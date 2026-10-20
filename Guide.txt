@@ -1,0 +1,185 @@
+1. Ziel und Grundprinzipien
+Entwickle eine übersichtliche Familien-App, in der Mitglieder Aufgaben erstellen, Personen zuweisen, Bilder anhängen, Wiederholungen definieren und den Erledigungsstatus sehen können. Nutzer dürfen Mitglied in mehreren Familien sein. Persönliche Outlook-Termine werden separat von gemeinsamen Aufgaben gehalten.
+Leitprinzipien:
+	•	Aufgaben sind der zentrale Produktbereich.
+	•	Der Datenbankstatus ist maßgeblich; Push-Nachrichten und Live Activities sind zusätzliche Hinweise und dürfen nicht die einzige Quelle für einen Aufgabenstatus sein.
+	•	Familienübergreifende und persönliche Daten müssen sauber getrennt sein.
+	•	Die Oberfläche soll hochwertig, ruhig, klar und flüssig wirken. Nutzbarkeit, Lesbarkeit, Performance und Barrierefreiheit haben Vorrang vor dekorativen Effekten.
+	•	Baue in kleinen, testbaren Schritten. Keine großen Änderungen ohne vorherige Bestandsaufnahme und Plan.
+2. Aufgaben: Daten und Erstellung
+Jedes Familienmitglied kann Aufgaben erstellen und bearbeiten, sofern die Aufgabe für es zugänglich ist.
+Eine Aufgabe enthält:
+	•	einen Titel;
+	•	eine optionale Beschreibung;
+	•	optional ein Datum und eine Uhrzeit als Startzeitpunkt (keine separate Frist und kein Fälligkeitsdatum);
+	•	eine oder mehrere zugewiesene Personen;
+	•	optional mehrere angehängte Bilder;
+	•	eine gewählte Erledigungsart;
+	•	bei Bedarf eine Wiederholungsregel.
+Es sollen zunächst keine zusätzlichen Felder wie Priorität, Kategorien, Orte oder Kommentare erfunden werden.
+Der Ersteller wird nicht automatisch als zugewiesene Person eingetragen, kann sich aber selbst zuweisen. Eine Aufgabe darf nicht versehentlich als „vom Ersteller übernommen“ gelten, nur weil er sie angelegt hat.
+Bilder
+	•	Bilder können aus der Fotomediathek ausgewählt und direkt mit der Kamera aufgenommen werden.
+	•	Mehrere Bilder pro Aufgabe sind möglich.
+	•	In der Aufgabenübersicht erscheint bei vorhandenen Bildern eine Miniaturansicht.
+	•	Das Antippen der Miniatur öffnet eine größere Bildansicht mit horizontalem Durchblättern der angehängten Bilder.
+	•	Das Antippen des übrigen Aufgabeneintrags öffnet die Aufgabendetailansicht.
+	•	In der Detailansicht befindet sich oben eine Schaltfläche zum Bearbeiten.
+	•	Bilder dürfen nur für Personen sichtbar sein, die laut Familien-Sichtbarkeitseinstellungen Zugriff auf die Aufgabe haben.
+3. Erledigungsarten und Berechtigungen
+Beim Anlegen einer Aufgabe muss zwischen zwei Modi gewählt werden:
+	1	Eine Person erledigt für alle: Sobald eine zugewiesene Person die Aufgabe abhakt, gilt die Aufgabe als vollständig erledigt und verschwindet für alle aus der aktiven Aufgabenübersicht. Ihre Live Activity wird bei allen zugewiesenen Personen beendet.
+	2	Jede Person erledigt einzeln: Jede zugewiesene Person hat einen eigenen Erledigungsstatus. Die Aufgabe ist erst vollständig erledigt, wenn alle zugewiesenen Personen sie erledigt haben. Die Live Activity verschwindet für jede Person individuell, sobald diese Person selbst erledigt hat; für die übrigen zugewiesenen Personen bleibt sie bestehen.
+Berechtigungen:
+	•	Regulär dürfen nur zugewiesene Personen eine Aufgabe abhaken.
+	•	Der Ersteller darf die Aufgabe unabhängig von seiner eigenen Zuweisung direkt als erledigt markieren.
+	•	Jedes Mitglied darf Aufgaben bearbeiten und löschen, sofern es laut Sichtbarkeitseinstellung Zugriff darauf hat.
+	•	Alle Mitglieder, die Zugriff auf den Verlauf haben, dürfen Aufgaben daraus wiederherstellen, auch wenn jemand anderes sie erstellt, erledigt oder gelöscht hat.
+	•	Ein versehentliches Abhaken muss rückgängig gemacht werden können.
+Zu klärender Konflikt: Wenn die Familien-Sichtbarkeit auf „nur mir zugewiesene Aufgaben“ steht, kann der Ersteller eine selbst erstellte Aufgabe möglicherweise nicht sehen, wenn er sich nicht zugewiesen hat. Das kann mit dem Recht des Erstellers, Aufgaben direkt abzuhaken, kollidieren. Erfinde keine Lösung stillschweigend: Weise im Umsetzungsplan ausdrücklich darauf hin und frage nach, ob der Ersteller seine eigenen Aufgaben unabhängig von der Zuweisung weiterhin sehen darf.
+4. Wiederkehrende Aufgaben
+Unterstützte Wiederholungen:
+	•	täglich;
+	•	an ausgewählten Wochentagen;
+	•	an einem oder mehreren festgelegten Monatstagen.
+Wiederkehrende Aufgaben sollen als Wiederholungsregel plus eigenständige Vorkommen modelliert werden. Bitte nicht einfach dieselbe einzelne Datenbankzeile nach jedem Abhaken zurücksetzen. Der Verlauf muss erkennen lassen, welches konkrete Vorkommen erledigt oder gelöscht wurde.
+Regeln:
+	•	Wird ein Vorkommen nicht erledigt, bleibt es überfällig; das nächste Vorkommen wird trotzdem gemäß dem festgelegten Rhythmus erzeugt.
+	•	Beim Löschen einer wiederkehrenden Aufgabe wird gefragt, ob nur das ausgewählte/nächste Vorkommen oder die gesamte Serie mit zukünftigen Vorkommen gelöscht werden soll.
+	•	Beim Bearbeiten und beim Tippen auf „Fertig“ wird ebenfalls nach dem Geltungsbereich gefragt. Sinnvolle Optionen sind: nur dieses Vorkommen ändern oder dieses und zukünftige Vorkommen ändern; wenn eine Änderung der Wiederholungsregel die ganze Serie betrifft, muss dies klar erklärt werden.
+	•	Bereits erledigte Vorkommen bleiben im Verlauf und werden nicht durch das Löschen der Serie entfernt.
+	•	Wenn ein einzelnes Vorkommen gelöscht wird, landet dieses gelöschte Vorkommen im Verlauf.
+	•	Beim Löschen einer gesamten Serie sollen nicht alle künftigen Vorkommen als einzelne Verlaufseinträge angelegt werden. Der Verlauf enthält einen Serien-Löschvorgang, über den die Serie wiederhergestellt werden kann.
+	•	Wird die gelöschte Serie wiederhergestellt, müssen auch die davon betroffenen zukünftigen Vorkommen wieder aktiviert werden.
+	•	Einträge bleiben 30 Tage im Verlauf; danach können sie automatisch endgültig entfernt werden.
+Noch offene Regel: Was bei einem Monatstag geschehen soll, der in einem Monat nicht vorkommt (zum Beispiel der 31.). Das im Plan als offene Entscheidung markieren und einen Vorschlag machen.
+5. Aufgabenübersicht und Navigation
+Die untere Navigation enthält drei Bereiche:
+	1	Aufgaben – Startseite;
+	2	Kalender – Monatsübersicht;
+	3	Verlauf – erledigte und gelöschte Aufgaben der letzten 30 Tage.
+Zusätzlich befindet sich rechts neben der unteren Navigation ein separater, aber gestalterisch einheitlicher, kreisrunder Plus-Button, über den direkt eine neue Aufgabe angelegt wird.
+Aufgaben-Startseite
+	•	Aufgaben aus allen Familien, in denen der Nutzer Mitglied ist, werden gemeinsam angezeigt.
+	•	Aufgaben ohne Datum stehen ganz oben.
+	•	Anschließend folgen datierte Aufgaben chronologisch nach Startzeit.
+	•	Es gibt zunächst keine Filter.
+	•	Jeder Eintrag zeigt Titel, optionale Beschreibung, gegebenenfalls eine Bild-Miniatur sowie kleine Profilbilder oder Initialen aller zugewiesenen Personen.
+	•	Der Erledigungsstatus der einzelnen Personen muss auf einen Blick unterscheidbar sein, zum Beispiel durch dezente Statusmarkierung oder visuelle Abschwächung des Avatars.
+	•	Tippen auf den Aufgabeneintrag öffnet die Detailansicht; dort gibt es oben eine Bearbeiten-Schaltfläche.
+	•	Tippen auf die Bild-Miniatur öffnet stattdessen die große Bildansicht.
+	•	Oben steht der Familienname als anklickbares Element. Oben rechts steht das Profilbild des aktuellen Nutzers. Die exakte Aktion beim Antippen des Familiennamens ist noch offen; im Plan bitte eine gute Lösung vorschlagen.
+	•	Nutzer können ein eigenes Profilbild hochladen.
+Familienfarben
+	•	Jede Familie hat eine selbst wählbare Farbe.
+	•	In zusammengeführten Ansichten werden Aufgaben entsprechend ihrer Familie gekennzeichnet.
+	•	Wenn Farben für einen Nutzer identisch oder schwer unterscheidbar sind, darf die App die Anzeige lokal für diesen Nutzer leicht variieren. Die gespeicherte Originalfarbe der Familie darf dadurch nicht verändert werden.
+6. Kalender und Outlook
+In-App-Kalender
+	•	Ausgangspunkt ist eine Monatsansicht.
+	•	Tage mit Aufgaben bekommen eine Markierung/einen Punkt.
+	•	Beim Auswählen eines Tages werden die Einträge dieses Tages angezeigt.
+	•	Aufgaben können in der Kalenderansicht der App sichtbar sein, werden aber niemals automatisch in Outlook geschrieben oder exportiert.
+	•	Kalendertermine erzeugen niemals Aufgaben – weder automatisch noch über eine versteckte Funktion.
+	•	Die Kalenderansicht kann Aufgaben und persönliche importierte Outlook-Termine darstellen, muss diese aber visuell klar unterscheiden.
+Outlook-Verbindung
+	•	In Version 1 wird nur Outlook unterstützt.
+	•	Jeder Nutzer kann selbst sein eigenes Outlook-Konto verbinden und entscheiden, welchen Outlook-Kalender er in seine App-Kalenderansicht einbezieht.
+	•	Die Outlook-Verbindung ist pro Nutzer. Importierte Outlook-Termine sind persönlich und dürfen nur dem Nutzer angezeigt werden, der diesen Kalender verbunden hat. Sie werden nicht automatisch mit Familienmitgliedern geteilt – auch dann nicht, wenn in der Familie alle Aufgaben sichtbar sind.
+	•	Outlook-Termine werden nur gelesen und angezeigt. Die App bearbeitet sie nicht und schreibt nichts zurück nach Outlook.
+	•	Änderungen und Absagen in Outlook sollen bei der nächsten Synchronisierung in der App berücksichtigt werden.
+	•	Für den beschriebenen Anwendungsfall soll ein persönlicher Filter konfigurierbar sein, der nicht abgesagte Termine anzeigt, bei denen eine bestimmte Person (im konkreten Fall die Mutter des Nutzers) Organisatorin ist und sowohl der Nutzer als auch seine Schwester als Teilnehmer eingetragen sind.
+	•	Diese Logik darf nicht hart auf bestimmte persönliche E-Mail-Adressen im Quellcode zugeschnitten sein. Organisator und Teilnehmer sollen konfigurierbar beziehungsweise im Setup auswählbar sein. Unterstütze weitere geeignete Filter später, ohne den Kalender neu bauen zu müssen.
+	•	Prüfe mit einem realen Testtermin, ob Microsoft Graph in den verfügbaren Berechtigungen alle benötigten Felder für Organisator und Teilnehmer liefert. Falls nicht, nenne die konkrete Einschränkung und schlage eine sichere Alternative vor.
+	•	Verwende die minimal erforderlichen Microsoft-Berechtigungen. OAuth-Zugriffstoken, Refresh-Token und Client-Geheimnisse dürfen nicht unsicher im App-Client gespeichert werden.
+Universelle Architektur, ohne mehr Kalenderdienste zu implementieren
+	•	Implementiere zunächst ausschließlich Outlook.
+	•	Halte die Kalender-Integration in einer separaten Abstraktionsschicht, die externe Termine in ein einheitliches internes Modell überführt. So können später weitere Anbieter ergänzt werden, ohne die Kalenderoberfläche neu zu schreiben.
+	•	Andere Anbieter wie Google oder iCloud sind nicht Teil des ersten Release und sollen nicht vorsorglich implementiert werden.
+7. Benachrichtigungen und Live Activities
+	•	Jede zugewiesene Person bekommt eine Push-Benachrichtigung, sobald ihr eine Aufgabe zugewiesen wird.
+	•	Wenn eine Aufgabe ein Datum mit Uhrzeit hat, erscheint die Live Activity fünf Minuten vor der Startzeit. Zum Startzeitpunkt wird zusätzlich eine Push-Benachrichtigung verschickt.
+	•	Bei Aufgaben ohne genaue Uhrzeit werden die zugewiesenen Personen direkt bei Erstellung/Zuweisung benachrichtigt; die Live Activity soll dann ebenfalls unmittelbar starten.
+	•	Ist eine Aufgabe eine Stunde nach ihrem Start noch offen, erhalten die zugewiesenen Personen eine Erinnerung. Danach wird alle 24 Stunden erneut erinnert, solange die Aufgabe offen ist.
+	•	Die genaue Berechnung der ersten Erinnerung bei Aufgaben ohne Uhrzeit muss als offene Entscheidung markiert werden.
+	•	Wenn eine Aufgabe vollständig erledigt wurde, erhalten der Ersteller und die zugewiesenen Personen eine Benachrichtigung – ausgenommen jede Person, die selbst die Aufgabe abgehakt hat.
+	•	Bei relevanten Änderungen an einer Aufgabe sollen die zugewiesenen Personen benachrichtigt werden.
+	•	Wird der Startzeitpunkt geändert, muss eine laufende/geplante Live Activity beendet beziehungsweise aktualisiert werden und erst fünf Minuten vor dem neuen Startzeitpunkt wieder erscheinen. Zum neuen Startzeitpunkt wird die Start-Benachrichtigung ausgelöst.
+	•	Beim Löschen oder vollständigen Erledigen wird die Live Activity beendet.
+	•	Mehrere Aufgaben dürfen gleichzeitig je eine Live Activity haben.
+	•	Eine Live Activity muss auf jedem zugewiesenen Gerät den passenden Aufgabenstatus zeigen und eine Aktion zum Abhaken bieten, sofern die Person laut Erledigungsmodus dazu berechtigt ist.
+	•	iOS-Grenzen und Systemverhalten von Push Notifications und Live Activities vor der Umsetzung in aktueller Apple-Dokumentation prüfen. Niemals erfolgreiche Zustellung garantieren; die Datenbank bleibt maßgeblich.
+8. Familien, Mitglieder und Einladungen
+	•	Nach der Registrierung entscheidet der Nutzer, ob er eine Familie erstellt oder einer vorhandenen Familie beitritt.
+	•	Beitritt über Einladungscode oder Link. Ein Link soll nach Anmeldung möglichst direkt dem Beitritt zur jeweiligen Familie dienen.
+	•	Nutzer können mehreren Familien angehören.
+	•	Der Ersteller einer Familie ist zunächst Administrator.
+	•	Standardmäßig dürfen Familienmitglieder andere Mitglieder einladen und die üblichen Verwaltungsaktionen durchführen.
+	•	Der Familienadministrator kann bestimmte Rechte in den Familieneinstellungen einschränken. Die genauen einzeln schaltbaren Rechte sind noch offen; schlage eine übersichtliche Lösung vor und kläre sie vor der endgültigen Implementierung.
+Sichtbarkeit von Aufgaben
+In den Einstellungen jeder Familie kann ausgewählt werden:
+	•	Alle Aufgaben sichtbar: Alle Mitglieder mit Zugang zu dieser Familie sehen deren Aufgaben.
+	•	Nur zugewiesene Aufgaben sichtbar: Mitglieder sehen nur Aufgaben, denen sie selbst zugewiesen sind.
+Diese Regel muss in der Datenbank und den Berechtigungsregeln durchgesetzt werden, nicht nur in der Benutzeroberfläche. Sie gilt ebenfalls für Details, Bilder und Verlaufseinträge. Den oben beschriebenen Konflikt mit Erstellerrechten ausdrücklich vor der Umsetzung klären.
+9. Anmeldung und Profil
+	•	Anmeldemöglichkeiten: E-Mail, Apple und Google.
+	•	E-Mail-Anmeldung soll passwortlos über Bestätigungslink oder Bestätigungscode erfolgen.
+	•	Nutzer sollen angemeldet bleiben und nicht bei jedem App-Start erneut einen Code eingeben müssen.
+	•	Session-Verwaltung sicher implementieren; Abmelden und Sitzungswiderruf müssen zuverlässig funktionieren.
+	•	Nutzer können ein Profilbild hochladen.
+	•	Nach der ersten Anmeldung: Familie erstellen oder per Link/Code beitreten.
+10. Design Language System & UI/UX – „Fluid Ambient“
+Visueller Stil und Farben
+	•	Dunkle, warme Ästhetik: tiefes warmes Graphit und Dunkelbraun statt hartem, kaltem Schwarz.
+	•	Primäre Akzentfarbe: strahlendes, warmes Bernstein-Orange für interaktive Elemente, Hinweise, Logo und den primären Plus-Button.
+	•	Cards und Content-Module mit großzügig abgerundeten Ecken.
+	•	Sanfte Transparenzen und feine, helle Lichtkanten sollen die Oberfläche hochwertig wirken lassen, ohne die Lesbarkeit zu beeinträchtigen.
+	•	Typografie: gut lesbare, elegante Überschriften in Kombination mit klarer, hochlesbarer Fließtextschrift. Sekundärinformationen in gedämpften warmgrauen Tönen.
+	•	Lege zu Beginn semantische Design-Tokens für Hintergrund, Flächen, Text, Sekundärtext, Akzentfarbe, Warnung, Erfolg, Linien und Familienfarben an. Wähle konkrete Farbcodes und Schriftgrößen auf Grundlage des Gesamtdesigns und dokumentiere sie.
+Navigation und Layout
+	•	Schwebende, abgerundete Pillen-Tab-Bar oberhalb des Home-Indikators/Safe Area.
+	•	Drei Navigationseinträge: Aufgaben, Kalender, Verlauf.
+	•	Der separate, kreisrunde Plus-Button ist der visuelle Schwerpunkt für das Erstellen einer Aufgabe und liegt rechts neben der Tab-Bar, gestalterisch aber als Teil des gleichen Systems.
+	•	Safe Areas, Dynamic Island, Tastatur, kleine iPhone-Bildschirme und unterschiedliche Schriftgrößen berücksichtigen.
+Materialien, Licht und Effekte
+	•	Schwebende UI-Elemente können einen Frosted-Glass-/Liquid-Glass-Effekt mit weichem Hintergrund-Blur nutzen.
+	•	Dezente perlmuttartige/chromatische Reflexe und feine Lichtkanten an den Rändern sind erwünscht.
+	•	Effekte zurückhaltend verwenden: Inhalte bleiben gut lesbar, Bedienelemente sind klar erkennbar, Kontrast bleibt ausreichend und Animationen/Frosted Glass dürfen auf älteren Geräten keine spürbaren Performanceprobleme verursachen.
+	•	Native iOS-Materialien verwenden, wo sie eine zuverlässige und performante Umsetzung bieten. Keine unnötig teuren Blur-Ebenen über großen scrollenden Listen.
+Motion, Übergänge und Haptik
+	•	Natürliche Spring-Physics mit organischer Bewegung statt harter Standard-Übergänge.
+	•	Öffnen einer Aufgabendetailansicht darf sich fließend aus der zugehörigen Card entwickeln, sofern es ohne instabile Navigation und ohne Beeinträchtigung der Performance umgesetzt werden kann.
+	•	Größen-, Positions- und Opazitätsänderungen weich animieren.
+	•	Smoothness priorisieren; vorhandene 60–120-Hz-Bildwiederholraten nicht künstlich begrenzen. Frame Drops bei Listen, Bildern, Kalender und Navigation vermeiden.
+	•	Präzise, zurückhaltende Taptic-Engine-Haptik an wichtigen Touchpoints: Plus-Button, Auswahl-/Einrastmomente und erfolgreicher Abschluss. Haptik nicht bei jeder unwichtigen Berührung auslösen.
+	•	Animationen und Haptik müssen systemweite Einstellungen wie „Bewegung reduzieren“ respektieren. Bedienbarkeit darf niemals von Animationen abhängen.
+UI-Qualitätskriterien
+	•	Hochwertig, ruhig und aufgeräumt, keine überladenen Dashboard-Karten.
+	•	Lesbarkeit hat Vorrang vor Glanzeffekten.
+	•	Deutliche visuelle Unterscheidung zwischen noch offenen und erledigten Personen innerhalb einer Aufgabe.
+	•	Lade-, Fehler-, Leer- und Erfolgszustände sinnvoll gestalten.
+	•	Formulare für Aufgabe erstellen/bearbeiten müssen auf kleinen Displays einfach bedienbar sein.
+	•	Interaktive Elemente bekommen angemessene Touch-Flächen, gute Kontraste und VoiceOver-Labels.
+	•	Vor der Umsetzung ein kleines, konsistentes Design-System erstellen und anschließend alle Screens daran ausrichten.
+11. Vorläufiger Backend-Vorschlag
+Supabase ist eine Empfehlung, keine unumstößliche technische Vorgabe. Prüfe zuerst den vorhandenen Projektstand und aktuelle offizielle Dokumentation. Falls noch kein Backend vorhanden ist, prüfe Supabase als bevorzugte Option und begründe kurz, ob es für die Anforderungen geeignet ist.
+Vorgeschlagene Aufteilung:
+	•	Supabase Auth: passwortlose E-Mail-Anmeldung sowie Apple-/Google-Anmeldung.
+	•	PostgreSQL: Nutzerprofile, Familien und Mitgliedschaften, Aufgaben, Zuweisungen, Erledigungsstatus je Person, Wiederholungsregeln und Vorkommen, Verlauf, Gerätepusher-Token-Verknüpfungen sowie persönliche Outlook-Verbindungsmetadaten und importierte Termine.
+	•	Supabase Storage: Aufgabenbilder und Profilbilder mit geschütztem Zugriff.
+	•	Supabase Realtime: wo sinnvoll für zeitnahe Aktualisierung von Aufgabenstatus und Familienansichten.
+	•	Serverseitige Funktionen und geplante Jobs: Wiederholungsvorkommen, Erinnerungen, Versand von Push-Nachrichten und Synchronisierung der persönlichen Outlook-Kalender.
+	•	iOS Push/Live Activities: über passende Apple-Dienste und App-spezifische iOS-Funktionen; prüfen, was zwingend nativ implementiert werden muss.
+	•	Outlook: Microsoft Graph mit möglichst eingeschränkter Leseberechtigung.
+Backend-Sicherheitsanforderungen
+	•	Row Level Security (RLS) auf allen geeigneten exponierten Tabellen aktivieren und präzise Policies schreiben.
+	•	Autorisierung muss server- und datenbankseitig geprüft werden; UI-Verstecken allein ist keine Sicherheit.
+	•	Bei jeder Anfrage Familienmitgliedschaft und Sichtbarkeit prüfen.
+	•	Persönliche Outlook-Termine und Tokens strikt einem Nutzer zuordnen. Nicht in gemeinsam sichtbare Tabellen mit breiten Leserechten legen.
+	•	Keine Supabase Secret-/Service-Role-Schlüssel, Microsoft Client Secrets oder sonstige privilegierte Geheimnisse in mobilem Client, Git-Repository, Prompt oder normalen Logs speichern.
+	•	Clientseitig ausschließlich die geeigneten Publishable-/öffentlichen Projektwerte verwenden; RLS ist zwingend.
+	•	Serverseitige Geheimnisse über eine geeignete Secret-Verwaltung hinterlegen. Nie den Nutzer bitten, Secret-Werte in den Chat zu kopieren.
+	•	Push-Token pro Gerät verwalten; abgemeldete/ungültige Tokens behandeln.
+	•	Wiederholte Jobs idempotent implementieren, damit bei erneutem Lauf keine doppelten Vorkommen oder Benachrichtigungen entstehen.
+	•	Datenmodell, Migrationen, Storage-Policies, RLS-Policies und Edge Functions dokumentieren und testen.
+	•	Sicherungen und Wiederherstellung vor produktiver Nutzung prüfen.

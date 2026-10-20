@@ -1,0 +1,10 @@
+// Vorlage: als Local.xcconfig in diesem Ordner kopieren und ausfüllen.
+// Local.xcconfig ist in .gitignore eingetragen und wird nie eingecheckt.
+//
+// FAMILIAR_DEVELOPMENT_TEAM: deine 10-stellige Team-ID
+//   (developer.apple.com → Account → Membership details).
+// FAMILIAR_BUNDLE_ID: eindeutige Bundle-ID in Reverse-DNS-Form, z. B. de.<deinname>.familiar.
+//   Die Widget-Extension erhält automatisch die Endung .LiveActivity.
+
+FAMILIAR_DEVELOPMENT_TEAM =
+FAMILIAR_BUNDLE_ID = com.example.familiar

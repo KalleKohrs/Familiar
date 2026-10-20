@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.build/
+.swiftpm/xcode/xcuserdata/
+Package.resolved.bak
+
+# Lokale Konfiguration und Geheimnisse – niemals einchecken
+ios/Config/Local.xcconfig
+ios/Config/Secrets.xcconfig
+*.p8
+*.p12
+*.mobileprovision
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.branches/
+
+# Claude Code lokale Einstellungen
+.claude/settings.local.json

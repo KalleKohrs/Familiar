@@ -1,0 +1,550 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F0000000000000000000A060 /* FamiliarWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A011 /* FamiliarWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F0000000000000000000A061 /* FamiliarCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A070 /* FamiliarCore */; };
+		F0000000000000000000A062 /* FamiliarDesign in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A071 /* FamiliarDesign */; };
+		F0000000000000000000A063 /* FamiliarActivity in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A072 /* FamiliarActivity */; };
+		F0000000000000000000A064 /* FamiliarDesign in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A073 /* FamiliarDesign */; };
+		F0000000000000000000A065 /* FamiliarActivity in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A074 /* FamiliarActivity */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F0000000000000000000A090 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F0000000000000000000A001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F0000000000000000000A041;
+			remoteInfo = FamiliarWidgets;
+		};
+		F0000000000000000000A091 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F0000000000000000000A001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F0000000000000000000A040;
+			remoteInfo = Familiar;
+		};
+		F0000000000000000000A092 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F0000000000000000000A001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F0000000000000000000A040;
+			remoteInfo = Familiar;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F0000000000000000000A053 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F0000000000000000000A060 /* FamiliarWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		F0000000000000000000A005 /* FamiliarKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FamiliarKit; path = Packages/FamiliarKit; sourceTree = "<group>"; };
+		F0000000000000000000A010 /* Familiar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Familiar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000A011 /* FamiliarWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FamiliarWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000A012 /* FamiliarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FamiliarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000A013 /* FamiliarUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FamiliarUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000A020 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		F0000000000000000000A021 /* Familiar.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Familiar.xcconfig; sourceTree = "<group>"; };
+		F0000000000000000000A022 /* FamiliarWidgets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FamiliarWidgets.xcconfig; sourceTree = "<group>"; };
+		F0000000000000000000A023 /* Tests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Tests.xcconfig; sourceTree = "<group>"; };
+		F0000000000000000000A024 /* UITests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = UITests.xcconfig; sourceTree = "<group>"; };
+		F0000000000000000000A025 /* Local.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.example.xcconfig; sourceTree = "<group>"; };
+		F0000000000000000000A026 /* Familiar-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Familiar-Info.plist"; sourceTree = "<group>"; };
+		F0000000000000000000A027 /* FamiliarWidgets-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "FamiliarWidgets-Info.plist"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F0000000000000000000A030 /* Familiar */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Familiar;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A031 /* FamiliarWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FamiliarWidgets;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A032 /* FamiliarTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FamiliarTests;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A033 /* FamiliarUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FamiliarUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F0000000000000000000A051 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0000000000000000000A061 /* FamiliarCore in Frameworks */,
+				F0000000000000000000A062 /* FamiliarDesign in Frameworks */,
+				F0000000000000000000A063 /* FamiliarActivity in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A055 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0000000000000000000A064 /* FamiliarDesign in Frameworks */,
+				F0000000000000000000A065 /* FamiliarActivity in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A058 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A05B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F0000000000000000000A002 = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000A004 /* Config */,
+				F0000000000000000000A030 /* Familiar */,
+				F0000000000000000000A031 /* FamiliarWidgets */,
+				F0000000000000000000A032 /* FamiliarTests */,
+				F0000000000000000000A033 /* FamiliarUITests */,
+				F0000000000000000000A005 /* FamiliarKit */,
+				F0000000000000000000A003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000A010 /* Familiar.app */,
+				F0000000000000000000A011 /* FamiliarWidgets.appex */,
+				F0000000000000000000A012 /* FamiliarTests.xctest */,
+				F0000000000000000000A013 /* FamiliarUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A004 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000A020 /* Base.xcconfig */,
+				F0000000000000000000A025 /* Local.example.xcconfig */,
+				F0000000000000000000A021 /* Familiar.xcconfig */,
+				F0000000000000000000A022 /* FamiliarWidgets.xcconfig */,
+				F0000000000000000000A023 /* Tests.xcconfig */,
+				F0000000000000000000A024 /* UITests.xcconfig */,
+				F0000000000000000000A026 /* Familiar-Info.plist */,
+				F0000000000000000000A027 /* FamiliarWidgets-Info.plist */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F0000000000000000000A040 /* Familiar */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0000000000000000000A0A1 /* Build configuration list for PBXNativeTarget "Familiar" */;
+			buildPhases = (
+				F0000000000000000000A050 /* Sources */,
+				F0000000000000000000A051 /* Frameworks */,
+				F0000000000000000000A052 /* Resources */,
+				F0000000000000000000A053 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0000000000000000000A093 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000A030 /* Familiar */,
+			);
+			name = Familiar;
+			packageProductDependencies = (
+				F0000000000000000000A070 /* FamiliarCore */,
+				F0000000000000000000A071 /* FamiliarDesign */,
+				F0000000000000000000A072 /* FamiliarActivity */,
+			);
+			productName = Familiar;
+			productReference = F0000000000000000000A010 /* Familiar.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F0000000000000000000A041 /* FamiliarWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0000000000000000000A0A2 /* Build configuration list for PBXNativeTarget "FamiliarWidgets" */;
+			buildPhases = (
+				F0000000000000000000A054 /* Sources */,
+				F0000000000000000000A055 /* Frameworks */,
+				F0000000000000000000A056 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000A031 /* FamiliarWidgets */,
+			);
+			name = FamiliarWidgets;
+			packageProductDependencies = (
+				F0000000000000000000A073 /* FamiliarDesign */,
+				F0000000000000000000A074 /* FamiliarActivity */,
+			);
+			productName = FamiliarWidgets;
+			productReference = F0000000000000000000A011 /* FamiliarWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F0000000000000000000A042 /* FamiliarTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0000000000000000000A0A3 /* Build configuration list for PBXNativeTarget "FamiliarTests" */;
+			buildPhases = (
+				F0000000000000000000A057 /* Sources */,
+				F0000000000000000000A058 /* Frameworks */,
+				F0000000000000000000A059 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0000000000000000000A094 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000A032 /* FamiliarTests */,
+			);
+			name = FamiliarTests;
+			productName = FamiliarTests;
+			productReference = F0000000000000000000A012 /* FamiliarTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F0000000000000000000A043 /* FamiliarUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0000000000000000000A0A4 /* Build configuration list for PBXNativeTarget "FamiliarUITests" */;
+			buildPhases = (
+				F0000000000000000000A05A /* Sources */,
+				F0000000000000000000A05B /* Frameworks */,
+				F0000000000000000000A05C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0000000000000000000A095 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000A033 /* FamiliarUITests */,
+			);
+			name = FamiliarUITests;
+			productName = FamiliarUITests;
+			productReference = F0000000000000000000A013 /* FamiliarUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F0000000000000000000A001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2710;
+				LastUpgradeCheck = 2710;
+				TargetAttributes = {
+					F0000000000000000000A040 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					F0000000000000000000A041 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					F0000000000000000000A042 = {
+						CreatedOnToolsVersion = 27.1;
+						TestTargetID = F0000000000000000000A040;
+					};
+					F0000000000000000000A043 = {
+						CreatedOnToolsVersion = 27.1;
+						TestTargetID = F0000000000000000000A040;
+					};
+				};
+			};
+			buildConfigurationList = F0000000000000000000A0A0 /* Build configuration list for PBXProject "Familiar" */;
+			developmentRegion = de;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				de,
+				Base,
+			);
+			mainGroup = F0000000000000000000A002;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F0000000000000000000A080 /* XCLocalSwiftPackageReference "Packages/FamiliarKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F0000000000000000000A003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F0000000000000000000A040 /* Familiar */,
+				F0000000000000000000A041 /* FamiliarWidgets */,
+				F0000000000000000000A042 /* FamiliarTests */,
+				F0000000000000000000A043 /* FamiliarUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F0000000000000000000A052 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A056 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A059 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A05C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F0000000000000000000A050 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A054 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A057 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000A05A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F0000000000000000000A093 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F0000000000000000000A041 /* FamiliarWidgets */;
+			targetProxy = F0000000000000000000A090 /* PBXContainerItemProxy */;
+		};
+		F0000000000000000000A094 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F0000000000000000000A040 /* Familiar */;
+			targetProxy = F0000000000000000000A091 /* PBXContainerItemProxy */;
+		};
+		F0000000000000000000A095 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F0000000000000000000A040 /* Familiar */;
+			targetProxy = F0000000000000000000A092 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		F0000000000000000000A0B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A020 /* Base.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		F0000000000000000000A0B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A020 /* Base.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		F0000000000000000000A0B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A021 /* Familiar.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		F0000000000000000000A0B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A021 /* Familiar.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		F0000000000000000000A0B4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A022 /* FamiliarWidgets.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		F0000000000000000000A0B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A022 /* FamiliarWidgets.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		F0000000000000000000A0B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A023 /* Tests.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		F0000000000000000000A0B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A023 /* Tests.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		F0000000000000000000A0B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A024 /* UITests.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		F0000000000000000000A0B9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0000000000000000000A024 /* UITests.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F0000000000000000000A0A0 /* Build configuration list for PBXProject "Familiar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0000000000000000000A0B0 /* Debug */,
+				F0000000000000000000A0B1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0000000000000000000A0A1 /* Build configuration list for PBXNativeTarget "Familiar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0000000000000000000A0B2 /* Debug */,
+				F0000000000000000000A0B3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0000000000000000000A0A2 /* Build configuration list for PBXNativeTarget "FamiliarWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0000000000000000000A0B4 /* Debug */,
+				F0000000000000000000A0B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0000000000000000000A0A3 /* Build configuration list for PBXNativeTarget "FamiliarTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0000000000000000000A0B6 /* Debug */,
+				F0000000000000000000A0B7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0000000000000000000A0A4 /* Build configuration list for PBXNativeTarget "FamiliarUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0000000000000000000A0B8 /* Debug */,
+				F0000000000000000000A0B9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		F0000000000000000000A080 /* XCLocalSwiftPackageReference "Packages/FamiliarKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FamiliarKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F0000000000000000000A070 /* FamiliarCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FamiliarCore;
+		};
+		F0000000000000000000A071 /* FamiliarDesign */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FamiliarDesign;
+		};
+		F0000000000000000000A072 /* FamiliarActivity */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FamiliarActivity;
+		};
+		F0000000000000000000A073 /* FamiliarDesign */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FamiliarDesign;
+		};
+		F0000000000000000000A074 /* FamiliarActivity */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FamiliarActivity;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F0000000000000000000A001 /* Project object */;
+}
