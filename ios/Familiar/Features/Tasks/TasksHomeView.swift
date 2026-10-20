@@ -1,9 +1,13 @@
+import FamiliarCore
 import FamiliarDesign
 import SwiftUI
 
-/// Startseite „Aufgaben“. Phase 0: Gerüst mit Kopfzeile und Leerzustand.
-/// Die echte Liste folgt in Phase 3.
+/// Startseite „Aufgaben“. Kopf mit Familien und Profil; die echte Liste folgt in Phase 3.
 struct TasksHomeView: View {
+    @Environment(SessionStore.self) private var session
+    @State private var showsFamilies = false
+    @State private var showsProfile = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -29,45 +33,51 @@ struct TasksHomeView: View {
             .navigationTitle("Aufgaben")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    FamilyHeaderButton(title: "Meine Familie")
+                    FamilyHeaderButton(title: session.familyHeaderTitle) { showsFamilies = true }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    ProfileHeaderButton(name: "Ich")
+                    ProfileHeaderButton { showsProfile = true }
                 }
             }
+            .sheet(isPresented: $showsFamilies) { FamiliesSheet() }
+            .sheet(isPresented: $showsProfile) { ProfileSheet() }
         }
     }
 }
 
-/// Familienname oben links. Öffnet später das Sheet „Familien“ (Plan, Abschnitt 6).
+/// Familienname oben links; öffnet das Sheet „Familien“ (Plan, Abschnitt 6).
 struct FamilyHeaderButton: View {
     let title: String
+    let action: () -> Void
 
     var body: some View {
-        Button {} label: {
+        Button(action: action) {
             HStack(spacing: FamiliarSpacing.xxs) {
-                Text(title).font(.subheadline.weight(.semibold))
+                Text(title).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Image(systemName: "chevron.down").font(.caption.weight(.semibold))
             }
             .foregroundStyle(FamiliarColor.textPrimary)
         }
         .accessibilityLabel("\(title), Familien verwalten")
+        .accessibilityIdentifier("header.family")
     }
 }
 
-/// Profilbild oben rechts. Öffnet später Profil und Einstellungen.
+/// Eigenes Profilbild oben rechts; öffnet Profil und Einstellungen.
 struct ProfileHeaderButton: View {
-    let name: String
+    @Environment(SessionStore.self) private var session
+    let action: () -> Void
 
     var body: some View {
-        Button {} label: {
-            AvatarView(name: name, diameter: 30)
+        Button(action: action) {
+            ProfileAvatar(profile: session.profile, name: session.profile?.displayName ?? "", diameter: 30)
         }
         .accessibilityLabel("Profil und Einstellungen")
+        .accessibilityIdentifier("header.profile")
     }
 }
 
 #Preview {
     TasksHomeView()
-        .preferredColorScheme(.dark)
+        .previewEnvironment(.ready)
 }

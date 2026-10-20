@@ -37,8 +37,8 @@ struct FloatingTabBar: View {
         .padding(FamiliarSpacing.xxs)
         .frame(minHeight: barHeight)
         .glassEffect(.regular, in: .capsule)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isTabBar)
+        // Bewusst ohne `.isTabBar`-Container: Damit legt SwiftUI Symbol und Text jedes Bereichs
+        // zusätzlich als eigene Buttons offen (UI-Test `testEachTabIsASingleAccessibilityElement`).
     }
 
     private func tabButton(_ tab: AppTab) -> some View {
@@ -52,6 +52,7 @@ struct FloatingTabBar: View {
                 Image(systemName: tab.systemImage)
                     .font(.title3.weight(.medium))
                     .frame(height: 24)
+                    .accessibilityHidden(true)
                 Text(tab.title)
                     .font(.caption2.weight(.semibold))
                     .lineLimit(1)
@@ -66,7 +67,9 @@ struct FloatingTabBar: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("tab.\(tab)")
         .accessibilityShowsLargeContentViewer {
             Label(tab.title, systemImage: tab.systemImage)
         }
@@ -94,6 +97,7 @@ struct FloatingTabBar: View {
         .buttonStyle(.plain)
         .glassEffect(.regular.tint(FamiliarColor.accent).interactive(), in: .circle)
         .accessibilityLabel("Neue Aufgabe")
+        .accessibilityIdentifier("createTask")
         .accessibilityShowsLargeContentViewer {
             Label("Neue Aufgabe", systemImage: "plus")
         }

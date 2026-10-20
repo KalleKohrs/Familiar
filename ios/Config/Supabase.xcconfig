@@ -1,0 +1,6 @@
+// Supabase-Projekt für die App (Dev: ldeouecoaqyfvubhrjei).
+// Nur der Publishable-Key gehört in die App: Er ist für Clients gedacht und durch RLS abgesichert.
+// Secret-Keys niemals hier eintragen. In xcconfig beginnt „//“ einen Kommentar, daher nur der Host.
+
+FAMILIAR_SUPABASE_HOST = ldeouecoaqyfvubhrjei.supabase.co
+FAMILIAR_SUPABASE_PUBLISHABLE_KEY = sb_publishable_pbWdiDYuPG_Wib2g4WCVug_oDhOtS3k

@@ -51,5 +51,5 @@ struct RootTabView: View {
 
 #Preview {
     RootTabView()
-        .preferredColorScheme(.dark)
+        .previewEnvironment(.ready)
 }

@@ -302,6 +302,7 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
    - RPCs `create_family`, `join_family`, `create_invite`.
    - SQL-Tests der RLS-Matrix.
 2. **Auth & Onboarding (iOS)**
+   - **Stand 2026-10-20:** aufgeteilt in **2a** (E-Mail-Code, Profil mit Bild, Familien erstellen/beitreten, Einladungscode teilen, Abmelden – umgesetzt), **2b** Google (sobald die Google-Cloud-Clients eingerichtet sind) und **2c** Sign in with Apple + Universal Links (brauchen das bezahlte Apple Developer Program).
    - Zuerst die Anleitungen `docs/setup/supabase-auth.md` (E-Mail-Template, Apple-Provider, Keys) und `docs/setup/google.md` (Google-Cloud-Clients Schritt für Schritt).
    - E-Mail-Code, Apple, Google, Profil + Avatar-Upload.
    - Familie erstellen/beitreten, Einladung teilen (Universal Link + Code), Sitzung halten, Abmelden.

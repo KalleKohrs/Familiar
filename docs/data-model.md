@@ -1,7 +1,7 @@
-# Datenmodell (Stand Phase 1 „Backend-Basis“)
+# Datenmodell (Stand Phase 2 „Auth & Onboarding“)
 
 Dieses Dokument beschreibt die Tabellen, Funktionen und RPCs aus den Migrationen
-`supabase/migrations/0001`–`0005`. Rechte und Policies im Detail: [rls-matrix.md](rls-matrix.md).
+`supabase/migrations/0001`–`0006`. Rechte und Policies im Detail: [rls-matrix.md](rls-matrix.md).
 Aufgaben, Bilder, Serien, Geräte und Kalender kommen ab Phase 3 dazu.
 
 ## Migrationsstand (Projekt `ldeouecoaqyfvubhrjei`)
@@ -13,6 +13,7 @@ Aufgaben, Bilder, Serien, Geräte und Kalender kommen ab Phase 3 dazu.
 | `0003_rls_helpers_policies` | 2026-10-20 | Supabase-MCP `apply_migration` |
 | `0004_family_rpcs` | 2026-10-20 | **manuell im Supabase-SQL-Editor** (die MCP-Bestätigung für Statements mit `delete` wurde in der App automatisch abgelehnt). Eintrag in `supabase_migrations.schema_migrations` (Version `20261020182858`) nachträglich ergänzt; Inhalt per SHA-256 gegen die Datei geprüft. |
 | `0005_invite_attempts_deny_policy` | 2026-10-20 | Supabase-MCP `apply_migration` |
+| `0006_avatars_storage` | 2026-10-20 | Supabase-MCP `apply_migration` (Phase 2) |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -117,6 +118,22 @@ Indizes: `family_invites_family_id_idx`, `family_invites_created_by_idx`, Unique
 Index `(user_id, attempted_at desc)`. RLS aktiv mit Ablehnungs-Policy `invite_attempts_deny_all`
 (`using (false)`, Migration 0005), keine Rechte für Client-Rollen.
 `join_family` löscht beim Aufruf die Einträge des Nutzers, die älter als eine Stunde sind.
+
+## Storage: Profilbilder (0006)
+
+Privater Bucket `avatars` (Limit 1 MB, nur `image/jpeg`). Genau ein Bild pro Person unter
+`{user_id}/avatar.jpg`; die App lädt mit `upsert` hoch und überschreibt so das alte Bild.
+
+| Policy auf `storage.objects` | Aktion | Regel |
+|---|---|---|
+| `avatars_select_own_and_co_members` | SELECT | eigener Ordner oder Ordner einer Person aus einer gemeinsamen Familie (`private.co_member_ids()`) |
+| `avatars_insert_own` | INSERT | nur `name = '{eigene user_id}/avatar.jpg'` |
+| `avatars_update_own` | UPDATE | nur das eigene `avatar.jpg`, kein Umbenennen |
+
+- Kein DELETE für Clients. „Bild entfernen“ setzt `profiles.avatar_path` per `update_profile(null, '')` auf null;
+  die Datei bleibt liegen und wird bei der Kontolöschung (Phase 9) entfernt.
+- Anzeige über signierte URLs (`createSignedURL`); Cache-Schlüssel in der App: Pfad + `profiles.updated_at`.
+- Tests: `supabase/tests/0002_storage_avatars.sql` (16 Prüfungen, grün am 2026-10-20).
 
 ## RLS-Hilfsfunktionen (0003, Schema `private`)
 

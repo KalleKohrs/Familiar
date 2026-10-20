@@ -46,4 +46,5 @@ MTL_ENABLE_DEBUG_INFO[config=Release] = NO
 FAMILIAR_DEVELOPMENT_TEAM =
 FAMILIAR_BUNDLE_ID = com.example.familiar
 
+#include "Supabase.xcconfig"
 #include? "Local.xcconfig"

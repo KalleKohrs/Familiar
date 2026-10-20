@@ -13,6 +13,7 @@
 		F0000000000000000000A063 /* FamiliarActivity in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A072 /* FamiliarActivity */; };
 		F0000000000000000000A064 /* FamiliarDesign in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A073 /* FamiliarDesign */; };
 		F0000000000000000000A065 /* FamiliarActivity in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A074 /* FamiliarActivity */; };
+		F0000000000000000000A066 /* FamiliarData in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000A075 /* FamiliarData */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +101,7 @@
 				F0000000000000000000A061 /* FamiliarCore in Frameworks */,
 				F0000000000000000000A062 /* FamiliarDesign in Frameworks */,
 				F0000000000000000000A063 /* FamiliarActivity in Frameworks */,
+				F0000000000000000000A066 /* FamiliarData in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +195,7 @@
 				F0000000000000000000A070 /* FamiliarCore */,
 				F0000000000000000000A071 /* FamiliarDesign */,
 				F0000000000000000000A072 /* FamiliarActivity */,
+				F0000000000000000000A075 /* FamiliarData */,
 			);
 			productName = Familiar;
 			productReference = F0000000000000000000A010 /* Familiar.app */;
@@ -543,6 +546,10 @@
 		F0000000000000000000A074 /* FamiliarActivity */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FamiliarActivity;
+		};
+		F0000000000000000000A075 /* FamiliarData */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FamiliarData;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

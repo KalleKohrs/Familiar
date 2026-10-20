@@ -1,0 +1,37 @@
+import Foundation
+
+/// Einladungscodes: 8 Zeichen Crockford-Base32 (Migration 0002).
+///
+/// Die Normalisierung entspricht `private.normalize_invite_code` auf dem Server, damit die App
+/// Eingaben schon vor dem Senden prüfen und einheitlich anzeigen kann. Maßgeblich bleibt der Server.
+public enum InviteCode {
+    public static let length = 8
+    static let alphabet = Set("0123456789ABCDEFGHJKMNPQRSTVWXYZ")
+
+    /// Großschreibung, Leerzeichen und Bindestriche entfernen, `O → 0`, `I/L → 1`.
+    public static func normalize(_ input: String) -> String {
+        var result = ""
+        for character in input.uppercased() {
+            switch character {
+            case " ", "-", "\t", "\n": continue
+            case "O": result.append("0")
+            case "I", "L": result.append("1")
+            default: result.append(character)
+            }
+        }
+        return result
+    }
+
+    /// `true`, wenn die Eingabe nach Normalisierung ein gültiger Code sein kann.
+    public static func isValid(_ input: String) -> Bool {
+        let code = normalize(input)
+        return code.count == length && code.allSatisfy(alphabet.contains)
+    }
+
+    /// Lesbare Schreibweise `ABCD-EFGH`; ungültige Eingaben bleiben unverändert.
+    public static func formatted(_ input: String) -> String {
+        let code = normalize(input)
+        guard code.count == length else { return input }
+        return "\(code.prefix(4))-\(code.suffix(4))"
+    }
+}

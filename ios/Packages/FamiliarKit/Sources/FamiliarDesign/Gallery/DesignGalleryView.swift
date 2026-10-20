@@ -5,6 +5,7 @@ import SwiftUI
 /// Wird in Debug-Builds aus der App heraus geöffnet und dient als Xcode-Preview.
 public struct DesignGalleryView: View {
     @State private var demoDone = false
+    @State private var demoText = ""
 
     public init() {}
 
@@ -162,6 +163,9 @@ public struct DesignGalleryView: View {
             Button("Abbrechen") {}.buttonStyle(.familiarSecondary)
             Button("Aufgabe löschen") {}.buttonStyle(.familiarDestructive)
             Button("Deaktiviert") {}.buttonStyle(.familiarPrimary).disabled(true)
+            TextField("E-Mail-Adresse", text: $demoText)
+                .familiarInputField()
+            FamiliarInlineError("Der Code ist falsch oder abgelaufen.")
             FlowRow {
                 FamiliarTag("Ohne Datum")
                 FamiliarTag("Mo, 3. Nov · 08:00", systemImage: "calendar", tone: .accent)

@@ -9,6 +9,10 @@
 		<key>UIColorName</key>
 		<string>LaunchBackground</string>
 	</dict>
+	<key>FamiliarSupabaseHost</key>
+	<string>$(FAMILIAR_SUPABASE_HOST)</string>
+	<key>FamiliarSupabasePublishableKey</key>
+	<string>$(FAMILIAR_SUPABASE_PUBLISHABLE_KEY)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

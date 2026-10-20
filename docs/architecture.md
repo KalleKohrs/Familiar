@@ -23,10 +23,17 @@ FamiliarWidgets (Widget-Extension)
 FamiliarKit (lokales Swift-Paket)
 ├── FamiliarCore      UI-freie Domänenlogik: Farben/OKLab, Familienfarb-Auflösung, Namen, Enums
 ├── FamiliarDesign    Tokens (Farben, Schrift, Abstände, Bewegung) und Komponenten
-└── FamiliarActivity  TaskActivityAttributes (gemeinsam für App und Extension)
+├── FamiliarActivity  TaskActivityAttributes (gemeinsam für App und Extension)
+└── FamiliarData      Supabase-Implementierung der Repositories (supabase-swift 2.55.x)
 ```
 
-Ab Phase 2 kommt `FamiliarData` (Repositories auf Basis von `supabase-swift`, Bild-Pipeline, Realtime) hinzu.
+- **FamiliarCore** enthält neben der Domänenlogik die Modelle (Profil, Familie, Mitglieder, Einladungen),
+  die Repository-Protokolle (`AuthService`, `ProfileRepository`, `FamilyRepository`) und `FamiliarError`.
+- **FamiliarData** setzt die Protokolle mit Supabase um (Auth, PostgREST-RPCs, Storage) und übersetzt
+  SDK-Fehler; nur Schlüssel aus dem Fehlerkatalog der RPCs werden als App-Fehler ausgewertet.
+- **App:** `SessionStore` (Anmeldestatus, Profil, Familien, Onboarding-Schritt) liegt im SwiftUI-Environment;
+  `RootView` wählt danach Anmeldung, Onboarding oder Hauptansicht. In Debug-Builds ersetzt das Startargument
+  `-FamiliarInMemoryBackend` Supabase durch ein Backend ohne Netzwerk (UI-Tests, Previews).
 
 **Konventionen**
 
