@@ -1,5 +1,6 @@
 import FamiliarCore
 import FamiliarDesign
+import AuthenticationServices
 import SwiftUI
 import UIKit
 
@@ -214,8 +215,20 @@ struct ProfileSheet: View {
         errorMessage = nil
         Task {
             defer { isDeletingAccount = false }
+            // Mit Apple angemeldet: kurz bei Apple bestätigen, damit der Server die Anmeldung widerrufen kann.
+            var appleCode: String?
+            if await session.needsAppleConfirmationForDeletion() {
+                do {
+                    appleCode = try await AppleReauthorization().authorizationCode()
+                } catch {
+                    if (error as? ASAuthorizationError)?.code != .canceled {
+                        errorMessage = String(localized: "Die Bestätigung mit Apple hat nicht geklappt. Bitte versuche es erneut.")
+                    }
+                    return
+                }
+            }
             do throws(FamiliarError) {
-                try await session.deleteAccount()
+                try await session.deleteAccount(appleAuthorizationCode: appleCode)
             } catch {
                 errorMessage = error.message
             }

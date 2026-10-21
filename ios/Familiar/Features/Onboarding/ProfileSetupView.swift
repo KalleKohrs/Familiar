@@ -54,7 +54,7 @@ struct ProfileSetupView: View {
                 }
             }
             .onAppear {
-                if name.isEmpty { name = session.profile?.displayName ?? "" }
+                if name.isEmpty { name = session.suggestedDisplayName ?? session.profile?.displayName ?? "" }
             }
         }
     }

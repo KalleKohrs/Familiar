@@ -2,7 +2,7 @@ import FamiliarCore
 import Foundation
 import Supabase
 
-/// Anmeldung per 6-stelligem E-Mail-Code (`signInWithOTP` + `verifyOTP(type: .email)`).
+/// Anmeldung per 6-stelligem E-Mail-Code (`signInWithOTP` + `verifyOTP(type: .email)`) oder mit Apple.
 /// Der Code statt eines Links funktioniert geräteübergreifend und braucht keine Universal Links;
 /// dafür muss die E-Mail-Vorlage `{{ .Token }}` enthalten (docs/setup/supabase-auth.md).
 final class SupabaseAuthService: AuthService {
@@ -42,10 +42,29 @@ final class SupabaseAuthService: AuthService {
         }
     }
 
-    func deleteAccount() async throws(FamiliarError) {
-        // Die Function prüft das mitgeschickte Nutzer-JWT und löscht serverseitig (Migration 0010).
+    func signInWithApple(idToken: String, nonce: String, fullName: String?) async throws(FamiliarError) {
         _ = try await perform {
-            try await client.functions.invoke("account-delete", options: FunctionInvokeOptions(method: .post))
+            try await client.auth.signInWithIdToken(credentials: OpenIDConnectCredentials(provider: .apple, idToken: idToken,
+                                                                                        nonce: nonce))
+        }
+        // Supabase-Doku: Apple liefert den Namen nur beim ersten Mal und nicht im ID-Token; als
+        // Vorschlag für den Profil-Schritt in den Metadaten ablegen.
+        if let fullName, !fullName.isEmpty {
+            _ = try? await client.auth.update(user: UserAttributes(data: ["full_name": .string(fullName)]))
+        }
+    }
+
+    func isLinkedToApple() async -> Bool {
+        guard let user = try? await client.auth.user() else { return false }
+        return user.identities?.contains { $0.provider == "apple" } ?? false
+    }
+
+    func deleteAccount(appleAuthorizationCode: String?) async throws(FamiliarError) {
+        // Die Function prüft das mitgeschickte Nutzer-JWT, widerruft ggf. die Apple-Anmeldung und
+        // löscht serverseitig (Migration 0010).
+        _ = try await perform {
+            try await client.functions.invoke("account-delete", options: FunctionInvokeOptions(
+                method: .post, body: DeleteAccountBody(appleAuthorizationCode: appleAuthorizationCode)))
         }
         // Lokale Sitzung beenden; das Konto existiert nicht mehr.
         _ = try? await client.auth.signOut(scope: .local)
@@ -56,5 +75,13 @@ final class SupabaseAuthService: AuthService {
         try await perform {
             try await client.auth.signOut(scope: everywhere ? .global : .local)
         }
+    }
+}
+
+private struct DeleteAccountBody: Encodable {
+    let appleAuthorizationCode: String?
+
+    enum CodingKeys: String, CodingKey {
+        case appleAuthorizationCode = "apple_authorization_code"
     }
 }

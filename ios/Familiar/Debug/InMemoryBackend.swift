@@ -154,7 +154,16 @@ extension InMemoryBackend: AuthService {
         publish()
     }
 
-    func deleteAccount() async throws(FamiliarError) {
+    func signInWithApple(idToken: String, nonce: String, fullName: String?) async throws(FamiliarError) {
+        let id = UUID()
+        profiles[id] = Profile(id: id, displayName: fullName ?? "Apple-Konto")
+        user = (id, "apple@privaterelay.example")
+        publish()
+    }
+
+    func isLinkedToApple() async -> Bool { false }
+
+    func deleteAccount(appleAuthorizationCode: String?) async throws(FamiliarError) {
         let me = try requireUser()
         for (familyID, familyMembers) in members where familyMembers.contains(where: { $0.userID == me }) {
             let others = familyMembers.filter { $0.userID != me }

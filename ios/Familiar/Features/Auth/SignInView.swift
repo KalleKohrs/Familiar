@@ -1,14 +1,17 @@
+import AuthenticationServices
 import FamiliarCore
 import FamiliarDesign
 import SwiftUI
 
-/// Anmeldung per E-Mail-Code (Plan, Abschnitt 6). Google und Apple folgen in Phase 2b/2c.
+/// Anmeldung per E-Mail-Code oder mit Apple (Plan, Abschnitt 6). Google folgt in Phase 2b.
 struct SignInView: View {
     @Environment(SessionStore.self) private var session
     @State private var email = ""
     @State private var isSending = false
     @State private var errorMessage: String?
     @State private var codeRequestedFor: String?
+    @State private var appleNonce = ""
+    @State private var isSigningInWithApple = false
     @FocusState private var emailFocused: Bool
 
     var body: some View {
@@ -53,6 +56,29 @@ struct SignInView: View {
                         .buttonStyle(.familiarPrimary)
                         .disabled(!InputRules.isPlausibleEmail(email) || isSending)
                         .accessibilityIdentifier("signIn.send")
+
+                        HStack(spacing: FamiliarSpacing.s) {
+                            Rectangle().fill(FamiliarColor.textTertiary.opacity(0.4)).frame(height: 1)
+                            Text("oder")
+                                .font(FamiliarFont.meta)
+                                .foregroundStyle(FamiliarColor.textSecondary)
+                            Rectangle().fill(FamiliarColor.textTertiary.opacity(0.4)).frame(height: 1)
+                        }
+                        .accessibilityHidden(true)
+                        .padding(.vertical, FamiliarSpacing.xxs)
+
+                        SignInWithAppleButton(.signIn) { request in
+                            appleNonce = AppleSignIn.makeNonce()
+                            request.requestedScopes = [.fullName, .email]
+                            request.nonce = AppleSignIn.sha256(appleNonce)
+                        } onCompletion: { result in
+                            handleApple(result)
+                        }
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(height: 50)
+                        .clipShape(Capsule())
+                        .disabled(isSigningInWithApple)
+                        .accessibilityIdentifier("signIn.apple")
                     }
                 }
                 .padding(.horizontal, FamiliarSpacing.m)
@@ -80,6 +106,36 @@ struct SignInView: View {
                 codeRequestedFor = address
             } catch {
                 errorMessage = error.message
+            }
+        }
+    }
+}
+
+extension SignInView {
+    private func handleApple(_ result: Result<ASAuthorization, any Error>) {
+        switch result {
+        case .failure(let error):
+            // Abbrechen ist keine Fehlermeldung wert.
+            if (error as? ASAuthorizationError)?.code != .canceled {
+                errorMessage = String(localized: "Die Anmeldung mit Apple hat nicht geklappt. Bitte versuche es erneut.")
+            }
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let idToken = credential.identityToken.flatMap({ String(data: $0, encoding: .utf8) }) else {
+                errorMessage = String(localized: "Die Anmeldung mit Apple hat nicht geklappt. Bitte versuche es erneut.")
+                return
+            }
+            let nonce = appleNonce
+            let name = AppleSignIn.displayName(from: credential.fullName)
+            isSigningInWithApple = true
+            errorMessage = nil
+            Task {
+                defer { isSigningInWithApple = false }
+                do throws(FamiliarError) {
+                    try await session.signInWithApple(idToken: idToken, nonce: nonce, fullName: name)
+                } catch {
+                    errorMessage = error.message
+                }
             }
         }
     }

@@ -14,8 +14,14 @@ public protocol AuthService: Sendable {
     func verifyEmailCode(_ code: String, email: String) async throws(FamiliarError)
     /// `everywhere = false`: nur dieses Gerät; `true`: alle Sitzungen des Kontos.
     func signOut(everywhere: Bool) async throws(FamiliarError)
+    /// „Mit Apple anmelden“: ID-Token und die unverschlüsselte Nonce der Anfrage. `fullName` liefert
+    /// Apple nur bei der allerersten Anmeldung.
+    func signInWithApple(idToken: String, nonce: String, fullName: String?) async throws(FamiliarError)
+    /// Ob das Konto mit Apple verknüpft ist – dann vor dem Löschen erneut mit Apple bestätigen.
+    func isLinkedToApple() async -> Bool
     /// Konto endgültig löschen (Edge Function `account-delete`); danach abgemeldet.
-    func deleteAccount() async throws(FamiliarError)
+    /// `appleAuthorizationCode`: frischer Code, mit dem der Server die Apple-Anmeldung widerruft.
+    func deleteAccount(appleAuthorizationCode: String?) async throws(FamiliarError)
 }
 
 public protocol ProfileRepository: Sendable {

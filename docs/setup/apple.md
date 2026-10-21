@@ -56,15 +56,17 @@ Laut Apple-Hilfe „Register an App ID“:
    - **Associated Domains** (Einladungslinks über deine Domain)
 7. **Continue** → Angaben prüfen → **Register**.
 
-Hinweis: Die in der App-ID aktivierten Capabilities sind eine Erlaubnisliste. Zusätzlich werden sie im Xcode-Target eingetragen; das übernehme ich in den jeweiligen Phasen (Entitlements-Datei), Xcode synchronisiert die Provisioning-Profile dann automatisch.
+Hinweis: Die in der App-ID aktivierten Capabilities sind eine Erlaubnisliste. Im Xcode-Target sind alle drei bereits eingetragen (`ios/Config/Familiar.entitlements`); Xcode synchronisiert die Provisioning-Profile dann automatisch.
 
-## 4. APNs-Schlüssel (.p8) erstellen (Mitteilungen & Live Activities)
+## 4. Apple-Schlüssel (.p8) erstellen (Mitteilungen, Live Activities, Apple-Anmeldung)
 
 Laut Apple-Hilfe „Create a private key to access a service“:
 
 1. In **Certificates, Identifiers & Profiles** **Keys** wählen, oben links **+**.
 2. **Key Name**: z. B. „Familiar APNs“.
-3. Haken bei **Apple Push Notification service (APNs)** → **Continue**.
+3. Haken bei **Apple Push Notification service (APNs)** **und** bei **Sign in with Apple**.
+   - Neben „Sign in with Apple“ auf **Configure** → als **Primary App ID** die App-ID aus Abschnitt 3 wählen → **Save**.
+   - Familiar braucht den Schlüssel für Sign in with Apple, um die Apple-Anmeldung beim Löschen eines Kontos zu widerrufen (Apple-Vorgabe). Ein Schlüssel für beides genügt.
 4. Neben „Apple Push Notification service“ auf **Configure** klicken:
    - **Environment**: **Sandbox & Production**. Ein Schlüssel für beide Umgebungen: Familiar merkt sich pro Gerät, ob es ein Entwicklungs-Build (Sandbox) oder eine TestFlight-/App-Store-Version (Production) ist, und wählt den passenden APNs-Server selbst. Wird die Option nicht angeboten, sag mir Bescheid – dann richten wir zwei Schlüssel ein.
    - **Key type**: **Team Scoped** (für alle Apps des Teams) ist am einfachsten.
@@ -85,6 +87,14 @@ Supabase-Dashboard → Projekt → **Edge Functions › Secrets** → folgende S
 | `APNS_TOPIC` | deine Bundle-ID |
 
 Danach mir nur Bescheid geben, *dass* die Secrets angelegt sind – nie die Werte.
+
+### Apple-Anmeldung in Supabase einschalten
+
+Laut Supabase-Doku „Login with Apple“ (nur native App, keine OAuth-Einstellungen nötig):
+
+1. Supabase-Dashboard → **Authentication › Sign In / Providers › Apple** öffnen und **Enable** einschalten.
+2. Unter **Client IDs** deine **Bundle-ID** eintragen.
+3. Die Felder für Secret Key / Services ID **leer lassen** (die braucht nur die Web-Anmeldung) → **Save**.
 
 ## Quellen
 

@@ -237,6 +237,19 @@ final class SessionStore {
     // MARK: Abmelden
 
     /// Der Anmeldestatus meldet danach `signedOut`; Gerätetokens werden ab Phase 7 vorher entfernt.
+    /// Name aus „Mit Apple anmelden“ (nur bei der ersten Anmeldung) als Vorschlag für den Profil-Schritt.
+    private(set) var suggestedDisplayName: String?
+
+    func signInWithApple(idToken: String, nonce: String, fullName: String?) async throws(FamiliarError) {
+        suggestedDisplayName = fullName
+        try await dependencies.auth.signInWithApple(idToken: idToken, nonce: nonce, fullName: fullName)
+    }
+
+    /// Ob vor dem Löschen eine Bestätigung mit Apple nötig ist (Widerruf der Apple-Anmeldung).
+    func needsAppleConfirmationForDeletion() async -> Bool {
+        await dependencies.auth.isLinkedToApple()
+    }
+
     /// Läuft vor dem Abmelden (Gerät für Mitteilungen abmelden, solange die Sitzung noch gilt).
     var beforeSignOut: (() async -> Void)?
 
@@ -246,8 +259,8 @@ final class SessionStore {
     }
 
     /// Konto endgültig löschen; danach meldet der Anmeldestatus `signedOut`.
-    func deleteAccount() async throws(FamiliarError) {
+    func deleteAccount(appleAuthorizationCode: String?) async throws(FamiliarError) {
         await beforeSignOut?()
-        try await dependencies.auth.deleteAccount()
+        try await dependencies.auth.deleteAccount(appleAuthorizationCode: appleAuthorizationCode)
     }
 }

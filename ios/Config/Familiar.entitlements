@@ -7,6 +7,11 @@
 	<key>aps-environment</key>
 	<string>development</string>
 	<!-- Einladungslinks https://familiar-app.de/join/… (apple-app-site-association auf der Website). -->
+	<!-- „Mit Apple anmelden“ -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:familiar-app.de</string>
