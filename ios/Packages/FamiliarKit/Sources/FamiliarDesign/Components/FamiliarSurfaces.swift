@@ -12,6 +12,9 @@ extension View {
     /// randlos bis in die Safe Areas.
     public func familiarScreenBackground() -> some View {
         background { FamiliarAmbientBackground().ignoresSafeArea() }
+            // Scrollende Inhalte verschwinden oben deutlich unter den schwebenden Knöpfen, statt
+            // lesbar darunter durchzulaufen (gilt für alle Scroll-Ansichten des Bildschirms).
+            .scrollEdgeEffectStyle(.hard, for: .top)
     }
 
     /// Dezenter, statischer Perlmutt-Reflex als Rand – nur für hervorgehobene Elemente.
