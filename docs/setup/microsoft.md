@@ -87,7 +87,7 @@ Wenn du später in Familiar „Outlook verbinden“ tippst und dich mit dem **Fi
 
 ## Erneuern (alle 6 Monate)
 
-Das Client Secret läuft ab. Vor Ablauf: Schritt 5 wiederholen und `MS_CLIENT_SECRET` in Supabase ersetzen. Für die Veröffentlichung im App Store empfiehlt Microsoft ein Zertifikat statt eines Secrets – das stellen wir vor dem Release um.
+Das Client Secret läuft ab. Vor Ablauf: Schritt 5 wiederholen und `MS_CLIENT_SECRET` in Supabase ersetzen. Microsoft empfiehlt für den Produktivbetrieb ein Zertifikat statt eines Secrets – steht als Punkt 4 auf der [Launch-Liste](../LAUNCH-TODO.md).
 
 ## Quellen
 

@@ -33,6 +33,6 @@ Die **Application (client) ID** von Familiar: <https://entra.microsoft.com> (mit
 
 In Familiar: Profil → Outlook → **Mit Outlook verbinden** erneut tippen. Die Seite „Genehmigung erforderlich“ sollte dann nicht mehr erscheinen.
 
-## Später (vor dem App-Store-Start)
+## Für andere Familien
 
-Damit andere Familien ohne IT-Freigabe auskommen, kann der Herausgeber bei Microsoft verifiziert werden („Publisher Verification“). Dafür braucht es ein Konto im Microsoft AI Cloud Partner Program und eine verifizierte Domain (familiar-app.de). Das planen wir für den Release.
+Damit andere ohne IT-Freigabe auskommen, muss der Herausgeber bei Microsoft verifiziert sein („Publisher Verification“) – Punkt 3 der [Launch-Liste](../LAUNCH-TODO.md).
