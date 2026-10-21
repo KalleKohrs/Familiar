@@ -245,6 +245,10 @@ final class SessionStore {
         try await dependencies.auth.signInWithApple(idToken: idToken, nonce: nonce, fullName: fullName)
     }
 
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws(FamiliarError) {
+        try await dependencies.auth.signInWithGoogle(idToken: idToken, accessToken: accessToken, nonce: nonce)
+    }
+
     /// Ob vor dem Löschen eine Bestätigung mit Apple nötig ist (Widerruf der Apple-Anmeldung).
     func needsAppleConfirmationForDeletion() async -> Bool {
         await dependencies.auth.isLinkedToApple()

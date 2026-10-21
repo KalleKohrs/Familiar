@@ -1,4 +1,5 @@
 import FamiliarCore
+import FamiliarData
 import FamiliarDesign
 import SwiftUI
 
@@ -27,7 +28,10 @@ struct RootView: View {
         .transition(.opacity)
         .familiarAnimation(value: session.phase)
         // Einladungslink (Universal Link): vormerken; gefragt wird, sobald das Profil steht.
-        .onOpenURL { url in session.receive(url) }
+        .onOpenURL { url in
+            // Rücksprung von der Google-Anmeldung, sonst ggf. Einladungslink.
+            if !GoogleSignInFlow.handle(url) { session.receive(url) }
+        }
         #if DEBUG
         // UI-Tests: Universal Links lassen sich im Simulator ohne Website nicht auslösen.
         .task {

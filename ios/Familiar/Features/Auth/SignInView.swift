@@ -1,9 +1,10 @@
 import AuthenticationServices
 import FamiliarCore
+import FamiliarData
 import FamiliarDesign
 import SwiftUI
 
-/// Anmeldung per E-Mail-Code oder mit Apple (Plan, Abschnitt 6). Google folgt in Phase 2b.
+/// Anmeldung per E-Mail-Code, mit Apple oder mit Google (Plan, Abschnitt 6).
 struct SignInView: View {
     @Environment(SessionStore.self) private var session
     @State private var email = ""
@@ -12,6 +13,7 @@ struct SignInView: View {
     @State private var codeRequestedFor: String?
     @State private var appleNonce = ""
     @State private var isSigningInWithApple = false
+    @State private var isSigningInWithGoogle = false
     @FocusState private var emailFocused: Bool
 
     var body: some View {
@@ -79,6 +81,12 @@ struct SignInView: View {
                         .clipShape(Capsule())
                         .disabled(isSigningInWithApple)
                         .accessibilityIdentifier("signIn.apple")
+
+                        if GoogleSignInFlow.isConfigured {
+                            GoogleSignInButtonView(action: signInWithGoogle)
+                                .disabled(isSigningInWithGoogle)
+                                .accessibilityIdentifier("signIn.google")
+                        }
                     }
                 }
                 .padding(.horizontal, FamiliarSpacing.m)
@@ -112,6 +120,30 @@ struct SignInView: View {
 }
 
 extension SignInView {
+    private func signInWithGoogle() {
+        guard let presenter = UIApplication.shared.connectedScenes
+            .compactMap({ ($0 as? UIWindowScene)?.keyWindow?.rootViewController }).first else { return }
+        // Den obersten sichtbaren Controller nehmen (die Anmeldung kann in einem Sheet liegen).
+        var top = presenter
+        while let presented = top.presentedViewController { top = presented }
+        let nonce = AppleSignIn.makeNonce()
+        isSigningInWithGoogle = true
+        errorMessage = nil
+        Task {
+            defer { isSigningInWithGoogle = false }
+            do {
+                let tokens = try await GoogleSignInFlow.signIn(presenting: top, hashedNonce: AppleSignIn.sha256(nonce))
+                try await session.signInWithGoogle(idToken: tokens.idToken, accessToken: tokens.accessToken, nonce: nonce)
+            } catch let error as FamiliarError {
+                errorMessage = error.message
+            } catch {
+                if !GoogleSignInFlow.isCancellation(error) {
+                    errorMessage = String(localized: "Die Anmeldung mit Google hat nicht geklappt. Bitte versuche es erneut.")
+                }
+            }
+        }
+    }
+
     private func handleApple(_ result: Result<ASAuthorization, any Error>) {
         switch result {
         case .failure(let error):

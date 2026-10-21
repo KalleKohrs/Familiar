@@ -47,4 +47,5 @@ FAMILIAR_DEVELOPMENT_TEAM =
 FAMILIAR_BUNDLE_ID = com.example.familiar
 
 #include "Supabase.xcconfig"
+#include "Google.xcconfig"
 #include? "Local.xcconfig"

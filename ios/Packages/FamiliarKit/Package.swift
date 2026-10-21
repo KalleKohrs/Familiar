@@ -13,6 +13,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/supabase/supabase-swift.git", from: "2.55.4"),
+        // Native Google-Anmeldung (von Supabase für iOS empfohlen); 10.x unterstützt Xcode 27.
+        .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "10.0.0"),
     ],
     targets: [
         // Domänenlogik ohne UI-Abhängigkeiten.
@@ -25,7 +27,11 @@ let package = Package(
         // Datenzugriff über Supabase (Auth, Datenbank, Storage). Nur für die App, nicht für die Extension.
         .target(
             name: "FamiliarData",
-            dependencies: ["FamiliarCore", .product(name: "Supabase", package: "supabase-swift")]
+            dependencies: [
+                "FamiliarCore",
+                .product(name: "Supabase", package: "supabase-swift"),
+                .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
+            ]
         ),
         .testTarget(name: "FamiliarCoreTests", dependencies: ["FamiliarCore"]),
         .testTarget(name: "FamiliarActivityTests", dependencies: ["FamiliarActivity"]),

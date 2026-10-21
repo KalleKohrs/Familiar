@@ -2,7 +2,7 @@ import FamiliarCore
 import Foundation
 import Supabase
 
-/// Anmeldung per 6-stelligem E-Mail-Code (`signInWithOTP` + `verifyOTP(type: .email)`) oder mit Apple.
+/// Anmeldung per 6-stelligem E-Mail-Code (`signInWithOTP` + `verifyOTP(type: .email)`), mit Apple oder Google.
 /// Der Code statt eines Links funktioniert geräteübergreifend und braucht keine Universal Links;
 /// dafür muss die E-Mail-Vorlage `{{ .Token }}` enthalten (docs/setup/supabase-auth.md).
 final class SupabaseAuthService: AuthService {
@@ -66,6 +66,13 @@ final class SupabaseAuthService: AuthService {
         // Vorschlag für den Profil-Schritt in den Metadaten ablegen.
         if let fullName, !fullName.isEmpty {
             _ = try? await client.auth.update(user: UserAttributes(data: ["full_name": .string(fullName)]))
+        }
+    }
+
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws(FamiliarError) {
+        _ = try await perform {
+            try await client.auth.signInWithIdToken(credentials: OpenIDConnectCredentials(
+                provider: .google, idToken: idToken, accessToken: accessToken, nonce: nonce))
         }
     }
 

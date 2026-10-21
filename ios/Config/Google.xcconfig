@@ -1,0 +1,7 @@
+// „Mit Google anmelden“ (docs/setup/google.md). Client-IDs sind keine Geheimnisse; das Client
+// Secret des Web-Clients liegt nur im Supabase-Dashboard.
+// iOS-Client (GIDClientID) und sein umgekehrtes URL-Schema für den Rücksprung von Google:
+FAMILIAR_GOOGLE_IOS_CLIENT_ID = 525341892208-lm5lu9vobaqd08rsebplo9o9428q0ash.apps.googleusercontent.com
+FAMILIAR_GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.525341892208-lm5lu9vobaqd08rsebplo9o9428q0ash
+// Web-Client (GIDServerClientID): Zielgruppe des ID-Tokens, das Supabase prüft.
+FAMILIAR_GOOGLE_SERVER_CLIENT_ID = 525341892208-tg7674nqnimluuokf3bvuhmh1o8nsmga.apps.googleusercontent.com

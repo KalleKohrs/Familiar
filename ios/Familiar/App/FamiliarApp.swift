@@ -1,6 +1,7 @@
 import AppIntents
 import FamiliarActivity
 import FamiliarCore
+import FamiliarData
 import FamiliarDesign
 import SwiftUI
 
@@ -20,7 +21,10 @@ struct FamiliarApp: App {
         let session = SessionStore(dependencies: dependencies)
         let tasks = TaskStore(repository: dependencies.tasks)
         let notifications = NotificationStore(devices: dependencies.devices, isEnabled: dependencies.supportsPush)
-        session.beforeSignOut = { await notifications.signOut() }
+        session.beforeSignOut = {
+            await notifications.signOut()
+            GoogleSignInFlow.signOut()
+        }
         // Abhaken aus der Live Activity (CompleteTaskIntent läuft im App-Prozess).
         let repository = dependencies.tasks
         TaskCompletionBridge.shared.setHandler { taskID in

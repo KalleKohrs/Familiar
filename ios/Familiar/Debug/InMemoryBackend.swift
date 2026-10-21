@@ -161,6 +161,13 @@ extension InMemoryBackend: AuthService {
         publish()
     }
 
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws(FamiliarError) {
+        let id = UUID()
+        profiles[id] = Profile(id: id, displayName: "Google-Konto")
+        user = (id, "google@example.test")
+        publish()
+    }
+
     func isLinkedToApple() async -> Bool { false }
 
     func deleteAccount(appleAuthorizationCode: String?) async throws(FamiliarError) {

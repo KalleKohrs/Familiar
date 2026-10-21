@@ -17,6 +17,8 @@ public protocol AuthService: Sendable {
     /// „Mit Apple anmelden“: ID-Token und die unverschlüsselte Nonce der Anfrage. `fullName` liefert
     /// Apple nur bei der allerersten Anmeldung.
     func signInWithApple(idToken: String, nonce: String, fullName: String?) async throws(FamiliarError)
+    /// „Mit Google anmelden“: ID-Token und Access-Token von GoogleSignIn, dazu die unverschlüsselte Nonce.
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws(FamiliarError)
     /// Ob das Konto mit Apple verknüpft ist – dann vor dem Löschen erneut mit Apple bestätigen.
     func isLinkedToApple() async -> Bool
     /// Konto endgültig löschen (Edge Function `account-delete`); danach abgemeldet.
