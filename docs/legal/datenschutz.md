@@ -52,7 +52,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 - **Erledigte und gelöschte Aufgaben:** 30 Tage im Verlauf (zum Wiederherstellen), danach automatisch endgültig gelöscht – einschließlich Bildern.
 - **Mitteilungs-Aufträge, beendete Live-Anzeigen, abgemeldete Geräte:** 30 Tage, danach automatisch gelöscht.
 - **Outlook-Termine:** nur ein Fenster von 7 Tagen zurück bis 120 Tage voraus; ältere fallen beim Abgleich weg; beim Trennen sofort gelöscht.
-- **Server-Protokolle:** bis zu 7 Tage (Aufbewahrung durch Supabase); Website-Protokolle nach den Vorgaben von Netlify.
+- **Server-Protokolle:** bis zu 1 Tag (Aufbewahrung durch Supabase); Website-Protokolle nach den Vorgaben von Netlify.
 - **Kontaktanfragen:** bis die Anfrage erledigt ist, danach löschen wir sie (spätestens nach 6 Monaten), sofern keine gesetzliche Aufbewahrungspflicht besteht.
 
 ## 6. Konto löschen
