@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Datenschutzerklärung – Familiar</title>
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+  <header class="top"><a class="brand" href="/">Familiar</a></header>
+  <main class="text">
+<h1>Datenschutzerklärung – Familiar (Entwurf)</h1>
+<aside class="draft"><strong>Entwurf, Stand 2026-10-21.</strong> Von mir aus dem tatsächlichen Datenfluss der App abgeleitet (Datenbank-Schema, Edge Functions, Privacy Manifest). Ich bin kein Anwalt: Bitte vor Veröffentlichung prüfen lassen (z. B. Anwalt oder seriöser Generator wie eRecht24) und die Platzhalter <code><mark>[…]</mark></code> ergänzen. Veröffentlichung unter <code>https://familiar-app.de/datenschutz</code>.</aside>
+<h2>1. Verantwortlicher</h2>
+<p>Familiar wird von einer Privatperson entwickelt und betrieben:</p>
+<p><mark>[Vorname Nachname]</mark><br><mark>[Straße Hausnummer]</mark><br><mark>[PLZ Ort]</mark><br>E-Mail: <mark>[datenschutz@familiar-app.de]</mark></p>
+<h2>2. Grundsätze</h2>
+<p>Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Funktionen der App nötig sind. Es gibt <strong>keine Werbung, kein Tracking, keine Analyse-Tools</strong> und keinen Verkauf von Daten.</p>
+<h2>3. Welche Daten wir verarbeiten und warum</h2>
+<div class="table"><table><thead><tr><th>Daten</th><th>Zweck</th><th>Rechtsgrundlage</th></tr></thead><tbody><tr><td><strong>E-Mail-Adresse</strong></td><td>Anmeldung per Einmal-Code; Zuordnung deines Kontos</td><td>Art. 6 Abs. 1 lit. b DSGVO (Vertrag)</td></tr><tr><td><strong>„Mit Apple anmelden“</strong> (freiwillig): Apple-Kennung, E-Mail-Adresse (ggf. Apples Weiterleitungsadresse), beim ersten Mal dein Name</td><td>Anmeldung; der Name dient nur als Vorschlag für dein Profil</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr><tr><td><strong>Anzeigename, Profilbild</strong> (freiwillig)</td><td>Damit deine Familie sieht, wer Aufgaben übernimmt</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr><tr><td><strong>Familien</strong> (Name, Farbe, Mitglieder, Rollen, Einladungscodes)</td><td>Gemeinsame Planung</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr><tr><td><strong>Aufgaben</strong> (Titel, Beschreibung, Datum/Uhrzeit, Wiederholung, Zuweisungen, Erledigt-Status, Bilder)</td><td>Kernfunktion</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr><tr><td><strong>Geräte-Kennung für Mitteilungen</strong> (APNs-Token, App-Version, Zeitzone)</td><td>Mitteilungen und Live-Anzeigen auf dem Sperrbildschirm</td><td>Art. 6 Abs. 1 lit. b DSGVO; die Mitteilungen selbst nur mit deiner Einwilligung in iOS</td></tr><tr><td><strong>Outlook-Termine</strong> (nur wenn du Outlook verbindest: Titel, Zeit, Ort, Organisator, Absage-Status der gewählten Kalender)</td><td>Anzeige im Familiar-Kalender – <strong>nur für dich</strong>, nicht für deine Familie</td><td>Art. 6 Abs. 1 lit. a DSGVO (Einwilligung durch Verbinden)</td></tr><tr><td><strong>Server-Protokolle</strong> (IP-Adresse, Zeitpunkt, Anfrage)</td><td>Betrieb und Sicherheit</td><td>Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren Betrieb)</td></tr></tbody></table></div>
+<p><strong>Wer sieht was:</strong> Aufgaben, Bilder und Status sehen die Mitglieder der jeweiligen Familie; ist eine Familie auf „nur Zugewiesene“ gestellt, sehen nur zugewiesene Personen und die Erstellerin bzw. der Ersteller die Aufgabe. Deine Outlook-Termine sieht niemand außer dir.</p>
+<p><strong>Outlook:</strong> Familiar erhält von Microsoft nur das Recht, deine Kalender zu <strong>lesen</strong> (<code>Calendars.ReadBasic</code> – ohne Termin-Text und Anhänge). Familiar schreibt nie in deinen Kalender. Das Zugriffs-Token liegt verschlüsselt auf dem Server. Du kannst die Verbindung jederzeit in der App trennen; dann werden Token und gespeicherte Termine gelöscht.</p>
+<h2>4. Empfänger und Auftragsverarbeiter</h2>
+<div class="table"><table><thead><tr><th>Dienst</th><th>Zweck</th><th>Sitz / Übermittlung</th></tr></thead><tbody><tr><td><strong>Supabase Inc.</strong></td><td>Datenbank, Anmeldung, Dateispeicher, Server-Funktionen</td><td>Server in der EU (<mark>[Region, z. B. Frankfurt]</mark>); Unternehmen in den USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln</td></tr><tr><td><strong>Resend, Inc.</strong></td><td>Versand der Anmelde-Codes per E-Mail</td><td>USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln <mark>[bzw. Angemessenheitsbeschluss/Data Privacy Framework, falls zertifiziert]</mark></td></tr><tr><td><strong>Apple Inc.</strong> (Apple Push Notification service)</td><td>Zustellung von Mitteilungen und Live-Anzeigen; erhält Geräte-Token und Mitteilungsinhalt (z. B. Aufgabentitel)</td><td>USA bzw. Apple Distribution International (Irland)</td></tr><tr><td><strong>Microsoft</strong></td><td>Nur bei verbundenem Outlook: Abruf deiner Termine</td><td>nach den Bedingungen deines Microsoft-Kontos</td></tr><tr><td><strong>Apple</strong> – nur bei „Mit Apple anmelden“</td><td>Anmeldung; beim Löschen deines Kontos widerrufen wir die Verknüpfung bei Apple</td><td>USA bzw. Apple Distribution International (Irland)</td></tr><tr><td>[<strong>Google</strong> – nur falls „Mit Google anmelden“ freigeschaltet wird]</td><td>Anmeldung</td><td><mark>[ergänzen, wenn freigeschaltet]</mark></td></tr></tbody></table></div>
+<h2>5. Speicherdauer</h2>
+<ul><li><strong>Konto, Familien, offene Aufgaben:</strong> bis du sie löschst bzw. dein Konto löschst.</li><li><strong>Erledigte und gelöschte Aufgaben:</strong> 30 Tage im Verlauf (zum Wiederherstellen), danach automatisch endgültig gelöscht – einschließlich Bildern.</li><li><strong>Mitteilungs-Aufträge, beendete Live-Anzeigen, abgemeldete Geräte:</strong> 30 Tage, danach automatisch gelöscht.</li><li><strong>Outlook-Termine:</strong> nur ein Fenster von 7 Tagen zurück bis 120 Tage voraus; ältere fallen beim Abgleich weg; beim Trennen sofort gelöscht.</li><li><strong>Server-Protokolle:</strong> <mark>[laut Supabase-Tarif, z. B. 7 Tage]</mark>.</li></ul>
+<h2>6. Konto löschen</h2>
+<p>In der App unter <strong>Profil › Konto löschen</strong>. Gelöscht werden dein Konto, Profil und Profilbild, deine Mitgliedschaften, Zuweisungen, Geräte und Outlook-Verbindung. Hast du dich mit Apple angemeldet, bestätigst du das Löschen kurz bei Apple; wir widerrufen dann die Verknüpfung mit deiner Apple-ID. Familien, in denen du allein bist, werden mit allen Aufgaben gelöscht. In Familien mit weiteren Mitgliedern bleiben von dir angelegte Aufgaben und Bilder für die Familie erhalten, aber ohne Bezug zu deiner Person; war niemand sonst Admin, wird das am längsten beteiligte Mitglied Admin.</p>
+<h2>7. Deine Rechte</h2>
+<p>Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO) sowie auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft (z. B. Outlook trennen, Mitteilungen in iOS abschalten). Schreib dazu an <mark>[datenschutz@familiar-app.de]</mark>.</p>
+<p>Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren, z. B. in deinem Bundesland: <mark>[zuständige Behörde des Verantwortlichen ergänzen]</mark>.</p>
+<h2>8. Sicherheit</h2>
+<p>Verbindungen sind verschlüsselt (TLS). Zugriffsrechte werden in der Datenbank für jede Abfrage geprüft (Row Level Security). Bilder liegen in nicht öffentlichen Speichern und werden nur über kurzlebige, signierte Links angezeigt.</p>
+<h2>9. Kinder</h2>
+<p><mark>[Klären: Mindestalter für ein eigenes Konto, z. B. 16 Jahre (Art. 8 DSGVO) bzw. Nutzung jüngerer Kinder nur mit Einwilligung der Eltern.]</mark></p>
+<h2>10. Änderungen</h2>
+<p>Wir passen diese Erklärung an, wenn sich die App ändert. Es gilt die jeweils hier veröffentlichte Fassung.</p>
+  </main>
+  <footer><a href="/support/">Hilfe</a> · <a href="/datenschutz/">Datenschutz</a> · <a href="/impressum/">Impressum</a></footer>
+</body>
+</html>

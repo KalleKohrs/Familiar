@@ -4,6 +4,8 @@
 
 ## 1. Verantwortlicher
 
+Familiar wird von einer Privatperson entwickelt und betrieben:
+
 [Vorname Nachname]
 [Straße Hausnummer]
 [PLZ Ort]
@@ -18,6 +20,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 | Daten | Zweck | Rechtsgrundlage |
 |---|---|---|
 | **E-Mail-Adresse** | Anmeldung per Einmal-Code; Zuordnung deines Kontos | Art. 6 Abs. 1 lit. b DSGVO (Vertrag) |
+| **„Mit Apple anmelden“** (freiwillig): Apple-Kennung, E-Mail-Adresse (ggf. Apples Weiterleitungsadresse), beim ersten Mal dein Name | Anmeldung; der Name dient nur als Vorschlag für dein Profil | Art. 6 Abs. 1 lit. b DSGVO |
 | **Anzeigename, Profilbild** (freiwillig) | Damit deine Familie sieht, wer Aufgaben übernimmt | Art. 6 Abs. 1 lit. b DSGVO |
 | **Familien** (Name, Farbe, Mitglieder, Rollen, Einladungscodes) | Gemeinsame Planung | Art. 6 Abs. 1 lit. b DSGVO |
 | **Aufgaben** (Titel, Beschreibung, Datum/Uhrzeit, Wiederholung, Zuweisungen, Erledigt-Status, Bilder) | Kernfunktion | Art. 6 Abs. 1 lit. b DSGVO |
@@ -37,7 +40,8 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 | **Resend, Inc.** | Versand der Anmelde-Codes per E-Mail | USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln [bzw. Angemessenheitsbeschluss/Data Privacy Framework, falls zertifiziert] |
 | **Apple Inc.** (Apple Push Notification service) | Zustellung von Mitteilungen und Live-Anzeigen; erhält Geräte-Token und Mitteilungsinhalt (z. B. Aufgabentitel) | USA bzw. Apple Distribution International (Irland) |
 | **Microsoft** | Nur bei verbundenem Outlook: Abruf deiner Termine | nach den Bedingungen deines Microsoft-Kontos |
-| [**Apple / Google** – nur falls „Mit Apple/Google anmelden“ genutzt wird] | Anmeldung | [ergänzen, wenn freigeschaltet] |
+| **Apple** – nur bei „Mit Apple anmelden“ | Anmeldung; beim Löschen deines Kontos widerrufen wir die Verknüpfung bei Apple | USA bzw. Apple Distribution International (Irland) |
+| [**Google** – nur falls „Mit Google anmelden“ freigeschaltet wird] | Anmeldung | [ergänzen, wenn freigeschaltet] |
 
 ## 5. Speicherdauer
 
@@ -49,7 +53,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 
 ## 6. Konto löschen
 
-In der App unter **Profil › Konto löschen**. Gelöscht werden dein Konto, Profil und Profilbild, deine Mitgliedschaften, Zuweisungen, Geräte und Outlook-Verbindung. Familien, in denen du allein bist, werden mit allen Aufgaben gelöscht. In Familien mit weiteren Mitgliedern bleiben von dir angelegte Aufgaben und Bilder für die Familie erhalten, aber ohne Bezug zu deiner Person; war niemand sonst Admin, wird das am längsten beteiligte Mitglied Admin.
+In der App unter **Profil › Konto löschen**. Gelöscht werden dein Konto, Profil und Profilbild, deine Mitgliedschaften, Zuweisungen, Geräte und Outlook-Verbindung. Hast du dich mit Apple angemeldet, bestätigst du das Löschen kurz bei Apple; wir widerrufen dann die Verknüpfung mit deiner Apple-ID. Familien, in denen du allein bist, werden mit allen Aufgaben gelöscht. In Familien mit weiteren Mitgliedern bleiben von dir angelegte Aufgaben und Bilder für die Familie erhalten, aber ohne Bezug zu deiner Person; war niemand sonst Admin, wird das am längsten beteiligte Mitglied Admin.
 
 ## 7. Deine Rechte
 

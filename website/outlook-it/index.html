@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Familiar für Outlook freigeben – Familiar</title>
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+  <header class="top"><a class="brand" href="/">Familiar</a></header>
+  <main class="text">
+<h1>Familiar für Outlook freigeben – Informationen für IT-Abteilungen</h1>
+<p>Eine Person aus Ihrem Unternehmen möchte in der Familien-App <strong>Familiar</strong> ihre <strong>eigenen</strong> Outlook-Termine anzeigen. Weil Familiar von einer Privatperson entwickelt wird und daher kein bei Microsoft verifizierter Herausgeber ist, verlangen viele Unternehmen eine einmalige Freigabe durch die IT. Diese Seite erklärt, was Familiar tut, damit Sie das prüfen können.</p>
+<h2>Was Familiar liest</h2>
+<div class="table"><table><tbody><tr><td><strong>Rechte (delegiert)</strong></td><td><code>Calendars.ReadBasic</code>, <code>offline_access</code>, <code>openid</code>, <code>email</code></td></tr><tr><td><strong>Bedeutung</strong></td><td>Nur die Kalender der jeweils angemeldeten Person. <code>Calendars.ReadBasic</code> ist das kleinste Kalender-Leserecht von Microsoft Graph: <strong>ohne</strong> Termin-Text (Body), Anhänge und Erweiterungen.</td></tr><tr><td><strong>Gespeichert</strong></td><td>Titel, Beginn und Ende, Ort, Organisator und Absage-Status von Terminen im Zeitraum 7 Tage zurück bis 120 Tage voraus – nur aus den Kalendern, die die Person auswählt.</td></tr><tr><td><strong>Sichtbar für</strong></td><td>Ausschließlich die Person selbst. Ihre Termine erscheinen <strong>nicht</strong> bei Familienmitgliedern.</td></tr><tr><td><strong>Schreibzugriff</strong></td><td>Keiner. Familiar ändert, erstellt oder löscht nichts in Outlook.</td></tr><tr><td><strong>Zugangsdaten</strong></td><td>Das Refresh-Token liegt verschlüsselt auf dem Server (Supabase Vault, EU-Region), nie auf dem Gerät. Die App authentifiziert sich bei Microsoft mit einem Zertifikat.</td></tr><tr><td><strong>Widerruf</strong></td><td>In Familiar unter Profil › Outlook › Trennen: Token und gespeicherte Termine werden gelöscht. Zusätzlich jederzeit über Ihre Unternehmensanwendungen in Microsoft Entra ID.</td></tr></tbody></table></div>
+<h2>Freigabe erteilen</h2>
+<p><strong>Variante A – Freigabe-Link:</strong> Die anfragende Person hat Ihnen aus der App einen Link geschickt (<code>https://login.microsoftonline.com/organizations/adminconsent?client_id=…</code>). Öffnen Sie ihn mit einem Konto mit der Rolle *Cloud Application Administrator*, *Application Administrator* oder *Global Administrator*, prüfen Sie die angezeigten Rechte und bestätigen Sie.</p>
+<p><strong>Variante B – Entra Admin Center:</strong> Sobald jemand aus Ihrem Unternehmen versucht hat, Familiar zu verbinden, finden Sie die App unter <strong>Entra ID › Enterprise apps › All applications › Familiar</strong>. Dort unter <strong>Security › Permissions</strong> auf <strong>Grant admin consent</strong> klicken.</p>
+<p><strong>Zugriff einschränken (optional):</strong> In der Enterprise App unter <strong>Properties</strong> „Assignment required“ aktivieren und unter <strong>Users and groups</strong> nur die Personen zuweisen, die Familiar nutzen dürfen.</p>
+<p>Microsoft-Dokumentation: <a href="https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent">Grant tenant-wide admin consent</a> · <a href="https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/configure-admin-consent-workflow">Configure the admin consent workflow</a></p>
+<h2>Kontakt</h2>
+<p>Fragen zur Freigabe: <mark>[kontakt@familiar-app.de]</mark>. Weitere Informationen: <a href="/datenschutz/">Datenschutzerklärung</a>.</p>
+  </main>
+  <footer><a href="/support/">Hilfe</a> · <a href="/datenschutz/">Datenschutz</a> · <a href="/impressum/">Impressum</a></footer>
+</body>
+</html>

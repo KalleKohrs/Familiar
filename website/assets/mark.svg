@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Familiar">
+  <!-- Wie FamiliarMark: hintere Kachel (Familienfarbe), Lücke, vordere Kachel mit Haken. -->
+  <defs>
+    <mask id="gap">
+      <rect width="100" height="100" fill="white"/>
+      <rect x="-4" y="18" width="86" height="86" rx="27" fill="black"/>
+    </mask>
+  </defs>
+  <rect x="22" y="0" width="78" height="78" rx="23" fill="#5EC2F2" transform="rotate(8 61 39)" mask="url(#gap)"/>
+  <rect x="0" y="22" width="78" height="78" rx="23" fill="#FF8C42"/>
+  <path d="M24 61 L35 73 L55 47" fill="none" stroke="#1B1006" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
