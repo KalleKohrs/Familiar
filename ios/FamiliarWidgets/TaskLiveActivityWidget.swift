@@ -24,7 +24,10 @@ struct TaskLiveActivityWidget: Widget {
                         .accessibilityHidden(true)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
+                    // Abstand zur Rundung der Insel, sonst wird die Uhrzeit angeschnitten.
                     StartTimeText(startsAt: context.state.startsAt)
+                        .fixedSize()
+                        .padding(.trailing, FamiliarSpacing.xs)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(context.state.title)
@@ -124,19 +127,25 @@ private struct AssigneeInitialsRow: View {
     let assignees: [TaskActivityAttributes.AssigneeState]
 
     var body: some View {
-        HStack(spacing: FamiliarSpacing.xxs) {
+        HStack(spacing: FamiliarSpacing.xs) {
             ForEach(Array(assignees.prefix(6).enumerated()), id: \.offset) { _, assignee in
+                // Wie in der App: erledigt = grüner Ring mit Haken, nicht abgeblendet.
                 Text(assignee.initials)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(FamiliarColor.textPrimary)
                     .frame(width: 22, height: 22)
                     .background(Circle().fill(FamiliarColor.elevated))
-                    .opacity(assignee.isDone ? 0.45 : 1)
+                    .overlay {
+                        if assignee.isDone {
+                            Circle().strokeBorder(FamiliarColor.success, lineWidth: 1.5)
+                        }
+                    }
                     .overlay(alignment: .bottomTrailing) {
                         if assignee.isDone {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(FamiliarColor.success)
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(FamiliarColor.onAccent, FamiliarColor.success)
+                                .offset(x: 3, y: 3)
                         }
                     }
                     .accessibilityLabel("\(assignee.initials), \(assignee.isDone ? "erledigt" : "offen")")

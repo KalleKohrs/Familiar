@@ -76,6 +76,8 @@ struct RootTabView: View {
         .task(id: session.userID) {
             guard let userID = session.userID else { return }
             await notifications.start(userID: userID)
+            // Der Abgleich kann vor dem Start gelaufen und dabei übersprungen worden sein.
+            await reconcileLiveActivities()
             // Einmal je Konto erklären, wofür Familiar Mitteilungen nutzt – erst dann fragt das System.
             if notifications.isAvailable && notifications.authorization == .notDetermined
                 && !notifications.hasAskedForPermission(userID) {
