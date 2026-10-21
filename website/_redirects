@@ -1,2 +1,5 @@
 # Netlify / Cloudflare Pages: jede Einladung zeigt dieselbe Seite (Code liest die Seite aus der Adresse).
 /join/*  /join/index.html  200
+# Falls der versteckte Ordner .well-known beim Hochladen fehlt: Datei aus dem Hauptverzeichnis
+# ausliefern (200 = interne Umleitung, keine Weiterleitung – Apple erlaubt keine Redirects).
+/.well-known/apple-app-site-association  /apple-app-site-association  200
