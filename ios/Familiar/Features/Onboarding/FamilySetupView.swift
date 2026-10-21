@@ -9,7 +9,7 @@ struct FamilySetupView: View {
             ScrollView {
                 VStack(spacing: FamiliarSpacing.l) {
                     VStack(spacing: FamiliarSpacing.xs) {
-                        FamiliarOrb(diameter: 64)
+                        FamiliarMark(size: 56)
                             .padding(.bottom, FamiliarSpacing.xs)
                         Text("Deine Familie")
                             .font(FamiliarFont.title)

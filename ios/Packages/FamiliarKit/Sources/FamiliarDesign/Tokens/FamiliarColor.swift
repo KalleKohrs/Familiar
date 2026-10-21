@@ -41,7 +41,7 @@ public enum FamiliarColor {
     public static let lightEdge = Color.familiar(0xFFF3E6, alpha: 0.14, highContrastAlpha: 0.30)
 
     // MARK: Ambient-Licht
-    /// Warmer Lichtschein für den Hintergrund und den Orb.
+    /// Warmer Lichtschein für den Hintergrund.
     public static let glowWarm = Color(.sRGB, red: 1.0, green: 0.478, blue: 0.239)
     /// Kühlerer Pflaumen-Schein als Gegengewicht im Hintergrund.
     public static let glowPlum = Color(.sRGB, red: 0.478, green: 0.231, blue: 0.361)

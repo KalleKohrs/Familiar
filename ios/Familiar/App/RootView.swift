@@ -66,7 +66,7 @@ extension RootView {
 /// Kurzer Zwischenzustand, während die gespeicherte Sitzung geladen wird.
 private struct LaunchView: View {
     var body: some View {
-        FamiliarOrb(diameter: 72)
+        FamiliarMark(size: 72)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .familiarScreenBackground()
             .accessibilityElement()

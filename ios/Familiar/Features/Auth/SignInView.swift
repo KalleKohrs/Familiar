@@ -19,7 +19,7 @@ struct SignInView: View {
             ScrollView {
                 VStack(spacing: FamiliarSpacing.xl) {
                     VStack(spacing: FamiliarSpacing.m) {
-                        FamiliarOrb(diameter: 88)
+                        FamiliarMark(size: 76)
                             .padding(.top, FamiliarSpacing.xxl)
                         Text("Willkommen bei Familiar")
                             .font(FamiliarFont.display)

@@ -32,7 +32,7 @@ public struct DesignGalleryView: View {
 
     private var brandSection: some View {
         VStack(spacing: FamiliarSpacing.m) {
-            FamiliarOrb(diameter: 88)
+            FamiliarMark(size: 76)
                 .padding(.top, FamiliarSpacing.l)
             Text("Familiar")
                 .font(FamiliarFont.display)

@@ -27,7 +27,7 @@ V1 ist ausschließlich dunkel (`UIUserInterfaceStyle = Dark`). Jede Farbe hat ei
 | `danger` | `#FF6B5B` | `#FF8E81` | Überfällig, Löschen |
 | `hairline` | `#FFF3E6` · 8 % | · 22 % | Feine Trennlinien |
 | `lightEdge` | `#FFF3E6` · 14 % | · 30 % | Helle Lichtkante oben an Cards |
-| `glowWarm` | `#FF7A3D` | – | Warmer Lichtschein (Hintergrund, Orb) |
+| `glowWarm` | `#FF7A3D` | – | Warmer Lichtschein (Hintergrund) |
 | `glowPlum` | `#7A3B5C` | – | Pflaumen-Schein (Hintergrund) |
 
 **Familienpalette** (Voreinstellungen, eigene Farbe per Farbwähler möglich): Koralle `#FF7F66`, Sonne `#F7C548`, Salbei `#8FD19E`, Himmel `#5EC2F2`, Lavendel `#B39DFF`, Rose `#F59AC0`, Petrol `#4CCFBF`, Sand `#D9B38C`.
@@ -59,10 +59,10 @@ Alle Stile basieren auf Dynamic-Type-Textstilen und skalieren mit der Systemschr
 ## Materialien und Licht
 
 Referenzbilder: [`design/reference-overview.webp`](design/reference-overview.webp), [`design/reference-feed.webp`](design/reference-feed.webp).
-Leitbild aus der Design-Referenz vom 2026-10-20: dunkles Aubergine-Graphit, weiches Ambient-Licht, leicht durchscheinende Cards mit Lichtkante, leuchtender Orange-Orb als Markenelement, schwebende runde Glas-Buttons mit orangem Plus.
+Leitbild aus der Design-Referenz vom 2026-10-20: dunkles Aubergine-Graphit, weiches Ambient-Licht, leicht durchscheinende Cards mit Lichtkante, (ursprünglich ein leuchtender Orange-Orb als Markenelement – am 2026-10-21 durch das flache Kachel-Zeichen ersetzt), schwebende runde Glas-Buttons mit orangem Plus.
 
 - **Ambient-Hintergrund** (`FamiliarAmbientBackground`, über `familiarScreenBackground()`): `canvas` plus zwei statische Radialverläufe – warm oben (`glowWarm`, 16 %), Pflaume unten links (`glowPlum`, 28 %). Keine Animation, kein Blur; bei „Kontrast erhöhen“ oder „Transparenz reduzieren“ auf 40 % reduziert.
-- **Orb** (`FamiliarOrb`): leuchtende Bernstein-Kugel aus Verläufen mit weichem Schein; für Leerzustände, Onboarding und Markenmomente. Statisch.
+- **Markenzeichen** (`FamiliarMark`): flache orange Kachel mit Haken vor einer zweiten Kachel in Familienfarbe („geteilte Aufgaben“); ohne Verläufe, Leuchten oder 3D. Anmeldung, Onboarding, Ladebildschirm, App-Icon (`tools/render-app-icon.swift`). Leerzustände zeigen nur ein Symbol auf ruhigem Grund.
 - **Liquid Glass** nur für schwebende Bedienelemente: die eigene Navigationsleiste `FloatingTabBar` (Glas-Pille mit drei Bereichen und daneben ein orange getönter Glas-Button „Neue Aufgabe“, `glassEffect(.regular.tint(accent).interactive())`, siehe [ADR 0006](decisions/0006-custom-glass-tab-bar.md)), System-Toolbars und ggf. weitere schwebende Buttons (`glassEffect`, `GlassEffectContainer`). Aktiver Bereich: Symbol und Text in `accent` auf heller Kapsel (`textPrimary` · 10 %).
 - **Cards** sind leicht durchscheinend (`cardGlass`) mit Verlaufs-Lichtkante (`lightEdge` → `hairline`) – ohne Blur, damit Listen flüssig scrollen. Bei „Transparenz reduzieren“ automatisch opak (`card`).
 - **Perlmutt-Reflex** (`pearlEdge`): statischer, dezenter chromatischer Rand nur für hervorgehobene Einzelelemente; keine Dauer-Animation.
@@ -96,7 +96,7 @@ Offene und erledigte Personen sind ohne Farbwahrnehmung unterscheidbar: Erledigt
 |---|---|
 | `familiarCard()` / `.buttonStyle(.familiarCard)` | Content-Fläche, antippbar mit Druckzustand |
 | `familiarScreenBackground()` / `FamiliarAmbientBackground` | Bildschirmhintergrund mit Ambient-Licht |
-| `FamiliarOrb` | Leuchtende Bernstein-Kugel (Markenelement) |
+| `FamiliarMark` | Flaches Kachel-Zeichen mit Haken (Markenelement, App-Icon) |
 | `.familiarPrimary` / `.familiarSecondary` / `.familiarDestructive` | Kapsel-Buttons |
 | `CompletionCheckButton` | Abhaken (28 pt sichtbar, 44 pt Touch-Fläche) |
 | `AvatarView`, `AvatarStack` | Profilbild/Initialen mit Status, Stapel mit Überlauf |
@@ -142,4 +142,4 @@ Recherche zu typischen Merkmalen KI-generierter („vibe-coded“) Apps: Standar
 - **Schrift:** Überschriften, Kartentitel und Gruppenlabels in **Bricolage Grotesque** (variabel mit optischen Größen, SIL OFL; `FamiliarTypeface`), Fließtext bleibt SF Pro für Lesbarkeit und Dynamic Type. Die Systemschrift „New York“ wird nicht mehr verwendet.
 - **Gruppenlabels** in normaler Schreibweise („Heute 2“) statt Versalien mit Sperrung.
 - **Akzentfarbe** nur für das Plus, Hauptaktionen und „heute“; Schalter für Rechte in Grün.
-- Offene Punkte für den nächsten Design-Durchgang: Leucht-Orb über Leerzuständen und Ambient-Schein zurücknehmen, Karten nur für einzeln bedienbare Einträge (nicht um Leerzustände und Hinweise).
+- Offene Punkte für den nächsten Design-Durchgang: Ambient-Schein zurücknehmen (Orb ersetzt am 2026-10-21), Karten nur für einzeln bedienbare Einträge (nicht um Leerzustände und Hinweise).

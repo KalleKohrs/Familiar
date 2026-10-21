@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Leerer Zustand mit Orb und Symbol, Text und optionaler Aktion.
+/// Leerer Zustand mit Symbol, Text und optionaler Aktion.
 public struct FamiliarEmptyState: View {
     let systemImage: String
     let title: String
@@ -24,12 +24,11 @@ public struct FamiliarEmptyState: View {
 
     public var body: some View {
         VStack(spacing: FamiliarSpacing.m) {
-            ZStack {
-                FamiliarOrb(diameter: 64)
-                Image(systemName: systemImage)
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(FamiliarColor.onAccent.opacity(0.85))
-            }
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(FamiliarColor.accent)
+                .frame(width: 60, height: 60)
+                .background(Circle().fill(FamiliarColor.elevated))
             .padding(.bottom, FamiliarSpacing.xs)
             .accessibilityHidden(true)
             VStack(spacing: FamiliarSpacing.xs) {
