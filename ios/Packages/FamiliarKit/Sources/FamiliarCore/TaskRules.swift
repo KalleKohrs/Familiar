@@ -35,11 +35,18 @@ public enum TaskRules {
             if let mine {
                 actions.append(mine.isDone ? .undoMine : .completeForMe)
             }
-            if isCreator {
+            // „Für alle erledigt“ nur, wenn es etwas anderes bewirkt als der eigene Haken.
+            if isCreator && !completesTask(task, userID: userID) {
                 actions.append(.completeForAll)
             }
         }
         return actions
+    }
+
+    /// Erledigt der eigene Haken die ganze Aufgabe? (allein zugewiesen bzw. alle anderen fertig)
+    public static func completesTask(_ task: TaskItem, userID: UUID) -> Bool {
+        guard let mine = task.assignees.first(where: { $0.userID == userID }), !mine.isDone else { return false }
+        return task.completionMode == .anyOne || task.assignees.allSatisfy { $0.userID == userID || $0.isDone }
     }
 
     /// Startseite: zuerst Aufgaben ohne Datum (neueste oben), dann datierte chronologisch.

@@ -180,9 +180,9 @@ final class TaskStore {
             switch action {
             case .completeForMe:
                 try await repository.complete(taskID: task.id, scope: .me)
-                let message = task.completionMode == .each
-                    ? String(localized: "Für dich abgehakt")
-                    : String(localized: "Erledigt")
+                let message = userID.map { TaskRules.completesTask(task, userID: $0) } ?? true
+                    ? String(localized: "Erledigt")
+                    : String(localized: "Für dich abgehakt")
                 offerUndo(task.id, message: message, kind: .uncomplete(.me))
             case .completeForAll:
                 try await repository.complete(taskID: task.id, scope: .all)

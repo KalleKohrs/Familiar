@@ -242,7 +242,9 @@ struct TaskDetailView: View {
     private func title(for action: TaskCompletionAction, task: TaskItem) -> String {
         switch action {
         case .completeForMe:
-            task.completionMode == .each ? String(localized: "Für mich erledigt") : String(localized: "Erledigt")
+            session.userID.map { TaskRules.completesTask(task, userID: $0) } ?? true
+                ? String(localized: "Erledigt")
+                : String(localized: "Für mich erledigt")
         case .completeForAll:
             String(localized: "Für alle erledigt")
         case .undoMine:

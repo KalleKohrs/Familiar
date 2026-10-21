@@ -125,9 +125,22 @@ struct TaskDraftTests {
     let person = UUID()
 
     @Test func newDraftNeedsTitleAssigneeAndExplicitMode() {
-        let draft = TaskDraft(familyID: family)
-        #expect(Set(draft.issues) == [.titleMissing, .assigneesMissing, .completionModeMissing])
+        var draft = TaskDraft(familyID: family)
+        #expect(Set(draft.issues) == [.titleMissing, .assigneesMissing])
         #expect(draft.input() == nil)
+        // Ab zwei Personen muss die Erledigungsart bewusst gewählt werden.
+        draft.title = "Aufräumen"
+        draft.toggleAssignee(person)
+        draft.toggleAssignee(UUID())
+        #expect(draft.issues == [.completionModeMissing])
+    }
+
+    @Test func singleAssigneeNeedsNoModeChoice() {
+        var draft = TaskDraft(familyID: family)
+        draft.title = "Müll"
+        draft.toggleAssignee(person)
+        #expect(!draft.needsCompletionModeChoice)
+        #expect(draft.input()?.completionMode == .anyOne)
     }
 
     @Test func inputDropsTimeWithoutDateAndEmptyDescription() throws {
@@ -158,5 +171,21 @@ struct TaskDraftTests {
         draft.images = (0..<11).map { _ in .new(PreparedImage(jpegData: Data(), thumbnailData: Data(), width: 1, height: 1)) }
         #expect(draft.issues.contains(.titleTooLong))
         #expect(draft.issues.contains(.tooManyImages))
+    }
+
+    @Test func soleAssigneeCreatorGetsOnlyOneAction() {
+        let me = UUID()
+        let item = TaskItem(id: UUID(), familyID: UUID(), createdBy: me, title: "Allein", completionMode: .each,
+                            assignees: [TaskAssignee(userID: me)])
+        #expect(TaskRules.actions(for: item, userID: me) == [.completeForMe])
+        #expect(TaskRules.completesTask(item, userID: me))
+    }
+
+    @Test func lastOpenAssigneeCreatorGetsOnlyOneAction() {
+        let me = UUID()
+        let other = TaskAssignee(userID: UUID(), completedAt: .now)
+        let item = TaskItem(id: UUID(), familyID: UUID(), createdBy: me, title: "Fast fertig", completionMode: .each,
+                            assignees: [TaskAssignee(userID: me), other])
+        #expect(TaskRules.actions(for: item, userID: me) == [.completeForMe])
     }
 }

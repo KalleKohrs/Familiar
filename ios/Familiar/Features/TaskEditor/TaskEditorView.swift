@@ -125,7 +125,8 @@ struct TaskEditorView: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Tastatur ausblenden", systemImage: "keyboard.chevron.compact.down") { focusedField = nil }
+                    Button("Fertig") { focusedField = nil }
+                        .fontWeight(.semibold)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(editingTask == nil ? "Hinzufügen" : "Fertig", action: save)
@@ -426,7 +427,9 @@ struct TaskEditorView: View {
         } header: {
             Text("Erledigung")
         } footer: {
-            if showsIssue(.completionModeMissing) {
+            if !draft.needsCompletionModeChoice {
+                Text("Bei einer Person spielt das keine Rolle – sie hakt die Aufgabe ab.")
+            } else if showsIssue(.completionModeMissing) {
                 issueText("Bitte wähle, wie die Aufgabe erledigt wird.")
             } else if let mode = draft.completionMode {
                 Text(TaskFormatting.modeExplanation(mode))
@@ -438,7 +441,8 @@ struct TaskEditorView: View {
     }
 
     private func modeTile(_ mode: CompletionMode) -> some View {
-        let isSelected = draft.completionMode == mode
+        let isSelected = draft.effectiveCompletionMode == mode
+        let isEnabled = draft.needsCompletionModeChoice
         let shape = RoundedRectangle(cornerRadius: FamiliarRadius.chip + 4, style: .continuous)
         return Button {
             focusedField = nil
@@ -466,7 +470,11 @@ struct TaskEditorView: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
+        // Bei einer Person automatisch gewählt und ausgegraut.
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.45)
         .familiarAnimation(FamiliarMotion.snappy, value: isSelected)
+        .familiarAnimation(FamiliarMotion.snappy, value: isEnabled)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(TaskFormatting.modeTitle(mode))
         .accessibilityHint(TaskFormatting.modeExplanation(mode))

@@ -153,13 +153,21 @@ public struct TaskDraft: Hashable, Sendable {
         if trimmedTitle.count > Self.titleLength.upperBound { issues.append(.titleTooLong) }
         if InputRules.trimmed(description).count > Self.maxDescriptionLength { issues.append(.descriptionTooLong) }
         if assigneeIDs.isEmpty { issues.append(.assigneesMissing) }
-        if completionMode == nil { issues.append(.completionModeMissing) }
+        if effectiveCompletionMode == nil { issues.append(.completionModeMissing) }
         if images.count > Self.maxImages { issues.append(.tooManyImages) }
         if let recurrence, !recurrence.isComplete { issues.append(.recurrenceIncomplete) }
         return issues
     }
 
     public var isValid: Bool { issues.isEmpty }
+
+    /// Erst ab zwei Personen macht die Erledigungsart einen Unterschied – dann muss sie bewusst
+    /// gewählt werden (Guide, Abschnitt 3). Bei einer Person gilt „Eine für alle“.
+    public var needsCompletionModeChoice: Bool { assigneeIDs.count > 1 }
+
+    public var effectiveCompletionMode: CompletionMode? {
+        needsCompletionModeChoice ? completionMode : (completionMode ?? .anyOne)
+    }
 
     public mutating func toggleAssignee(_ userID: UUID) {
         if let index = assigneeIDs.firstIndex(of: userID) {
@@ -171,7 +179,7 @@ public struct TaskDraft: Hashable, Sendable {
 
     /// Server-Eingabe; Bilder müssen vorher hochgeladen sein. `nil`, solange der Entwurf ungültig ist.
     public func input() -> TaskInput? {
-        guard isValid, let familyID, let completionMode else { return nil }
+        guard isValid, let familyID, let completionMode = effectiveCompletionMode else { return nil }
         let trimmedDescription = InputRules.trimmed(description)
         return TaskInput(
             familyID: familyID,
