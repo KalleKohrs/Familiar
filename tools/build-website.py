@@ -87,14 +87,23 @@ def page(title: str, body: str) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} – Familiar</title>
+  <meta name="theme-color" content="#1E1519">
+  <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
-  <header class="top"><a class="brand" href="/">Familiar</a></header>
-  <main class="text">
+  <a class="skip" href="#inhalt">Zum Inhalt</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/assets/mark.svg" alt="">Familiar</a>
+    <nav aria-label="Hauptnavigation"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
+  </header>
+  <main id="inhalt" class="text">
 {body}
   </main>
-  <footer><a href="/support/">Hilfe</a> · <a href="/kontakt/">Kontakt</a> · <a href="/datenschutz/">Datenschutz</a> · <a href="/impressum/">Impressum</a></footer>
+  <footer class="site-footer">
+    <span>© 2026 Familiar</span>
+    <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+  </footer>
 </body>
 </html>
 """

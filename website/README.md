@@ -8,3 +8,5 @@ Statische Website für Familiar. Wird bei einem statischen Hoster veröffentlich
 | `/join/<code>` | Ausweichseite ohne installierte App: zeigt den Code und den Weg in den App Store. |
 | `/datenschutz/`, `/impressum/`, `/support/`, `/outlook-it/` | Erzeugt aus `docs/legal/*.md` mit `python3 tools/build-website.py` – Texte nur dort ändern, dann neu erzeugen. Platzhalter `[…]` sind gelb markiert und müssen vor dem Veröffentlichen ersetzt sein. |
 | `/` | Startseite. |
+
+Schrift: Bricolage Grotesque (SIL Open Font License, `assets/fonts/`), selbst gehostet – keine externen Ressourcen, kein Tracking.
