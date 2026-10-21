@@ -16,9 +16,9 @@
 2. **Workflow** (läuft im Backup-Repository, täglich 03:30 UTC und manuell):
    - `supabase db dump` für Rollen, Schema und Daten (wie in der Supabase-Doku).
    - Bilder: alle Objekte aus `task-images` und `avatars` über die Storage-API laden (Service-Key nur als GitHub-Secret).
-   - Alles in ein Archiv packen und mit **age** (moderne Dateiverschlüsselung) **für einen öffentlichen Schlüssel verschlüsseln**. Der private Schlüssel liegt nur beim Nutzer (Passwort-Manager + Ausdruck), nie bei GitHub oder Supabase.
+   - Alles in ein Archiv packen und **hybrid mit openssl verschlüsseln** (`backup/encrypt.sh`): zufälliger AES-256-Schlüssel je Archiv, dieser mit dem öffentlichen RSA-3072-Schlüssel (OAEP/SHA-256) verschlüsselt. openssl ist auf GitHub-Runnern und jedem Mac vorhanden – keine Zusatzprogramme. Der private Schlüssel liegt nur beim Nutzer (Passwort-Manager), nie bei GitHub oder Supabase. Rundlauf lokal getestet (2026-10-21).
    - Datenbank-Archiv als Commit ins Backup-Repository (klein, Verlauf = Versionen), Bilder-Archiv als Actions-Artefakt mit 30 Tagen Aufbewahrung.
-3. **Secrets in GitHub** (nie im Chat): `SUPABASE_DB_URL` (Verbindungs-URL des Produktionsprojekts), `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`; der öffentliche age-Schlüssel steht offen im Workflow.
+3. **Secrets in GitHub** (nie im Chat): `SUPABASE_DB_URL` (Verbindungs-URL des Produktionsprojekts), `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`; der öffentliche Schlüssel liegt als `backup-public.pem` im Backup-Repository.
 
 ## Grenzen
 
@@ -28,7 +28,7 @@
 
 ## Wiederherstellung (Kurzfassung)
 
-1. Archiv herunterladen und mit dem privaten age-Schlüssel entschlüsseln.
+1. Sicherungsordner herunterladen und mit `backup/decrypt.sh` und dem privaten Schlüssel entschlüsseln.
 2. Neues Supabase-Projekt anlegen, `roles.sql`, `schema.sql`, `data.sql` laut Supabase-Doku „Backup and Restore using the CLI“ einspielen.
 3. Bilder mit dem mitgelieferten Skript in die Buckets hochladen; Edge Functions neu deployen, Secrets setzen.
 

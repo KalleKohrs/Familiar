@@ -4,8 +4,10 @@
 #   SUPABASE_DB_URL       Session-Pooler-Verbindung des Produktionsprojekts (IPv4)
 #   SUPABASE_URL          https://<projekt>.supabase.co
 #   SUPABASE_SERVICE_KEY  Secret-Key (nur für das Herunterladen der Bilder)
-# Verschlüsselt wird mit age für den öffentlichen Schlüssel unten; den privaten Schlüssel hat nur
-# der Inhaber (Passwort-Manager). Ohne ihn ist die Sicherung nicht lesbar – auch nicht für GitHub.
+# Verschlüsselt wird hybrid mit openssl (encrypt.sh): ein zufälliger Schlüssel je Archiv (AES-256),
+# dieser wiederum mit dem öffentlichen RSA-Schlüssel `backup-public.pem` im Repository. Den privaten
+# Schlüssel hat nur der Inhaber (Passwort-Manager). Ohne ihn ist die Sicherung nicht lesbar – auch
+# nicht für GitHub. Entschlüsseln: decrypt.sh (siehe docs/setup/backup.md).
 name: Datensicherung
 
 on:
@@ -16,9 +18,6 @@ on:
 permissions:
   contents: write
 
-env:
-  AGE_RECIPIENT: "AGE_PUBLIC_KEY_HIER_EINTRAGEN"
-
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -28,9 +27,6 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: age installieren
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
-
       - name: Datenbank sichern (Rollen, Schema, Daten)
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -44,9 +40,10 @@ jobs:
         run: |
           stamp=$(date -u +%Y-%m-%d)
           mkdir -p db
-          tar -czf - -C work roles.sql schema.sql data.sql | age -r "$AGE_RECIPIENT" -o "db/familiar-db-$stamp.tar.gz.age"
+          tar -czf work/db.tar.gz -C work roles.sql schema.sql data.sql
+          ./encrypt.sh work/db.tar.gz "db/familiar-db-$stamp"
           # Nur die letzten 60 Sicherungen behalten.
-          ls -1 db/*.age | sort | head -n -60 | xargs -r git rm -q
+          ls -1d db/familiar-db-* | sort | head -n -60 | xargs -r git rm -rq
           git config user.name "Familiar Backup"
           git config user.email "backup@familiar-app.de"
           git add db
@@ -58,10 +55,11 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           node download-storage.mjs work/storage task-images avatars
-          tar -czf - -C work storage | age -r "$AGE_RECIPIENT" -o images.tar.gz.age
+          tar -czf work/images.tar.gz -C work storage
+          ./encrypt.sh work/images.tar.gz familiar-bilder
 
       - uses: actions/upload-artifact@v4
         with:
           name: familiar-bilder
-          path: images.tar.gz.age
+          path: familiar-bilder
           retention-days: 30
