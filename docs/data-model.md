@@ -18,6 +18,10 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0008_history_purge` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Auch hier wurde der Eintrag `20261021044920` vorher versehentlich mit einer wirkungslosen Platzhalter-Abfrage angelegt; maßgeblich ist die Datei (SHA-256 `3d7a39442fb049e3…`). |
 | `0009_recurrence` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`-Anweisungen; vorher kein Platzhalter-Eintrag). Inhalt per SHA-256 `86cf70d71478f91b…` gegen die Zwischenablage geprüft; Tests `supabase/tests/0006_recurrence.sql`: 42/42 grün. |
 | `0010_family_permissions` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (SHA-256 `3fa201b6d20879ca…`). Tests `supabase/tests/0007_family_permissions.sql`: 23/23 grün. |
+| `0011_outlook` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Tests `supabase/tests/0008_outlook.sql`: 21/21 grün. |
+| `0012_notifications` | 2026-10-21 | Supabase-MCP `apply_migration` (bewusst ohne `delete`). Tests `supabase/tests/0009_notifications.sql`: 29/29 grün. |
+| `0013_notification_dedupe` | 2026-10-21 | Supabase-MCP `apply_migration` |
+| `0014_push_claim_starts_at` | 2026-10-21 | Supabase-MCP `apply_migration` |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -225,6 +229,21 @@ Realtime: Änderungen an `task_series` (außer reinem Fortschreiben der Wasserst
 - `set_family_permissions` mit sechs Schaltern (null = unverändert), `delete_family` (nur Admin).
 - `prepare_account_deletion(user)` nur für `service_role`: Familien ohne weitere Mitglieder löschen, Admin-Rolle an das am längsten dabei befindliche Mitglied weitergeben, Besitz an Aufgabenbildern lösen (Supabase: Nutzer mit eigenen Storage-Objekten lassen sich nicht löschen), Profilbild-Pfade liefern. Die Edge Function `account-delete` (verify_jwt) ermittelt den Nutzer aus dem JWT, löscht die Profilbilder über die Storage-API und danach den Auth-Nutzer.
 - Neue Fehlerschlüssel: `permission_denied_create_tasks`, `permission_denied_edit_tasks`, `permission_denied_delete_tasks`.
+
+## Mitteilungen und Live Activities (0012–0014)
+
+| Objekt | Zweck |
+|---|---|
+| `devices` | APNs-Geräte-Token je Konto (`apns_environment` sandbox/production), Push-to-Start-Token, `invalidated_at` statt Löschen (Abmelden, 410/BadDeviceToken). Lesen nur eigene; Schreiben nur per RPC. |
+| `live_activities` | Laufende Activities je Gerät mit Update-Token; `state` active/ended. |
+| `notification_jobs` | Outbox; kein Client-Zugriff. `dedupe_key` eindeutig → keine Doppelten. Status pending → sending (`claim_id`, `FOR UPDATE SKIP LOCKED`) → sent/failed/skipped; bis zu 3 Versuche. |
+| Trigger | Zuweisung (nicht an sich selbst, nicht bei Serien-Vorkommen), erledigt (Ersteller + Zugewiesene außer wer selbst abgehakt hat), gelöscht, relevante Änderung (E6: Titel, Startzeit, Erledigungsart), Activity-Update/-Ende. |
+| `private.enqueue_due_notifications()` | Jede Minute zustandslos aus dem aktuellen Stand: Activity-Start 5 min vor Start (Nur-Datum: 08:00 Ortszeit bzw. ab Zuweisung, E3), „Jetzt“ zum Start, Erinnerung 1 h danach und dann alle 24 h (ohne Uhrzeit: alle 24 h); nur frisch fällige Slots, keine Nachholflut. |
+| Cron `familiar-push-dispatch` (`* * * * *`) | Legt Fälliges an und ruft `push-dispatch` nur auf, wenn Aufträge warten (Einmal-Token). |
+| RPCs (App) | `register_device`, `unregister_device` (vor dem Abmelden), `register_live_activity`, `end_live_activity`. |
+| RPCs (nur service_role) | `push_claim_jobs(token)` liefert Inhalt, ContentState-Felder (`starts_at_unix` nur mit Uhrzeit, `is_open`, `can_complete`, Initialen), Geräte und Activities; `push_report_results(results)`. |
+
+Spike S2 (2026-10-21): Die Edge Function erreicht APNs per `fetch` über HTTP/2 – die Sandbox antwortet ohne Schlüssel mit `403 {"reason":"MissingProviderToken"}`. Kein externer Sender nötig.
 
 ## RLS-Hilfsfunktionen (0003, Schema `private`)
 

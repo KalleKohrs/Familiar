@@ -36,7 +36,7 @@
 
 **Offene technische Risiken → frühe Spikes:**
 - **S1:** Plus-Tab (`.prominent`) abfangen: Sheet öffnen, ohne dass der Tab wechselt; VoiceOver-Label „Neue Aufgabe“.
-- **S2:** APNs über HTTP/2 aus der Supabase-Edge-Runtime (`fetch` handelt h2 per ALPN aus?).
+- **S2:** APNs über HTTP/2 aus der Supabase-Edge-Runtime (`fetch` handelt h2 per ALPN aus?). **Erledigt 2026-10-21: funktioniert** (APNs-Sandbox antwortet mit `403 MissingProviderToken`).
   - Ausweichweg 1: `node:http2`.
   - Ausweichweg 2: kleiner externer Sender (eigene Entscheidung nötig).
 - **S3:** Liefert `Calendars.ReadBasic` Organisator und Teilnehmer? Prüfung mit realem Testtermin in Phase 8.
@@ -323,6 +323,7 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
    - Monatsansicht mit Aufgaben + Projektionen.
    - Anbieter-Abstraktion im Client.
 7. **Push & Live Activities**
+   - **Stand 2026-10-21:** Server fertig (Migrationen 0012–0014, Edge Function `push-dispatch`, Tests 29/29, S2 bestanden). Versand startet, sobald die APNs-Secrets gesetzt sind (Launch-Liste Punkt 1). App-Seite folgt.
    - **Spike S2** zuerst.
    - devices, Outbox, `push-dispatch`.
    - Widget-Extension, `CompleteTaskIntent`, Push-to-Start, Abgleich beim Vordergrund.
