@@ -6,6 +6,7 @@ import SwiftUI
 /// kommen in den Phasen 6, 7 und 9 dazu.
 struct ProfileSheet: View {
     @Environment(SessionStore.self) private var session
+    @Environment(OutlookStore.self) private var outlook
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var isSaving = false
@@ -59,6 +60,35 @@ struct ProfileSheet: View {
 
                     if let errorMessage {
                         FamiliarInlineError(errorMessage)
+                    }
+
+                    VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                        FamiliarSectionHeader("Persönlicher Kalender")
+                        NavigationLink {
+                            OutlookSettingsView()
+                        } label: {
+                            HStack(spacing: FamiliarSpacing.s) {
+                                Image(systemName: "calendar")
+                                    .font(.title3)
+                                    .foregroundStyle(FamiliarColor.textSecondary)
+                                    .accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Outlook")
+                                        .font(FamiliarFont.cardTitle)
+                                        .foregroundStyle(FamiliarColor.textPrimary)
+                                    Text(outlook.isConnected ? "Verbunden" : "Nicht verbunden")
+                                        .font(FamiliarFont.meta)
+                                        .foregroundStyle(FamiliarColor.textSecondary)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(FamiliarColor.textTertiary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.familiarCard)
+                        .accessibilityIdentifier("profile.outlook")
                     }
 
                     #if DEBUG

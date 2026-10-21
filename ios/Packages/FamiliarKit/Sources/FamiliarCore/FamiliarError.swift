@@ -67,4 +67,10 @@ public enum AppErrorKey: String, CaseIterable, Hashable, Sendable {
     case restoreSeriesInstead = "restore_series_instead"
     case seriesDeletionNotFound = "series_deletion_not_found"
     case invalidRange = "invalid_range"
+    // Familienrechte (Migration 0010)
+    case permissionDeniedCreateTasks = "permission_denied_create_tasks"
+    case permissionDeniedEditTasks = "permission_denied_edit_tasks"
+    case permissionDeniedDeleteTasks = "permission_denied_delete_tasks"
+    // Kalender (Migration 0011)
+    case calendarNotFound = "calendar_not_found"
 }

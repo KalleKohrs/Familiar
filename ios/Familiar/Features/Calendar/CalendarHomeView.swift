@@ -3,11 +3,12 @@ import FamiliarDesign
 import SwiftUI
 
 /// Bereich „Kalender“ (Plan, Abschnitt 7): Monatsraster mit Aufgaben und geplanten Serienterminen,
-/// darunter die Einträge des gewählten Tages. Persönliche Outlook-Termine folgen in Phase 8
-/// über ``ExternalEventRepository`` und werden dann getrennt gekennzeichnet.
+/// darunter die Einträge des gewählten Tages. Persönliche Outlook-Termine (Phase 8) erscheinen
+/// getrennt gekennzeichnet: Ring statt Punkt und mit Anbieter-Namen.
 struct CalendarHomeView: View {
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var store
+    @Environment(OutlookStore.self) private var outlook
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var transition
 
@@ -47,13 +48,14 @@ struct CalendarHomeView: View {
                     .navigationTransition(.zoom(sourceID: taskID, in: transition))
             }
             .overlay(alignment: .bottom) { TaskBanner() }
-            .task(id: ReloadKey(month: month, token: store.changeToken)) { await load() }
+            .task(id: ReloadKey(month: month, token: store.changeToken, outlook: outlook.revision)) { await load() }
         }
     }
 
     private struct ReloadKey: Hashable {
         let month: LocalDate
         let token: Int
+        let outlook: Int
     }
 
     // MARK: Laden
@@ -64,7 +66,10 @@ struct CalendarHomeView: View {
         defer { isLoading = false }
         do throws(FamiliarError) {
             let data = try await store.calendarData(from: first, through: last)
-            entries = CalendarRules.entriesByDay(tasks: data.tasks, projected: data.projected)
+            // Persönliche Outlook-Termine (nur für den Nutzer selbst).
+            let external = await outlook.events(from: first.startOfDay(in: .current),
+                                                to: last.adding(days: 1).startOfDay(in: .current))
+            entries = CalendarRules.entriesByDay(tasks: data.tasks, projected: data.projected, external: external)
             loadError = nil
         } catch {
             loadError = error.message
@@ -229,9 +234,11 @@ struct CalendarHomeView: View {
         let date = day.date(at: nil, in: .current).formatted(.dateTime.day().month(.wide))
         let tasks = entries.filter { if case .task = $0 { true } else { false } }.count
         let planned = entries.filter { if case .projected = $0 { true } else { false } }.count
+        let external = entries.filter { if case .external = $0 { true } else { false } }.count
         var parts = [isToday ? String(localized: "Heute, \(date)") : date]
         if tasks > 0 { parts.append(tasks == 1 ? String(localized: "1 Aufgabe") : String(localized: "\(tasks) Aufgaben")) }
         if planned > 0 { parts.append(String(localized: "\(planned) geplant")) }
+        if external > 0 { parts.append(external == 1 ? String(localized: "1 Termin") : String(localized: "\(external) Termine")) }
         return parts.joined(separator: ", ")
     }
 
@@ -299,12 +306,22 @@ private struct CalendarEntryRow: View {
                 done: false, planned: true)
                 .accessibilityHint("Geplanter Termin einer Serie; erscheint als Aufgabe, sobald er an der Reihe ist.")
         case .external(let event):
-            row(time: event.isAllDay ? String(localized: "Ganztägig") : event.startsAt.formatted(date: .omitted, time: .shortened),
-                title: event.title, familyID: nil, subtitle: event.provider, done: false, planned: false)
+            row(time: event.isAllDay ? String(localized: "Ganzer Tag") : timeText(LocalTime(event.startsAt, timeZone: .current)),
+                title: event.title, familyID: nil,
+                subtitle: [timeRange(event), event.location].compactMap { $0 }.joined(separator: " · "),
+                done: false, planned: false, externalProvider: event.providerName)
+                .accessibilityIdentifier("calendar.event.\(event.title)")
         }
     }
 
-    private func row(time: String, title: String, familyID: UUID?, subtitle: String?, done: Bool, planned: Bool) -> some View {
+    /// „9:00–10:00“ für Termine mit Uhrzeit.
+    private func timeRange(_ event: ExternalEvent) -> String? {
+        guard !event.isAllDay else { return nil }
+        return "\(timeText(LocalTime(event.startsAt, timeZone: .current)))–\(timeText(LocalTime(event.endsAt, timeZone: .current)))"
+    }
+
+    private func row(time: String, title: String, familyID: UUID?, subtitle: String?, done: Bool, planned: Bool,
+                     externalProvider: String? = nil) -> some View {
         HStack(alignment: .center, spacing: FamiliarSpacing.s) {
             Text(time)
                 .font(FamiliarFont.time)
@@ -341,6 +358,15 @@ private struct CalendarEntryRow: View {
                 Text("Geplant")
                     .font(FamiliarFont.caption)
                     .foregroundStyle(FamiliarColor.textTertiary)
+            } else if let externalProvider {
+                // Persönlicher Termin: eigenes Kennzeichen, kein Abhaken.
+                Label(externalProvider, systemImage: "calendar")
+                    .labelStyle(CompactLabelStyle())
+                    .font(FamiliarFont.caption)
+                    .foregroundStyle(FamiliarColor.textSecondary)
+                    .padding(.horizontal, FamiliarSpacing.xs)
+                    .padding(.vertical, 3)
+                    .overlay(Capsule().strokeBorder(FamiliarColor.hairline, lineWidth: 1))
             }
         }
         .padding(.horizontal, FamiliarSpacing.s)

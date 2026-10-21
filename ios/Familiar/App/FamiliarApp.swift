@@ -7,6 +7,7 @@ struct FamiliarApp: App {
     @State private var avatars: AvatarImageStore
     @State private var tasks: TaskStore
     @State private var taskImages: TaskImageStore
+    @State private var outlook: OutlookStore
 
     init() {
         FamiliarTypeface.register()
@@ -15,6 +16,7 @@ struct FamiliarApp: App {
         _avatars = State(initialValue: AvatarImageStore(profiles: dependencies.profiles))
         _tasks = State(initialValue: TaskStore(repository: dependencies.tasks))
         _taskImages = State(initialValue: TaskImageStore(tasks: dependencies.tasks))
+        _outlook = State(initialValue: OutlookStore(repository: dependencies.calendars))
     }
 
     var body: some Scene {
@@ -24,6 +26,7 @@ struct FamiliarApp: App {
                 .environment(avatars)
                 .environment(tasks)
                 .environment(taskImages)
+                .environment(outlook)
                 .preferredColorScheme(.dark)
                 .tint(FamiliarColor.accent)
                 .task { session.start() }

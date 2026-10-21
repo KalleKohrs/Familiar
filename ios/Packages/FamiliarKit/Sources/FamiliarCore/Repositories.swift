@@ -77,14 +77,14 @@ public protocol FamilyRepository: Sendable {
     func deleteFamily(familyID: UUID) async throws(FamiliarError)
 }
 
-/// Persönliche Termine aus externen Kalendern (Plan, Abschnitt 7) – anbieterunabhängig.
-/// Bis Outlook angebunden ist (Phase 8), liefert ``NoExternalEvents`` nichts.
-public protocol ExternalEventRepository: Sendable {
+/// Persönliche Termine aus externen Kalendern (Plan, Abschnitt 7) – anbieterunabhängig, strikt pro Nutzer.
+public protocol ExternalCalendarRepository: Sendable {
+    func connections() async throws(FamiliarError) -> [CalendarConnection]
+    /// Anmelde-URL des Anbieters (Edge Function `outlook-oauth-start`).
+    func connectURL() async throws(FamiliarError) -> URL
+    func setSelected(calendarID: UUID, _ selected: Bool) async throws(FamiliarError)
+    func disconnect(connectionID: UUID) async throws(FamiliarError)
+    /// Abgleich jetzt anstoßen; `false`, wenn gerade erst einer lief.
+    func requestSync() async throws(FamiliarError) -> Bool
     func events(from: Date, to: Date) async throws(FamiliarError) -> [ExternalEvent]
-}
-
-public struct NoExternalEvents: ExternalEventRepository {
-    public init() {}
-
-    public func events(from: Date, to: Date) async throws(FamiliarError) -> [ExternalEvent] { [] }
 }

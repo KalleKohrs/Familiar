@@ -21,6 +21,7 @@ struct RootTabView: View {
     }
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var tasks
+    @Environment(OutlookStore.self) private var outlook
 
     var body: some View {
         TabView(selection: $selection) {
@@ -65,6 +66,9 @@ struct RootTabView: View {
         }
         .task(id: session.userID) {
             if let userID = session.userID { await tasks.start(userID: userID) }
+        }
+        .task(id: session.userID) {
+            if session.userID != nil { await outlook.reload() } else { outlook.stop() }
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: createTaskRequests)
     }

@@ -24,23 +24,150 @@ public struct ProjectedOccurrence: Hashable, Identifiable, Sendable {
     }
 }
 
-/// Persönlicher Termin aus einem externen Kalender (ab Phase 8: Outlook), nur lesend.
+/// Persönlicher Termin aus einem externen Kalender (`public.external_events`, Migration 0011), nur lesend.
 /// Anbieter-unabhängig, damit weitere Kalender ohne Änderung der Ansicht folgen können.
-public struct ExternalEvent: Hashable, Identifiable, Sendable {
+public struct ExternalEvent: Decodable, Hashable, Identifiable, Sendable {
     public let id: UUID
+    public var calendarID: UUID?
     public var provider: String
     public var title: String
     public var startsAt: Date
     public var endsAt: Date
     public var isAllDay: Bool
+    /// Ganztägig: Kalendertage ohne Zeitzone; `endDate` ist exklusiv.
+    public var startDate: LocalDate?
+    public var endDate: LocalDate?
+    public var location: String?
+    public var organizerName: String?
+    public var isCancelled: Bool
 
-    public init(id: UUID, provider: String, title: String, startsAt: Date, endsAt: Date, isAllDay: Bool) {
+    public init(id: UUID, calendarID: UUID? = nil, provider: String, title: String, startsAt: Date, endsAt: Date,
+                isAllDay: Bool, startDate: LocalDate? = nil, endDate: LocalDate? = nil, location: String? = nil,
+                organizerName: String? = nil, isCancelled: Bool = false) {
         self.id = id
+        self.calendarID = calendarID
         self.provider = provider
         self.title = title
         self.startsAt = startsAt
         self.endsAt = endsAt
         self.isAllDay = isAllDay
+        self.startDate = startDate
+        self.endDate = endDate
+        self.location = location
+        self.organizerName = organizerName
+        self.isCancelled = isCancelled
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, provider, title
+        case calendarID = "calendar_id"
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
+        case isAllDay = "is_all_day"
+        case startDate = "start_date"
+        case endDate = "end_date"
+        case location = "location_name"
+        case organizerName = "organizer_name"
+        case isCancelled = "is_cancelled"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        calendarID = try c.decodeIfPresent(UUID.self, forKey: .calendarID)
+        provider = try c.decodeIfPresent(String.self, forKey: .provider) ?? "outlook"
+        title = try c.decode(String.self, forKey: .title)
+        startsAt = try c.decode(Date.self, forKey: .startsAt)
+        endsAt = try c.decode(Date.self, forKey: .endsAt)
+        isAllDay = try c.decodeIfPresent(Bool.self, forKey: .isAllDay) ?? false
+        startDate = try c.decodeIfPresent(LocalDate.self, forKey: .startDate)
+        endDate = try c.decodeIfPresent(LocalDate.self, forKey: .endDate)
+        location = try c.decodeIfPresent(String.self, forKey: .location)
+        organizerName = try c.decodeIfPresent(String.self, forKey: .organizerName)
+        isCancelled = try c.decodeIfPresent(Bool.self, forKey: .isCancelled) ?? false
+    }
+
+    /// Anzeigename des Anbieters.
+    public var providerName: String { provider == "outlook" ? "Outlook" : provider.capitalized }
+
+    /// Tage, an denen der Termin erscheint: ganztägig über alle Tage, sonst am Starttag.
+    public func days(in timeZone: TimeZone) -> [LocalDate] {
+        if isAllDay, let startDate {
+            let last = endDate.map { $0.adding(days: -1) } ?? startDate
+            return startDate <= last ? RecurrenceRule.daily.dates(from: startDate, through: last) : [startDate]
+        }
+        return [LocalDate(startsAt, timeZone: timeZone)]
+    }
+}
+
+public enum CalendarConnectionStatus: String, Decodable, Hashable, Sendable {
+    case active
+    case needsReauth = "needs_reauth"
+    case error
+}
+
+/// Eigener Kalender bei einem Anbieter (`public.external_calendars`).
+public struct ExternalCalendar: Decodable, Hashable, Identifiable, Sendable {
+    public let id: UUID
+    public var name: String
+    public var color: String?
+    public var isDefault: Bool
+    public var isSelected: Bool
+
+    public init(id: UUID, name: String, color: String? = nil, isDefault: Bool = false, isSelected: Bool = false) {
+        self.id = id
+        self.name = name
+        self.color = color
+        self.isDefault = isDefault
+        self.isSelected = isSelected
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, color
+        case isDefault = "is_default"
+        case isSelected = "is_selected"
+    }
+}
+
+/// Verbindung zu einem Kalender-Konto (`public.calendar_connections` mit eingebetteten Kalendern).
+public struct CalendarConnection: Decodable, Hashable, Identifiable, Sendable {
+    public let id: UUID
+    public var provider: String
+    public var accountEmail: String?
+    public var status: CalendarConnectionStatus
+    public var lastSyncAt: Date?
+    public var lastError: String?
+    public var calendars: [ExternalCalendar]
+
+    public init(id: UUID, provider: String = "outlook", accountEmail: String?, status: CalendarConnectionStatus,
+                lastSyncAt: Date? = nil, lastError: String? = nil, calendars: [ExternalCalendar] = []) {
+        self.id = id
+        self.provider = provider
+        self.accountEmail = accountEmail
+        self.status = status
+        self.lastSyncAt = lastSyncAt
+        self.lastError = lastError
+        self.calendars = calendars
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, provider, status
+        case accountEmail = "account_email"
+        case lastSyncAt = "last_sync_at"
+        case lastError = "last_error"
+        case calendars = "external_calendars"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        provider = try c.decodeIfPresent(String.self, forKey: .provider) ?? "outlook"
+        accountEmail = try c.decodeIfPresent(String.self, forKey: .accountEmail)
+        status = try c.decode(CalendarConnectionStatus.self, forKey: .status)
+        lastSyncAt = try c.decodeIfPresent(Date.self, forKey: .lastSyncAt)
+        lastError = try c.decodeIfPresent(String.self, forKey: .lastError)
+        calendars = (try c.decodeIfPresent([ExternalCalendar].self, forKey: .calendars) ?? [])
+            .sorted { $0.isDefault != $1.isDefault ? $0.isDefault : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 }
 
@@ -102,8 +229,10 @@ public enum CalendarRules {
         for occurrence in projected where !existing.contains(occurrence.id) {
             result[occurrence.date, default: []].append(.projected(occurrence))
         }
-        for event in external {
-            result[LocalDate(event.startsAt, timeZone: timeZone), default: []].append(.external(event))
+        for event in external where !event.isCancelled {
+            for day in event.days(in: timeZone) {
+                result[day, default: []].append(.external(event))
+            }
         }
         return result.mapValues { entries in
             entries.sorted { lhs, rhs in

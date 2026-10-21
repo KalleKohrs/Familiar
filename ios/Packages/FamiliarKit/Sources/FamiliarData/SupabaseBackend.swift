@@ -31,6 +31,7 @@ public struct SupabaseBackend: Sendable {
     public let profiles: any ProfileRepository
     public let families: any FamilyRepository
     public let tasks: any TaskRepository
+    public let calendars: any ExternalCalendarRepository
 
     public init(configuration: SupabaseConfiguration) {
         let client = SupabaseClient(
@@ -47,6 +48,7 @@ public struct SupabaseBackend: Sendable {
         profiles = SupabaseProfileRepository(client: client)
         families = SupabaseFamilyRepository(client: client)
         tasks = SupabaseTaskRepository(client: client)
+        calendars = SupabaseCalendarRepository(client: client)
     }
 }
 

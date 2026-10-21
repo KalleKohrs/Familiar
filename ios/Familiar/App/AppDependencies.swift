@@ -9,6 +9,7 @@ struct AppDependencies {
     let profiles: any ProfileRepository
     let families: any FamilyRepository
     let tasks: any TaskRepository
+    let calendars: any ExternalCalendarRepository
 
     static func live() -> AppDependencies {
         #if DEBUG
@@ -20,6 +21,7 @@ struct AppDependencies {
             fatalError("Supabase-Konfiguration fehlt in der Info.plist (siehe Config/Supabase.xcconfig).")
         }
         let backend = SupabaseBackend(configuration: configuration)
-        return AppDependencies(auth: backend.auth, profiles: backend.profiles, families: backend.families, tasks: backend.tasks)
+        return AppDependencies(auth: backend.auth, profiles: backend.profiles, families: backend.families, tasks: backend.tasks,
+                               calendars: backend.calendars)
     }
 }

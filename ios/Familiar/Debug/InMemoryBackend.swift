@@ -662,10 +662,68 @@ extension InMemoryBackend: TaskRepository {
     }
 }
 
+/// Outlook ohne Netzwerk: mit `-FamiliarInMemoryOutlook` ist ein Firmenkonto verbunden,
+/// mit einem Termin morgen um 9:00 und einem ganztägigen Termin übermorgen.
+actor InMemoryCalendars: ExternalCalendarRepository {
+    private var connection: CalendarConnection?
+    private var storedEvents: [ExternalEvent] = []
+
+    init(connected: Bool) {
+        guard connected else { return }
+        let calendar = ExternalCalendar(id: UUID(), name: "Kalender", isDefault: true, isSelected: true)
+        connection = CalendarConnection(id: UUID(), accountEmail: "kalle@firma.example", status: .active,
+                                        lastSyncAt: .now, calendars: [calendar,
+                                            ExternalCalendar(id: UUID(), name: "Geburtstage")])
+        let berlin = TimeZone(identifier: "Europe/Berlin") ?? .current
+        let tomorrow = LocalDate(.now, timeZone: berlin).adding(days: 1)
+        let meetingStart = tomorrow.date(at: LocalTime(hour: 9, minute: 0), in: berlin)
+        let dayAfter = tomorrow.adding(days: 1)
+        storedEvents = [
+            ExternalEvent(id: UUID(), calendarID: calendar.id, provider: "outlook", title: "Team-Meeting",
+                          startsAt: meetingStart, endsAt: meetingStart.addingTimeInterval(3600), isAllDay: false,
+                          location: "Raum 3", organizerName: "Chefin"),
+            ExternalEvent(id: UUID(), calendarID: calendar.id, provider: "outlook", title: "Messe",
+                          startsAt: dayAfter.startOfDay(in: berlin), endsAt: dayAfter.adding(days: 1).startOfDay(in: berlin),
+                          isAllDay: true, startDate: dayAfter, endDate: dayAfter.adding(days: 1)),
+        ]
+    }
+
+    func connections() async throws(FamiliarError) -> [CalendarConnection] {
+        connection.map { [$0] } ?? []
+    }
+
+    func connectURL() async throws(FamiliarError) -> URL {
+        throw .unknown(message: "Im Testmodus nicht verfügbar.")
+    }
+
+    func setSelected(calendarID: UUID, _ selected: Bool) async throws(FamiliarError) {
+        guard let index = connection?.calendars.firstIndex(where: { $0.id == calendarID }) else { return }
+        connection?.calendars[index].isSelected = selected
+    }
+
+    func disconnect(connectionID: UUID) async throws(FamiliarError) {
+        connection = nil
+        storedEvents = []
+    }
+
+    func requestSync() async throws(FamiliarError) -> Bool {
+        connection != nil
+    }
+
+    func events(from: Date, to: Date) async throws(FamiliarError) -> [ExternalEvent] {
+        let selected = Set(connection?.calendars.filter(\.isSelected).map(\.id) ?? [])
+        return storedEvents.filter { event in
+            event.startsAt < to && event.endsAt > from && event.calendarID.map(selected.contains) ?? false
+        }
+    }
+}
+
 extension AppDependencies {
     static func inMemory(scenario: InMemoryBackend.Scenario) -> AppDependencies {
         let backend = InMemoryBackend(scenario: scenario)
-        return AppDependencies(auth: backend, profiles: backend, families: backend, tasks: backend)
+        return AppDependencies(auth: backend, profiles: backend, families: backend, tasks: backend,
+                               calendars: InMemoryCalendars(
+                                   connected: ProcessInfo.processInfo.arguments.contains("-FamiliarInMemoryOutlook")))
     }
 }
 
@@ -680,6 +738,7 @@ extension View {
             .environment(AvatarImageStore(profiles: dependencies.profiles))
             .environment(TaskStore(repository: dependencies.tasks))
             .environment(TaskImageStore(tasks: dependencies.tasks))
+            .environment(OutlookStore(repository: dependencies.calendars))
             .preferredColorScheme(.dark)
             .tint(FamiliarColor.accent)
             .task { session.start() }
