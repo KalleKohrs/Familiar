@@ -45,3 +45,15 @@ footer a { color: var(--secondary); }
 .card { background: var(--card); border-radius: 24px; padding: 28px 24px; }
 .code { font: 600 30px/1.2 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 2px; margin: 8px 0 24px; user-select: all; }
 .steps { text-align: left; color: var(--secondary); }
+
+/* Kontaktformular */
+.contact { display: grid; gap: 16px; margin-top: 24px; }
+.contact label { display: grid; gap: 6px; color: var(--secondary); font-size: 15px; }
+.contact input, .contact textarea {
+  font: inherit; color: var(--text); background: var(--sunken);
+  border: 1px solid var(--hairline); border-radius: 12px; padding: 12px 14px;
+}
+.contact input:focus, .contact textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.contact .button { border: 0; cursor: pointer; font-size: 17px; justify-self: start; }
+.contact .hint { color: var(--secondary); font-size: 14px; margin: 0; }
+.hidden { display: none; }

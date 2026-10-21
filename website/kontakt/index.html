@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kontakt – Familiar</title>
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+  <header class="top"><a class="brand" href="/">Familiar</a></header>
+  <main class="text">
+    <h1>Kontakt</h1>
+    <p>Schreib uns über dieses Formular oder per E-Mail an <a href="mailto:info@familiar-app.de">info@familiar-app.de</a>. Wir antworten in der Regel innerhalb von zwei Werktagen.</p>
+    <!-- Netlify Forms (docs.netlify.com/manage/forms/setup): Formular-Erkennung muss in Netlify eingeschaltet sein. -->
+    <form class="contact" name="kontakt" method="POST" action="/kontakt/danke/" data-netlify="true" netlify-honeypot="bot-field">
+      <input type="hidden" name="form-name" value="kontakt">
+      <p class="hidden"><label>Nicht ausfüllen: <input name="bot-field"></label></p>
+      <label>Name<input type="text" name="name" autocomplete="name" required></label>
+      <label>E-Mail-Adresse<input type="email" name="email" autocomplete="email" required></label>
+      <label>Nachricht<textarea name="nachricht" rows="6" required></textarea></label>
+      <p class="hint">Deine Angaben verwenden wir nur, um deine Anfrage zu beantworten – mehr in der <a href="/datenschutz/">Datenschutzerklärung</a>.</p>
+      <button class="button" type="submit">Nachricht senden</button>
+    </form>
+  </main>
+  <footer><a href="/support/">Hilfe</a> · <a href="/kontakt/">Kontakt</a> · <a href="/datenschutz/">Datenschutz</a> · <a href="/impressum/">Impressum</a></footer>
+</body>
+</html>

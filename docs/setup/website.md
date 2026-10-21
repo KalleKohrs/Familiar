@@ -4,7 +4,7 @@ Stand 2026-10-21, geprüft gegen die Netlify-Doku ([Deploys](https://docs.netlif
 
 **Warum Netlify:** kostenlos für eine kleine Seite, Hochladen per Drag-and-drop, HTTPS automatisch, und die Domain bleibt bei INWX. E-Mail (MX) und die Resend-Einträge für den Mailversand bleiben unberührt.
 
-**Vorher:** Die gelb markierten Platzhalter (Name, Anschrift, Kontakt) müssen ersetzt sein – ich erzeuge die Seiten dann mit `python3 tools/build-website.py` neu.
+**Stand:** Alle Angaben sind ausgefüllt (Impressum, Datenschutz). Rechtlich prüfen lassen ist trotzdem empfehlenswert.
 
 ## Schritt 1 – Netlify-Konto
 
@@ -19,6 +19,12 @@ Stand 2026-10-21, geprüft gegen die Netlify-Doku ([Deploys](https://docs.netlif
 4. **Site configuration** → **Change site name** → `familiar-app` (falls frei) → **Save**.
 
 Später aktualisieren: Seite in Netlify öffnen → **Deploys** → den Ordner `website` erneut in das Feld unten ziehen.
+
+## Schritt 2b – Kontaktformular einschalten
+
+1. In der Seite: **Forms** (bzw. **Project configuration › Forms**) → **Enable form detection**.
+2. Den Ordner `website` noch einmal unter **Deploys** hineinziehen (Formulare werden erst ab dem nächsten Hochladen erkannt).
+3. **Forms › Form notifications › Add notification › Email notification** → `info@familiar-app.de`, Formular `kontakt` → **Save**. Nachrichten kommen dann per Mail; alle Einsendungen stehen außerdem unter **Forms**.
 
 ## Schritt 3 – Domain verbinden
 

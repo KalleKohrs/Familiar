@@ -94,7 +94,7 @@ def page(title: str, body: str) -> str:
   <main class="text">
 {body}
   </main>
-  <footer><a href="/support/">Hilfe</a> · <a href="/datenschutz/">Datenschutz</a> · <a href="/impressum/">Impressum</a></footer>
+  <footer><a href="/support/">Hilfe</a> · <a href="/kontakt/">Kontakt</a> · <a href="/datenschutz/">Datenschutz</a> · <a href="/impressum/">Impressum</a></footer>
 </body>
 </html>
 """

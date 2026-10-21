@@ -11,7 +11,7 @@ Deutschland
 
 **Kontakt**
 E-Mail: [info@familiar-app.de](mailto:info@familiar-app.de)
-[Telefon: optional, eine zweite schnelle Kontaktmöglichkeit ist Pflicht – E-Mail plus z. B. Kontaktformular oder Telefon]
+Kontaktformular: [familiar-app.de/kontakt](/kontakt/)
 
 **Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV**
 Kalle Kohrs, Anschrift wie oben
