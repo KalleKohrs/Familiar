@@ -22,6 +22,8 @@ actor InMemoryBackend {
     }
 
     static let validEmailCode = "123456"
+    /// `-FamiliarLiveActivities`: lokale Live Activities zur Sichtprüfung (ohne Server und Push).
+    static let liveActivitiesDemo = ProcessInfo.processInfo.arguments.contains("-FamiliarLiveActivities")
     static let joinableCode = "TEST2345"
 
     private var user: (id: UUID, email: String)?
@@ -81,6 +83,17 @@ actor InMemoryBackend {
                                   startsAt: tomorrow.date(at: LocalTime(hour: 15, minute: 30), in: berlin),
                                   completionMode: .anyOne, assignees: [TaskAssignee(userID: anna)])
             tasks[doctor.id] = doctor
+            if Self.liveActivitiesDemo {
+                // Sichtprüfung der Live Activity: eine Aufgabe, die in drei Minuten beginnt.
+                let soon = Date.now.addingTimeInterval(180)
+                let today = LocalDate(soon, timeZone: berlin)
+                let time = LocalTime(soon, timeZone: berlin)
+                let pickup = TaskItem(id: UUID(), familyID: family.id, createdBy: anna, title: "Kinder abholen",
+                                      startDate: today, startTime: time, startsAt: today.date(at: time, in: berlin),
+                                      completionMode: .each,
+                                      assignees: [TaskAssignee(userID: me), TaskAssignee(userID: anna, completedAt: .now)])
+                tasks[pickup.id] = pickup
+            }
             let trainingRule = RecurrenceRule.weekly([2, 4])
             let training = TaskInput(familyID: family.id, title: "Training", description: nil,
                                      startDate: LocalDate(.now, timeZone: berlin), startTime: LocalTime(hour: 18, minute: 0),
@@ -740,7 +753,7 @@ extension AppDependencies {
         return AppDependencies(auth: backend, profiles: backend, families: backend, tasks: backend,
                                calendars: InMemoryCalendars(
                                    connected: ProcessInfo.processInfo.arguments.contains("-FamiliarInMemoryOutlook")),
-                               devices: InMemoryDevices(), supportsPush: false)
+                               devices: InMemoryDevices(), supportsPush: InMemoryBackend.liveActivitiesDemo)
     }
 }
 

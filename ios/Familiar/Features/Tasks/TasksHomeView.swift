@@ -9,6 +9,7 @@ struct TasksHomeView: View {
     @Environment(TaskStore.self) private var store
     @Environment(\.openNewTask) private var openNewTask
     @Environment(NotificationStore.self) private var notifications
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var transition
     @State private var path: [UUID] = []
     @State private var gallery: GalleryState?
@@ -111,7 +112,7 @@ struct TasksHomeView: View {
                         message: "Gerade ist nichts offen. Neue Aufgaben legst du über das Plus an."
                     )
                     .padding(.vertical, FamiliarSpacing.xl)
-                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                    .transition(FamiliarMotion.appearTransition(reduceMotion: reduceMotion))
                     .accessibilityIdentifier("tasks.allDone")
                 } else {
                     FamiliarEmptyState(

@@ -16,6 +16,7 @@ struct TaskEditorView: View {
     @Environment(TaskImageStore.self) private var images
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let mode: Mode
     @State private var draft: TaskDraft
@@ -108,7 +109,7 @@ struct TaskEditorView: View {
             .onChange(of: invalidSaveAttempts) { _, _ in
                 // Zur ersten fehlenden Angabe springen, damit nichts „einfach wartet“.
                 guard let anchor = firstIssueAnchor else { return }
-                withAnimation(FamiliarMotion.standard) { proxy.scrollTo(anchor, anchor: .center) }
+                withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) { proxy.scrollTo(anchor, anchor: .center) }
             }
             }
             .scrollContentBackground(.hidden)
@@ -229,7 +230,7 @@ struct TaskEditorView: View {
     private var startSection: some View {
         Section {
             if draft.recurrence == nil {
-                Toggle("Datum", isOn: $draft.hasDate.animation())
+                Toggle("Datum", isOn: $draft.hasDate.animation(FamiliarMotion.animation(reduceMotion: reduceMotion)))
                     .accessibilityIdentifier("editor.hasDate")
             }
             if draft.usesDate {
@@ -237,7 +238,7 @@ struct TaskEditorView: View {
                            selection: dateBinding, displayedComponents: .date)
                     .environment(\.timeZone, timeZone)
                     .accessibilityIdentifier("editor.date")
-                Toggle("Uhrzeit", isOn: $draft.hasTime.animation())
+                Toggle("Uhrzeit", isOn: $draft.hasTime.animation(FamiliarMotion.animation(reduceMotion: reduceMotion)))
                 if draft.hasTime {
                     DatePicker("Uhrzeit", selection: timeBinding, displayedComponents: .hourAndMinute)
                         .environment(\.timeZone, timeZone)
@@ -259,7 +260,7 @@ struct TaskEditorView: View {
 
     private var repeatSection: some View {
         Section {
-            Picker("Wiederholen", selection: frequencyBinding.animation()) {
+            Picker("Wiederholen", selection: frequencyBinding.animation(FamiliarMotion.animation(reduceMotion: reduceMotion))) {
                 if editingTask == nil {
                     Text("Nie").tag(RecurrenceFrequency?.none)
                 }
