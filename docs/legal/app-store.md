@@ -82,6 +82,6 @@ Ich erstelle sie aus dem Simulator, sobald der Design-Durchgang abgeschlossen is
 
 ## Prüfhinweise für Apple (App Review)
 
-- Anmeldung per E-Mail-Code: Für das Review ein Demo-Konto bereitstellen ([Vorgehen klären, z. B. eigenes Review-Postfach]).
+- Anmeldung: Prüf-Adresse (`REVIEW_EMAIL`) eingeben, „Code senden“, dann statt des E-Mail-Codes den 10-stelligen Prüf-Code (`REVIEW_CODE`) eingeben. Das Prüf-Konto vorher mit einer Beispiel-Familie und Aufgaben füllen.
 - Konto löschen: Profil › Konto löschen.
 - Outlook ist optional und nur lesend.

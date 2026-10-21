@@ -37,8 +37,23 @@ final class SupabaseAuthService: AuthService {
     }
 
     func verifyEmailCode(_ code: String, email: String) async throws(FamiliarError) {
-        _ = try await perform {
-            try await client.auth.verifyOTP(email: InputRules.trimmed(email), token: InputRules.trimmed(code), type: .email)
+        let address = InputRules.trimmed(email)
+        let token = InputRules.trimmed(code)
+        do throws(FamiliarError) {
+            _ = try await perform {
+                try await client.auth.verifyOTP(email: address, token: token, type: .email)
+            }
+        } catch {
+            // Prüf-Konto für Apples App-Prüfung (Edge Function `review-sign-in`): Nur die dort
+            // hinterlegte Adresse mit festem Prüf-Code erhält einen gültigen Einmal-Code.
+            guard error == .invalidEmailCode,
+                  let review: ReviewSignIn = try? await client.functions.invoke(
+                      "review-sign-in",
+                      options: FunctionInvokeOptions(method: .post, body: ["email": address, "code": token]))
+            else { throw error }
+            _ = try await perform {
+                try await client.auth.verifyOTP(email: address, token: review.emailOTP, type: .email)
+            }
         }
     }
 
@@ -83,5 +98,13 @@ private struct DeleteAccountBody: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case appleAuthorizationCode = "apple_authorization_code"
+    }
+}
+
+private struct ReviewSignIn: Decodable {
+    let emailOTP: String
+
+    enum CodingKeys: String, CodingKey {
+        case emailOTP = "email_otp"
     }
 }

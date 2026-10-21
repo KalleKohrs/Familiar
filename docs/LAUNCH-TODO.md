@@ -14,7 +14,7 @@ Grundsatz (2026-10-21): Familiar wird von Anfang an so gebaut, wie es zum App-St
 | 6 | **Website familiar-app.de veröffentlichen** (Ordner `website/`, z. B. Cloudflare Pages – kostenlos) mit Einladungslinks, Datenschutzerklärung, Impressum, Support-Seite | Pflicht für App Store und DSGVO; Entwürfe: [legal/datenschutz.md](legal/datenschutz.md), [legal/impressum.md](legal/impressum.md) – du ergänzt Angaben zu dir, am besten rechtlich prüfen lassen | – | 1 h |
 | 7 | **App-Store-Eintrag**: Name, Beschreibung, Screenshots, Datenschutz-Angaben („Nutrition Label“) | Veröffentlichung; Entwurf: [legal/app-store.md](legal/app-store.md) | – | 1–2 h |
 | 8 | **Firmen-IT**: Familiar für deinen Outlook-Kalender freigeben | Nur für dich persönlich; Vorlage: [setup/outlook-it-freigabe.md](setup/outlook-it-freigabe.md). Entfällt für andere nach Punkt 3 | – | Mail schreiben |
-| 9 | **Zugang für Apples App-Prüfung** | Prüfer können keinen E-Mail-Code empfangen; wir brauchen ein Demo-Konto mit Postfach, auf das du schnell reagieren kannst, oder einen festen Prüf-Zugang (Lösung erarbeite ich nach aktueller Doku) | – | 15 min |
+| 9 | **Zugang für Apples App-Prüfung** | Prüfer können keinen E-Mail-Code empfangen. Fertig gebaut (Edge Function `review-sign-in`): du legst in Supabase die Secrets `REVIEW_EMAIL` (eigene Adresse nur für die Prüfung) und `REVIEW_CODE` (10 Ziffern, nur für Apple) an und trägst beides in App Store Connect unter „Anmeldedaten für die Prüfung“ ein. Nach der Freigabe kann `REVIEW_CODE` gelöscht werden | – | 10 min |
 
 ## Was ich bis dahin selbstständig weiterbaue
 
