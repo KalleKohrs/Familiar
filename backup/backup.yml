@@ -1,0 +1,67 @@
+# Nächtliche Datensicherung (ADR 0009). Gehört als .github/workflows/backup.yml in das private
+# Repository „familiar-backups“. Grundlage: Supabase-Doku „Automated backups using GitHub Actions“.
+# Secrets (Repository › Settings › Secrets and variables › Actions):
+#   SUPABASE_DB_URL       Session-Pooler-Verbindung des Produktionsprojekts (IPv4)
+#   SUPABASE_URL          https://<projekt>.supabase.co
+#   SUPABASE_SERVICE_KEY  Secret-Key (nur für das Herunterladen der Bilder)
+# Verschlüsselt wird mit age für den öffentlichen Schlüssel unten; den privaten Schlüssel hat nur
+# der Inhaber (Passwort-Manager). Ohne ihn ist die Sicherung nicht lesbar – auch nicht für GitHub.
+name: Datensicherung
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  AGE_RECIPIENT: "AGE_PUBLIC_KEY_HIER_EINTRAGEN"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: age installieren
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Datenbank sichern (Rollen, Schema, Daten)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          mkdir -p work
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f work/roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f work/schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f work/data.sql --data-only --use-copy
+
+      - name: Datenbank verschlüsseln und ablegen
+        run: |
+          stamp=$(date -u +%Y-%m-%d)
+          mkdir -p db
+          tar -czf - -C work roles.sql schema.sql data.sql | age -r "$AGE_RECIPIENT" -o "db/familiar-db-$stamp.tar.gz.age"
+          # Nur die letzten 60 Sicherungen behalten.
+          ls -1 db/*.age | sort | head -n -60 | xargs -r git rm -q
+          git config user.name "Familiar Backup"
+          git config user.email "backup@familiar-app.de"
+          git add db
+          git commit -m "Sicherung $stamp" && git push
+
+      - name: Bilder sichern
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          node download-storage.mjs work/storage task-images avatars
+          tar -czf - -C work storage | age -r "$AGE_RECIPIENT" -o images.tar.gz.age
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: familiar-bilder
+          path: images.tar.gz.age
+          retention-days: 30
