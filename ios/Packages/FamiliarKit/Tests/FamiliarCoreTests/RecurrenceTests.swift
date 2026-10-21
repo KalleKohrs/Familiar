@@ -90,3 +90,39 @@ struct RecurrenceTests {
         #expect(sections.map { $0.tasks.map(\.title) } == [["gestern", "heute früh"], ["ohne", "heute abend"], ["morgen"], ["später"]])
     }
 }
+
+struct CalendarRulesTests {
+    @Test func monthGridStartsMondayAndCoversFullWeeks() {
+        let grid = CalendarRules.monthGrid(year: 2026, month: 10)
+        // Oktober 2026 beginnt an einem Donnerstag und endet an einem Samstag.
+        #expect(grid.first == LocalDate(year: 2026, month: 9, day: 28))
+        #expect(grid.last == LocalDate(year: 2026, month: 11, day: 1))
+        #expect(grid.count % 7 == 0)
+        #expect(grid.first?.isoWeekday == 1)
+    }
+
+    @Test func monthOffsetsAcrossYears() {
+        let january = LocalDate(year: 2027, month: 1, day: 15)
+        #expect(CalendarRules.month(january, offset: -1) == LocalDate(year: 2026, month: 12, day: 1))
+        #expect(CalendarRules.month(LocalDate(year: 2026, month: 12, day: 3), offset: 1) == LocalDate(year: 2027, month: 1, day: 1))
+    }
+
+    @Test func entriesSkipUndatedAndDuplicateProjections() {
+        let familyID = UUID()
+        let seriesID = UUID()
+        let day = LocalDate(year: 2026, month: 10, day: 21)
+        let timed = TaskItem(id: UUID(), familyID: familyID, createdBy: nil, title: "Arzt", startDate: day,
+                             startTime: LocalTime(hour: 9, minute: 0), completionMode: .anyOne, assignees: [])
+        let allDay = TaskItem(id: UUID(), familyID: familyID, createdBy: nil, title: "Müll", startDate: day,
+                              completionMode: .anyOne, assignees: [], seriesID: seriesID, occurrenceDate: day)
+        let undated = TaskItem(id: UUID(), familyID: familyID, createdBy: nil, title: "Ohne", completionMode: .anyOne, assignees: [])
+        let duplicate = ProjectedOccurrence(seriesID: seriesID, familyID: familyID, date: day, startTime: nil,
+                                            timezone: "Europe/Berlin", title: "Müll")
+        let later = ProjectedOccurrence(seriesID: seriesID, familyID: familyID, date: day.adding(days: 7), startTime: nil,
+                                        timezone: "Europe/Berlin", title: "Müll")
+        let byDay = CalendarRules.entriesByDay(tasks: [timed, allDay, undated], projected: [duplicate, later])
+        #expect(byDay[day]?.map(\.id) == [allDay.id.uuidString, timed.id.uuidString])
+        #expect(byDay[day.adding(days: 7)]?.count == 1)
+        #expect(byDay.values.flatMap { $0 }.count == 3)
+    }
+}

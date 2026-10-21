@@ -72,6 +72,23 @@ actor InMemoryBackend {
                                 assignees: [TaskAssignee(userID: me), TaskAssignee(userID: anna)])
             tasks[trash.id] = trash
             tasks[room.id] = room
+
+            // Für den Kalender: ein Termin morgen und eine wöchentliche Serie (Di und Do).
+            let berlin = TimeZone(identifier: "Europe/Berlin") ?? .current
+            let tomorrow = LocalDate(.now, timeZone: berlin).adding(days: 1)
+            let doctor = TaskItem(id: UUID(), familyID: family.id, createdBy: me, title: "Arzttermin Anna",
+                                  startDate: tomorrow, startTime: LocalTime(hour: 15, minute: 30),
+                                  startsAt: tomorrow.date(at: LocalTime(hour: 15, minute: 30), in: berlin),
+                                  completionMode: .anyOne, assignees: [TaskAssignee(userID: anna)])
+            tasks[doctor.id] = doctor
+            let trainingRule = RecurrenceRule.weekly([2, 4])
+            let training = TaskInput(familyID: family.id, title: "Training", description: nil,
+                                     startDate: LocalDate(.now, timeZone: berlin), startTime: LocalTime(hour: 18, minute: 0),
+                                     timezone: "Europe/Berlin", completionMode: .anyOne, assigneeIDs: [me], images: [],
+                                     recurrence: trainingRule)
+            let trainingInfo = TaskSeries(id: UUID(), familyID: family.id, title: "Training", rule: trainingRule,
+                                          startDate: training.startDate)
+            seriesRecords[trainingInfo.id] = SeriesRecord(info: trainingInfo, input: training, createdBy: me)
         }
     }
 
@@ -259,6 +276,7 @@ extension InMemoryBackend: TaskRepository {
 
     func openTasks() async throws(FamiliarError) -> [TaskItem] {
         let me = try requireUser()
+        generateAll()
         return tasks.values.filter { $0.isOpen && membership($0.familyID, for: me) != nil }
     }
 
@@ -275,6 +293,11 @@ extension InMemoryBackend: TaskRepository {
 
     private func today(_ timezone: String) -> LocalDate {
         LocalDate(.now, timeZone: TimeZone(identifier: timezone) ?? .current)
+    }
+
+    /// Wie der Cron-Job auf dem Server: alle Serien fortschreiben.
+    private func generateAll() {
+        for id in seriesRecords.keys { generate(id) }
     }
 
     /// Vorkommen bis heute plus das nächste künftige; nie vor der Wasserstandsmarke.
@@ -411,6 +434,30 @@ extension InMemoryBackend: TaskRepository {
         deletion.restoredAt = .now
         deletions[deletionID] = deletion
         generate(deletion.seriesID)
+    }
+
+    func calendarTasks(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [TaskItem] {
+        let me = try requireUser()
+        generateAll()
+        return tasks.values.filter { task in
+            guard task.deletedAt == nil, let date = task.startDate, membership(task.familyID, for: me) != nil else { return false }
+            return date >= from && date <= through
+        }
+    }
+
+    func projectedOccurrences(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [ProjectedOccurrence] {
+        let me = try requireUser()
+        return seriesRecords.values.flatMap { record -> [ProjectedOccurrence] in
+            guard record.info.deletedAt == nil, membership(record.input.familyID, for: me) != nil,
+                  let rule = record.input.recurrence, let start = record.info.startDate else { return [] }
+            let lower = [from, start, record.resumeFrom, record.generatedUntil?.adding(days: 1)].compactMap { $0 }.max() ?? from
+            guard lower <= through else { return [] }
+            return rule.dates(from: lower, through: through).map { date in
+                ProjectedOccurrence(seriesID: record.info.id, familyID: record.input.familyID, date: date,
+                                    startTime: record.input.startTime, timezone: record.input.timezone,
+                                    title: record.input.title, rule: rule)
+            }
+        }
     }
 
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {

@@ -139,6 +139,43 @@ final class SupabaseTaskRepository: TaskRepository {
         }
     }
 
+    func calendarTasks(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [TaskItem] {
+        try await perform {
+            try await client.from("tasks")
+                .select(Self.select)
+                .is("deleted_at", value: nil)
+                .gte("start_date", value: from.description)
+                .lte("start_date", value: through.description)
+                .execute()
+                .value
+        }
+    }
+
+    func projectedOccurrences(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [ProjectedOccurrence] {
+        let rows: [ProjectionRow] = try await perform {
+            try await client.rpc("project_series_occurrences",
+                                 params: ["p_from": from.description, "p_to": through.description])
+                .execute()
+                .value
+        }
+        let ids = Array(Set(rows.map(\.seriesID)))
+        guard !ids.isEmpty else { return [] }
+        let series: [TaskSeries] = try await perform {
+            try await client.from("task_series")
+                .select("id, family_id, title, freq, weekdays, month_days, start_date, deleted_at")
+                .in("id", values: ids.map(\.uuidString))
+                .execute()
+                .value
+        }
+        let byID = Dictionary(uniqueKeysWithValues: series.map { ($0.id, $0) })
+        return rows.compactMap { row in
+            guard let info = byID[row.seriesID] else { return nil }
+            return ProjectedOccurrence(seriesID: row.seriesID, familyID: row.familyID, date: row.occurrenceDate,
+                                       startTime: row.startTime, timezone: row.timezone,
+                                       title: info.title ?? "", rule: info.rule)
+        }
+    }
+
     func imageURL(path: String) async throws(FamiliarError) -> URL {
         try await perform {
             try await client.storage.from(Self.bucket).createSignedURL(path: path, expiresIn: 60 * 60)
@@ -178,6 +215,23 @@ final class SupabaseTaskRepository: TaskRepository {
         let payload = message["payload"]?.objectValue ?? message
         let id = payload["task_id"]?.stringValue ?? payload["series_id"]?.stringValue
         return id.flatMap(UUID.init(uuidString:))
+    }
+}
+
+/// Zeile aus `project_series_occurrences`.
+struct ProjectionRow: Decodable {
+    let seriesID: UUID
+    let familyID: UUID
+    let occurrenceDate: LocalDate
+    let startTime: LocalTime?
+    let timezone: String
+
+    enum CodingKeys: String, CodingKey {
+        case timezone
+        case seriesID = "series_id"
+        case familyID = "family_id"
+        case occurrenceDate = "occurrence_date"
+        case startTime = "start_time"
     }
 }
 

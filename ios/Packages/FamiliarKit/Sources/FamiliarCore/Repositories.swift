@@ -49,6 +49,10 @@ public protocol TaskRepository: Sendable {
     func restoreSeries(deletionID: UUID) async throws(FamiliarError)
     /// Serien-Löschungen der letzten 30 Tage, die noch nicht wiederhergestellt sind.
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion]
+    /// Nicht gelöschte Aufgaben (offen und erledigt) mit Startdatum im Zeitraum, für den Kalender.
+    func calendarTasks(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [TaskItem]
+    /// Künftige, noch nicht erzeugte Vorkommen sichtbarer Serien (höchstens 400 Tage).
+    func projectedOccurrences(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [ProjectedOccurrence]
     /// Kurzlebige URL für ein Aufgabenbild oder eine Miniatur.
     func imageURL(path: String) async throws(FamiliarError) -> URL
     /// Hinweise „Aufgabe geändert“ (Realtime); der Inhalt wird danach neu geladen.
@@ -61,4 +65,16 @@ public protocol FamilyRepository: Sendable {
     func joinFamily(code: String) async throws(FamiliarError) -> JoinFamilyResult
     func createInvite(familyID: UUID) async throws(FamiliarError) -> FamilyInvite
     func leaveFamily(familyID: UUID) async throws(FamiliarError) -> LeaveFamilyResult
+}
+
+/// Persönliche Termine aus externen Kalendern (Plan, Abschnitt 7) – anbieterunabhängig.
+/// Bis Outlook angebunden ist (Phase 8), liefert ``NoExternalEvents`` nichts.
+public protocol ExternalEventRepository: Sendable {
+    func events(from: Date, to: Date) async throws(FamiliarError) -> [ExternalEvent]
+}
+
+public struct NoExternalEvents: ExternalEventRepository {
+    public init() {}
+
+    public func events(from: Date, to: Date) async throws(FamiliarError) -> [ExternalEvent] { [] }
 }

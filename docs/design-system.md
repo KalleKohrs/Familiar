@@ -125,3 +125,12 @@ Nach Rückmeldung „nicht clean genug“ an der Referenz ausgerichtet:
 - **Profilbilder an Aufgaben:** mit kleinem Abstand statt Überlappung; erledigt = grüner Ring plus Häkchen-Abzeichen (keine Abschwächung).
 - **Entscheidungsfragen** (Löschen, Geltungsbereich bei Serien): `FamiliarChoiceSheet` – kleines Blatt von unten mit Symbol, Überschrift, Erklärung und Knöpfen statt System-Aktionsmenü.
 - **Editor:** Tastatur verschwindet beim Scrollen und bei jeder Auswahl; „Weiter“ springt vom Titel zur Beschreibung. Beim Speichern mit fehlenden Angaben: Sprung zur ersten Stelle, rote Hinweise direkt am Abschnitt, Fehler-Haptik.
+
+## Kalender (Phase 6)
+
+- Überschrift „Kalender“ in New York; Monatsraster in einer Card, Wochen ab Montag, Tage anderer Monate abgeschwächt.
+- Monat wechseln: runde Glas-Knöpfe (wie die Referenz) oder horizontal wischen; „Heute“-Knopf erscheint, sobald man sich vom heutigen Tag entfernt.
+- Heute: orange gefüllter Kreis; gewählter Tag: Glas-Kreis mit orangem Rand.
+- Punkte unter dem Tag (max. 3) in Familienfarbe: voll = Aufgabe, blass = geplanter Serientermin bzw. erledigt. Outlook-Termine (Phase 8): Ring statt Punkt und in der Liste mit Anbieter-Namen – nie nur über Farbe unterschieden.
+- Tagesliste: Zeilen mit Uhrzeit links (bzw. „Ganzer Tag“), Titel, Wiederholung/Familie; erledigt = durchgestrichen mit grünem Haken; geplante Serientermine mit „Geplant“ und nicht antippbar.
+- VoiceOver je Tag: „21. Oktober, 2 Aufgaben, 1 geplant“.

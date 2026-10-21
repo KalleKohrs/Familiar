@@ -319,6 +319,7 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
    - **Stand 2026-10-21:** umgesetzt (Migration 0009, Wiederholung im Editor, Geltungsbereich beim Bearbeiten und Löschen, Serien-Eintrag im Verlauf, Erzeugung alle 5 Minuten per `pg_cron`, Projektion für den Kalender). Regeln: [ADR 0008](decisions/0008-recurrence.md).
    - Serien, Generator, Projektion, Scope-Dialoge, Serien-Löschen/-Wiederherstellen; Monatstag-Regel (E2).
 6. **Kalender**
+   - **Stand 2026-10-21:** umgesetzt (Monatsraster ab Montag mit Wischen und Pfeil-Knöpfen, Punkte in Familienfarbe – voll für Aufgaben, blass für geplante Serientermine aus `project_series_occurrences` –, Tagesliste mit Uhrzeit, Erledigt-Status und „Geplant“; `ExternalEventRepository` als anbieterunabhängige Schnittstelle, liefert bis Phase 8 nichts).
    - Monatsansicht mit Aufgaben + Projektionen.
    - Anbieter-Abstraktion im Client.
 7. **Push & Live Activities**

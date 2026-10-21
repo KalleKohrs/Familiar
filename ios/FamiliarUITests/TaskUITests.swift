@@ -178,3 +178,35 @@ final class RecurrenceUITests: XCTestCase {
         XCTAssertEqual(occurrences.count, 2)
     }
 }
+
+/// Kalender: Tag wählen zeigt dessen Aufgaben; Monat wechseln.
+final class CalendarUITests: XCTestCase {
+    override func setUp() {
+        continueAfterFailure = false
+    }
+
+    @MainActor
+    func testSelectingTomorrowShowsItsTasksAndMonthsCanChange() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-FamiliarInMemoryBackend", "-FamiliarInMemoryScenario", "ready"]
+        app.launch()
+        XCTAssertTrue(app.buttons["tab.calendar"].waitForExistence(timeout: 10))
+        app.buttons["tab.calendar"].tap()
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Berlin")!
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: .now)!
+        let parts = calendar.dateComponents([.year, .month, .day], from: tomorrow)
+        let id = String(format: "calendar.day.%04d-%02d-%02d", parts.year!, parts.month!, parts.day!)
+
+        let cell = app.buttons[id]
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+        cell.tap()
+        XCTAssertTrue(app.buttons["calendar.task.Arzttermin Anna"].waitForExistence(timeout: 5))
+
+        app.buttons["calendar.next"].tap()
+        XCTAssertTrue(app.buttons["calendar.today"].waitForExistence(timeout: 5))
+        app.buttons["calendar.today"].tap()
+        XCTAssertTrue(app.buttons["calendar.today"].waitForNonExistence(timeout: 5))
+    }
+}

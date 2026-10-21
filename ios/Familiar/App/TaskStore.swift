@@ -139,6 +139,22 @@ final class TaskStore {
         }
     }
 
+    /// Aufgaben und geplante Serientermine eines Zeitraums (Kalender, Phase 6).
+    func calendarData(from: LocalDate, through: LocalDate) async throws(FamiliarError)
+        -> (tasks: [TaskItem], projected: [ProjectedOccurrence]) {
+        let tasks = try await repository.calendarTasks(from: from, through: through)
+        let projected = try await repository.projectedOccurrences(from: from, through: through)
+        return (tasks, projected)
+    }
+
+    /// Ändert sich, sobald Liste oder Verlauf neu geladen wurden – Anlass für den Kalender, nachzuladen.
+    var changeToken: Int {
+        var hasher = Hasher()
+        for task in tasks { hasher.combine(task.id); hasher.combine(task.version) }
+        hasher.combine(history.count)
+        return hasher.finalize()
+    }
+
     func task(_ id: UUID) -> TaskItem? {
         tasks.first { $0.id == id }
     }
