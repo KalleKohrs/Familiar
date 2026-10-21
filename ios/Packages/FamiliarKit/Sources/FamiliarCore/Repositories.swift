@@ -84,10 +84,23 @@ public protocol FamilyRepository: Sendable {
 }
 
 /// Persönliche Termine aus externen Kalendern (Plan, Abschnitt 7) – anbieterunabhängig, strikt pro Nutzer.
+/// Links zum Verbinden eines Kalenders.
+public struct CalendarConnectLinks: Hashable, Sendable {
+    /// Anmeldung beim Anbieter.
+    public let connect: URL
+    /// Freigabe für ein ganzes Unternehmen durch dessen IT (Microsoft-Firmenkonten).
+    public let adminConsent: URL?
+
+    public init(connect: URL, adminConsent: URL?) {
+        self.connect = connect
+        self.adminConsent = adminConsent
+    }
+}
+
 public protocol ExternalCalendarRepository: Sendable {
     func connections() async throws(FamiliarError) -> [CalendarConnection]
-    /// Anmelde-URL des Anbieters (Edge Function `outlook-oauth-start`).
-    func connectURL() async throws(FamiliarError) -> URL
+    /// Anmelde-URL des Anbieters und Freigabe-Link für die IT (Edge Function `outlook-oauth-start`).
+    func connectLinks() async throws(FamiliarError) -> CalendarConnectLinks
     func setSelected(calendarID: UUID, _ selected: Bool) async throws(FamiliarError)
     func disconnect(connectionID: UUID) async throws(FamiliarError)
     /// Abgleich jetzt anstoßen; `false`, wenn gerade erst einer lief.

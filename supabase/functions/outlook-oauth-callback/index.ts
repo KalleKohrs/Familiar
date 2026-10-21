@@ -1,18 +1,30 @@
 // outlook-oauth-callback: Rücksprung von Microsoft nach der Anmeldung (Phase 8, Migration 0011).
 //
 // Aufruf durch den Browser (verify_jwt = false). Löst den Einmal-State ein, tauscht Code + PKCE-
-// Verifier mit dem Client Secret gegen Tokens, speichert das Refresh-Token nur im Vault, legt die
-// Kalenderliste an und stößt den ersten Abgleich an. Antwortet immer mit einer Weiterleitung auf
+// Verifier gegen Tokens (Client-Authentifizierung siehe microsoft-auth.ts), speichert das
+// Refresh-Token nur im Vault, legt die Kalenderliste an und stößt den ersten Abgleich an. Antwortet immer mit einer Weiterleitung auf
 // familiar://outlook?status=… – ASWebAuthenticationSession schließt sich dann.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { clientAuthentication, TOKEN_URL } from "./microsoft-auth.ts";
 
 const SCOPES = "openid email offline_access https://graph.microsoft.com/Calendars.ReadBasic";
 
-function backToApp(status: string, reason?: string): Response {
+function backToApp(status: string, reason?: string, extra: Record<string, string> = {}): Response {
   const target = new URL("familiar://outlook");
   target.searchParams.set("status", status);
   if (reason) target.searchParams.set("reason", reason);
+  for (const [key, value] of Object.entries(extra)) target.searchParams.set(key, value);
   return new Response(null, { status: 302, headers: { Location: target.toString() } });
+}
+
+/// Fehler von Microsoft einordnen. Firmenkonten ohne Herausgeberprüfung brauchen oft eine einmalige
+/// Freigabe durch die IT (AADSTS90094 „Need admin approval“, AADSTS90095 bei aktiviertem
+/// Anfrage-Workflow). Tippt jemand auf der Genehmigungsseite „Zurück zur App“, kommt
+/// access_denied mit AADSTS65004 („User declined to consent“).
+function classify(error: string, description: string): string {
+  if (/AADSTS9009[45]/.test(description) || error === "consent_required") return "admin_consent";
+  if (/AADSTS65004/.test(description) || error === "access_denied") return "declined";
+  return error;
 }
 
 async function sha256Hex(text: string): Promise<string> {
@@ -35,8 +47,14 @@ function idTokenClaims(idToken: string | undefined): Record<string, unknown> {
 Deno.serve(async (req) => {
   const params = new URL(req.url).searchParams;
   if (params.get("error")) {
-    // z. B. access_denied (abgebrochen) oder Firmen-Richtlinie (Zustimmung durch Admin nötig).
-    return backToApp("error", params.get("error") ?? "unknown");
+    const reason = classify(params.get("error") ?? "unknown", params.get("error_description") ?? "");
+    // Für die Nachricht an die IT: Freigabe-Link für das ganze Unternehmen (Client-ID ist kein Geheimnis).
+    const clientId = Deno.env.get("MS_CLIENT_ID");
+    const extra: Record<string, string> = {};
+    if (clientId && (reason === "admin_consent" || reason === "declined")) {
+      extra.consent_url = `https://login.microsoftonline.com/organizations/adminconsent?client_id=${clientId}`;
+    }
+    return backToApp("error", reason, extra);
   }
   const code = params.get("code");
   const state = params.get("state");
@@ -46,20 +64,20 @@ Deno.serve(async (req) => {
   const key = secretKeys["default"] ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const url = Deno.env.get("SUPABASE_URL");
   const clientId = Deno.env.get("MS_CLIENT_ID");
-  const clientSecret = Deno.env.get("MS_CLIENT_SECRET");
-  if (!key || !url || !clientId || !clientSecret) return backToApp("error", "misconfigured");
+  const clientAuth = clientId ? await clientAuthentication(clientId) : null;
+  if (!key || !url || !clientId || !clientAuth) return backToApp("error", "misconfigured");
 
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
   const { data: stateRow } = await admin.rpc("outlook_consume_oauth_state", { p_state_hash: await sha256Hex(state) });
   if (!stateRow?.user_id) return backToApp("error", "expired");
 
-  const tokenResponse = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
+  const tokenResponse = await fetch(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       client_id: clientId,
-      client_secret: clientSecret,
+      ...clientAuth,
       scope: SCOPES,
       code,
       redirect_uri: `${url}/functions/v1/outlook-oauth-callback`,
@@ -100,6 +118,9 @@ Deno.serve(async (req) => {
       is_default: c.isDefaultCalendar === true,
     }));
     await admin.rpc("outlook_upsert_calendars", { p_connection_id: connectionId, p_calendars: calendars });
+  } else {
+    // Kein Abbruch: Der Abgleich holt die Kalenderliste erneut.
+    console.error("graph calendars", calendarsResponse.status, (await calendarsResponse.text()).slice(0, 300));
   }
 
   await admin.rpc("outlook_request_sync_for", { p_user_id: stateRow.user_id });

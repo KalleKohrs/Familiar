@@ -67,5 +67,7 @@ Deno.serve(async (req) => {
     prompt: "select_account",
   }).toString();
 
-  return json({ url: authorize.toString() });
+  // Freigabe für ein ganzes Unternehmen durch dessen IT (Firmenkonten ohne Herausgeberprüfung).
+  const consentUrl = `https://login.microsoftonline.com/organizations/adminconsent?client_id=${clientId}`;
+  return json({ url: authorize.toString(), consent_url: consentUrl });
 });

@@ -14,6 +14,9 @@ struct OutlookSettingsView: View {
     @State private var message: String?
     @State private var errorMessage: String?
     @State private var connectionToRemove: CalendarConnection?
+    /// Microsoft hat „Genehmigung erforderlich“ o. Ä. gemeldet: IT-Hinweis hervorheben.
+    @State private var needsITApproval = false
+    @State private var itRequest: ITApprovalRequest?
 
     var body: some View {
         ScrollView {
@@ -39,6 +42,7 @@ struct OutlookSettingsView: View {
                 case .loaded:
                     if outlook.connections.isEmpty {
                         connectButton(title: "Mit Outlook verbinden")
+                        itApprovalHint
                     } else {
                         ForEach(outlook.connections) { connection in
                             connectionSection(connection)
@@ -53,6 +57,9 @@ struct OutlookSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await outlook.reload() }
         .announcesChanges(of: errorMessage)
+        .sheet(item: $itRequest) { request in
+            ITApprovalSheet(request: request)
+        }
         .sheet(item: $connectionToRemove) { connection in
             FamiliarChoiceSheet(
                 systemImage: "calendar.badge.minus", tint: FamiliarColor.danger,
@@ -142,6 +149,9 @@ struct OutlookSettingsView: View {
         case .active:
             guard let last = connection.lastSyncAt else { return String(localized: "Erster Abgleich läuft …") }
             let relative = last.formatted(.relative(presentation: .named))
+            if connection.lastError == "no_mailbox" {
+                return String(localized: "Zu diesem Microsoft-Konto gibt es keinen Outlook-Kalender. Trenne die Verbindung und melde dich mit dem Konto an, in dem deine Termine liegen (z. B. …@outlook.com).")
+            }
             if let error = connection.lastError, !error.isEmpty {
                 return String(localized: "Zuletzt versucht \(relative) – Outlook antwortete nicht.")
             }
@@ -154,6 +164,50 @@ struct OutlookSettingsView: View {
             calendar.isSelected
         } set: { selected in
             run { () async throws(FamiliarError) in try await outlook.setSelected(calendar, selected) }
+        }
+    }
+
+    // MARK: Firmenkonten
+
+    /// Firmenkonten brauchen oft eine einmalige Freigabe durch die IT (Familiar ist kein bei
+    /// Microsoft verifizierter Herausgeber). Private Outlook-Konten gehen ohne.
+    private var itApprovalHint: some View {
+        VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+            Label {
+                VStack(alignment: .leading, spacing: FamiliarSpacing.xxs) {
+                    Text(needsITApproval ? "Deine Firma muss Familiar freigeben" : "Firmenkonto?")
+                        .font(FamiliarFont.cardTitle)
+                        .foregroundStyle(FamiliarColor.textPrimary)
+                    Text(needsITApproval
+                         ? "Microsoft verlangt bei deinem Firmenkonto eine einmalige Freigabe durch die IT. Schick ihr den Link – danach kannst du Outlook verbinden."
+                         : "Bei manchen Firmen muss die IT Familiar einmal freigeben. Erscheint „Genehmigung erforderlich“, schick ihr einfach den Freigabe-Link.")
+                        .font(FamiliarFont.secondary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
+                }
+            } icon: {
+                Image(systemName: "building.2")
+                    .foregroundStyle(needsITApproval ? FamiliarColor.warning : FamiliarColor.textSecondary)
+            }
+            Button(action: prepareITRequest) {
+                Label("Freigabe bei meiner IT anfragen", systemImage: "paperplane")
+            }
+            .buttonStyle(needsITApproval ? .familiarPrimary : .familiarSecondary)
+            .disabled(isWorking)
+            .accessibilityIdentifier("outlook.askIT")
+        }
+        .familiarCard()
+    }
+
+    private func prepareITRequest() {
+        isWorking = true
+        errorMessage = nil
+        Task {
+            defer { isWorking = false }
+            if let url = await outlook.loadAdminConsentURL() {
+                itRequest = ITApprovalRequest(consentURL: url)
+            } else {
+                errorMessage = String(localized: "Der Freigabe-Link konnte nicht geladen werden. Bitte versuche es erneut.")
+            }
         }
     }
 
@@ -190,8 +244,12 @@ struct OutlookSettingsView: View {
                 let status = items.first { $0.name == "status" }?.value
                 let reason = items.first { $0.name == "reason" }?.value
                 if status == "connected" {
+                    needsITApproval = false
                     message = String(localized: "Outlook ist verbunden. Die Termine erscheinen gleich im Kalender.")
                     await outlook.didConnect()
+                } else if reason == "admin_consent" || reason == "declined" {
+                    // Firmenkonto: statt eines Fehlers den Weg über die IT zeigen.
+                    needsITApproval = true
                 } else {
                     errorMessage = Self.message(forReason: reason)
                 }
@@ -207,8 +265,6 @@ struct OutlookSettingsView: View {
 
     static func message(forReason reason: String?) -> String {
         switch reason {
-        case "access_denied", "consent_required":
-            String(localized: "Die Freigabe wurde nicht erteilt. Bei Firmenkonten muss eventuell deine IT einmal zustimmen – Familiar braucht nur das Leserecht für Kalender.")
         case "expired":
             String(localized: "Die Anmeldung hat zu lange gedauert. Bitte versuche es erneut.")
         default:
@@ -228,5 +284,60 @@ struct OutlookSettingsView: View {
                 errorMessage = error.message
             }
         }
+    }
+}
+
+/// Nachricht an die IT mit Freigabe-Link (Vorschau, dann Teilen).
+struct ITApprovalRequest: Identifiable {
+    let consentURL: URL
+    var id: URL { consentURL }
+
+    var text: String {
+        String(localized: """
+        Hallo,
+
+        ich möchte in der Familien-App „Familiar“ meine eigenen Outlook-Termine anzeigen lassen. Dafür braucht Familiar eine einmalige Freigabe für unser Unternehmen.
+
+        Angefragte Rechte (delegiert, nur für die jeweils angemeldete Person): Calendars.ReadBasic, offline_access, openid, email. Familiar liest nur Titel, Zeit, Ort und Organisator von Terminen, ohne Termin-Text und Anhänge, und schreibt nie in Outlook.
+
+        Freigabe-Link (als Administrator öffnen):
+        \(consentURL.absoluteString)
+
+        Weitere Infos: https://familiar-app.de/outlook-it
+
+        Vielen Dank!
+        """)
+    }
+}
+
+private struct ITApprovalSheet: View {
+    let request: ITApprovalRequest
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: FamiliarSpacing.m) {
+                    Text("Diese Nachricht kannst du per Mail oder Teams an deine IT schicken. Sie enthält den Freigabe-Link und erklärt, was Familiar liest.")
+                        .font(FamiliarFont.secondary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
+                    Text(request.text)
+                        .font(FamiliarFont.body)
+                        .foregroundStyle(FamiliarColor.textPrimary)
+                        .textSelection(.enabled)
+                        .padding(FamiliarSpacing.m)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(FamiliarColor.sunken))
+                    ShareLink(item: request.text, subject: Text("Freigabe für Familiar (Outlook-Kalender)")) {
+                        Label("Nachricht teilen", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.familiarPrimary)
+                }
+                .padding(FamiliarSpacing.m)
+            }
+            .familiarScreenBackground()
+            .navigationTitle("An deine IT")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDragIndicator(.visible)
     }
 }

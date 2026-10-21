@@ -701,7 +701,7 @@ actor InMemoryCalendars: ExternalCalendarRepository {
         connection.map { [$0] } ?? []
     }
 
-    func connectURL() async throws(FamiliarError) -> URL {
+    func connectLinks() async throws(FamiliarError) -> CalendarConnectLinks {
         throw .unknown(message: "Im Testmodus nicht verfügbar.")
     }
 

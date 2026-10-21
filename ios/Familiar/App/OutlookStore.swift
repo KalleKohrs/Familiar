@@ -36,8 +36,19 @@ final class OutlookStore {
         }
     }
 
+    /// Freigabe-Link für die IT, sobald einmal eine Anmeldung gestartet wurde.
+    private(set) var adminConsentURL: URL?
+
     func connectURL() async throws(FamiliarError) -> URL {
-        try await repository.connectURL()
+        let links = try await repository.connectLinks()
+        adminConsentURL = links.adminConsent ?? adminConsentURL
+        return links.connect
+    }
+
+    /// Für die Nachricht an die IT: Freigabe-Link holen, falls noch keiner bekannt ist.
+    func loadAdminConsentURL() async -> URL? {
+        if adminConsentURL == nil { adminConsentURL = try? await repository.connectLinks().adminConsent }
+        return adminConsentURL
     }
 
     /// Nach erfolgreicher Anmeldung: Der erste Abgleich läuft auf dem Server; ein paar Mal nachsehen.

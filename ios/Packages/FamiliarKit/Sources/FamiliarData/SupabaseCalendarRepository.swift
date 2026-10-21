@@ -20,14 +20,14 @@ final class SupabaseCalendarRepository: ExternalCalendarRepository {
         }
     }
 
-    func connectURL() async throws(FamiliarError) -> URL {
+    func connectLinks() async throws(FamiliarError) -> CalendarConnectLinks {
         let response: ConnectResponse = try await perform {
             try await client.functions.invoke("outlook-oauth-start", options: FunctionInvokeOptions(method: .post))
         }
         guard let url = URL(string: response.url) else {
             throw .unknown(message: "Ungültige Anmelde-Adresse")
         }
-        return url
+        return CalendarConnectLinks(connect: url, adminConsent: response.consentURL.flatMap(URL.init(string:)))
     }
 
     func setSelected(calendarID: UUID, _ selected: Bool) async throws(FamiliarError) {
@@ -64,6 +64,12 @@ final class SupabaseCalendarRepository: ExternalCalendarRepository {
 
 private struct ConnectResponse: Decodable {
     let url: String
+    let consentURL: String?
+
+    enum CodingKeys: String, CodingKey {
+        case url
+        case consentURL = "consent_url"
+    }
 }
 
 private struct SelectParams: Encodable {
