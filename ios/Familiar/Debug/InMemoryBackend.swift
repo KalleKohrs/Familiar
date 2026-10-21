@@ -31,6 +31,8 @@ actor InMemoryBackend {
     private var invites: [String: FamilyInvite] = [:]
     private var avatarFiles: [String: URL] = [:]
     private var listeners: [UUID: AsyncStream<AuthState>.Continuation] = [:]
+    private var tasks: [UUID: TaskItem] = [:]
+    private var imageFiles: [String: URL] = [:]
 
     init(scenario: Scenario) {
         let anna = UUID()
@@ -51,6 +53,14 @@ actor InMemoryBackend {
                 FamilyMember(familyID: family.id, userID: me, role: .admin, profile: profiles[me]),
                 FamilyMember(familyID: family.id, userID: anna, role: .member, profile: profiles[anna]),
             ]
+            let trash = TaskItem(id: UUID(), familyID: family.id, createdBy: anna, title: "Müll rausbringen",
+                                 completionMode: .anyOne, createdAt: .now.addingTimeInterval(-60),
+                                 assignees: [TaskAssignee(userID: me)])
+            let room = TaskItem(id: UUID(), familyID: family.id, createdBy: anna, title: "Zimmer aufräumen",
+                                description: "Jede Person ihr eigenes Zimmer.", completionMode: .each,
+                                assignees: [TaskAssignee(userID: me), TaskAssignee(userID: anna)])
+            tasks[trash.id] = trash
+            tasks[room.id] = room
         }
     }
 
@@ -226,10 +236,151 @@ extension InMemoryBackend: FamilyRepository {
     }
 }
 
+
+extension InMemoryBackend: TaskRepository {
+    private func visibleTask(_ id: UUID) throws(FamiliarError) -> TaskItem {
+        let me = try requireUser()
+        guard let task = tasks[id], membership(task.familyID, for: me) != nil else {
+            throw .app(key: .taskNotFound, message: "Aufgabe nicht gefunden oder für dich nicht sichtbar.")
+        }
+        return task
+    }
+
+    func openTasks() async throws(FamiliarError) -> [TaskItem] {
+        let me = try requireUser()
+        return tasks.values.filter { $0.isOpen && membership($0.familyID, for: me) != nil }
+    }
+
+    func task(id: UUID) async throws(FamiliarError) -> TaskItem {
+        try visibleTask(id)
+    }
+
+    func historyTasks() async throws(FamiliarError) -> [TaskItem] {
+        let me = try requireUser()
+        return HistoryRules.entries(tasks.values.filter { !$0.isOpen && membership($0.familyID, for: me) != nil })
+    }
+
+    func upload(_ image: PreparedImage, familyID: UUID) async throws(FamiliarError) {
+        let base = "\(familyID.uuidString.lowercased())/\(image.id.uuidString.lowercased())"
+        for (suffix, data) in [(".jpg", image.jpegData), ("_thumb.jpg", image.thumbnailData)] {
+            let file = URL.temporaryDirectory.appending(path: "familiar-\(image.id.uuidString)\(suffix)")
+            do { try data.write(to: file) } catch { throw .unknown(message: error.localizedDescription) }
+            imageFiles[base + suffix] = file
+        }
+    }
+
+    private func images(for input: TaskInput) -> [TaskImage] {
+        input.images.map { reference in
+            let base = "\(input.familyID.uuidString.lowercased())/\(reference.id.uuidString.lowercased())"
+            return TaskImage(id: reference.id, path: base + ".jpg", thumbPath: base + "_thumb.jpg",
+                             width: reference.width, height: reference.height)
+        }
+    }
+
+    private func startsAt(_ input: TaskInput) -> Date? {
+        input.startDate?.date(at: input.startTime, in: TimeZone(identifier: input.timezone) ?? .current)
+    }
+
+    func createTask(_ input: TaskInput) async throws(FamiliarError) -> TaskItem {
+        let me = try requireUser()
+        guard membership(input.familyID, for: me) != nil else {
+            throw .app(key: .familyNotFound, message: "Familie nicht gefunden oder du bist kein Mitglied.")
+        }
+        let task = TaskItem(id: UUID(), familyID: input.familyID, createdBy: me, title: input.title,
+                            description: input.description, startDate: input.startDate, startTime: input.startTime,
+                            timezone: input.timezone, startsAt: startsAt(input), completionMode: input.completionMode,
+                            assignees: input.assigneeIDs.map { TaskAssignee(userID: $0) }, images: images(for: input))
+        tasks[task.id] = task
+        return task
+    }
+
+    func updateTask(id: UUID, expectedVersion: Int, _ input: TaskInput) async throws(FamiliarError) -> TaskItem {
+        var task = try visibleTask(id)
+        guard task.version == expectedVersion else {
+            throw .app(key: .taskConflict, message: "Die Aufgabe wurde inzwischen von jemand anderem geändert. Bitte öffne sie neu.")
+        }
+        let previous = Dictionary(uniqueKeysWithValues: task.assignees.map { ($0.userID, $0) })
+        task.title = input.title
+        task.description = input.description
+        task.startDate = input.startDate
+        task.startTime = input.startTime
+        task.startsAt = startsAt(input)
+        task.completionMode = input.completionMode
+        task.assignees = input.assigneeIDs.map { previous[$0] ?? TaskAssignee(userID: $0) }
+        task.images = images(for: TaskInput(familyID: task.familyID, title: "", description: nil, startDate: nil,
+                                            startTime: nil, timezone: input.timezone, completionMode: input.completionMode,
+                                            assigneeIDs: [], images: input.images))
+        task.version += 1
+        tasks[id] = task
+        return task
+    }
+
+    func complete(taskID: UUID, scope: CompletionScope) async throws(FamiliarError) {
+        let me = try requireUser()
+        var task = try visibleTask(taskID)
+        guard let action = TaskRules.actions(for: task, userID: me).first(where: {
+            scope == .all ? $0 == .completeForAll || ($0 == .completeForMe && task.completionMode == .anyOne)
+                          : $0 == .completeForMe || $0 == .completeForAll
+        }) else {
+            throw .app(key: .notAllowedToComplete, message: "Nur zugewiesene Personen oder wer die Aufgabe erstellt hat, dürfen sie abhaken.")
+        }
+        if action == .completeForMe, let index = task.assignees.firstIndex(where: { $0.userID == me }) {
+            task.assignees[index].completedAt = .now
+        }
+        if action == .completeForAll || task.completionMode == .anyOne || task.assignees.allSatisfy(\.isDone) {
+            task.completedAt = .now
+            task.completedBy = me
+            task.completionSource = action == .completeForAll ? .creator : .assignee
+        }
+        task.version += 1
+        tasks[taskID] = task
+    }
+
+    func uncomplete(taskID: UUID, scope: CompletionScope) async throws(FamiliarError) {
+        let me = try requireUser()
+        var task = try visibleTask(taskID)
+        if scope == .all || task.completionMode == .anyOne {
+            for index in task.assignees.indices { task.assignees[index].completedAt = nil }
+        } else if let index = task.assignees.firstIndex(where: { $0.userID == me }) {
+            task.assignees[index].completedAt = nil
+        }
+        task.completedAt = nil
+        task.completedBy = nil
+        task.completionSource = nil
+        task.version += 1
+        tasks[taskID] = task
+    }
+
+    func delete(taskID: UUID) async throws(FamiliarError) {
+        var task = try visibleTask(taskID)
+        task.deletedAt = .now
+        task.deletedBy = try requireUser()
+        task.version += 1
+        tasks[taskID] = task
+    }
+
+    func restore(taskID: UUID) async throws(FamiliarError) {
+        var task = try visibleTask(taskID)
+        task.deletedAt = nil
+        task.deletedBy = nil
+        task.version += 1
+        tasks[taskID] = task
+    }
+
+    func imageURL(path: String) async throws(FamiliarError) -> URL {
+        guard let url = imageFiles[path] else { throw .unknown(message: "Bild nicht gefunden.") }
+        return url
+    }
+
+    nonisolated func changes(for userID: UUID) -> AsyncStream<UUID> {
+        AsyncStream { _ in }
+    }
+}
+
 extension AppDependencies {
     static func inMemory(scenario: InMemoryBackend.Scenario) -> AppDependencies {
         let backend = InMemoryBackend(scenario: scenario)
-        return AppDependencies(auth: backend, profiles: backend, families: backend)
+        return AppDependencies(auth: backend, profiles: backend, families: backend, tasks: backend)
     }
 }
 
@@ -241,6 +392,8 @@ extension View {
         return self
             .environment(session)
             .environment(AvatarImageStore(profiles: dependencies.profiles))
+            .environment(TaskStore(repository: dependencies.tasks))
+            .environment(TaskImageStore(tasks: dependencies.tasks))
             .preferredColorScheme(.dark)
             .tint(FamiliarColor.accent)
             .task { session.start() }

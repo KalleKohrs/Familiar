@@ -10,6 +10,7 @@ INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES
 INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES
 INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait
 INFOPLIST_KEY_UIUserInterfaceStyle = Dark
+INFOPLIST_KEY_NSCameraUsageDescription = Familiar nutzt die Kamera, um Fotos direkt an Aufgaben anzuhängen.
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
 ENABLE_PREVIEWS = YES

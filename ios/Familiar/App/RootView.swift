@@ -5,6 +5,7 @@ import SwiftUI
 /// Wählt nach dem Anmeldestatus: Anmeldung, Onboarding oder die App.
 struct RootView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(TaskStore.self) private var tasks
 
     var body: some View {
         ZStack {
@@ -25,6 +26,10 @@ struct RootView: View {
         }
         .transition(.opacity)
         .familiarAnimation(value: session.phase)
+        .onChange(of: session.userID) { _, userID in
+            // Nach dem Abmelden keine Aufgaben der vorigen Person im Speicher behalten.
+            if userID == nil { tasks.stop() }
+        }
     }
 }
 

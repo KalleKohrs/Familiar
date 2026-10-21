@@ -26,6 +26,26 @@ public protocol ProfileRepository: Sendable {
     func avatarURL(path: String) async throws(FamiliarError) -> URL
 }
 
+public protocol TaskRepository: Sendable {
+    /// Offene, nicht gelöschte Aufgaben aller Familien, die der Nutzer sehen darf (RLS).
+    func openTasks() async throws(FamiliarError) -> [TaskItem]
+    func task(id: UUID) async throws(FamiliarError) -> TaskItem
+    /// Erledigte und gelöschte Aufgaben der letzten 30 Tage (Verlauf), nur sichtbare (RLS).
+    func historyTasks() async throws(FamiliarError) -> [TaskItem]
+    /// Lädt Bild und Miniatur nach `task-images/{family_id}/{id}.jpg` bzw. `…_thumb.jpg`.
+    func upload(_ image: PreparedImage, familyID: UUID) async throws(FamiliarError)
+    func createTask(_ input: TaskInput) async throws(FamiliarError) -> TaskItem
+    func updateTask(id: UUID, expectedVersion: Int, _ input: TaskInput) async throws(FamiliarError) -> TaskItem
+    func complete(taskID: UUID, scope: CompletionScope) async throws(FamiliarError)
+    func uncomplete(taskID: UUID, scope: CompletionScope) async throws(FamiliarError)
+    func delete(taskID: UUID) async throws(FamiliarError)
+    func restore(taskID: UUID) async throws(FamiliarError)
+    /// Kurzlebige URL für ein Aufgabenbild oder eine Miniatur.
+    func imageURL(path: String) async throws(FamiliarError) -> URL
+    /// Hinweise „Aufgabe geändert“ (Realtime); der Inhalt wird danach neu geladen.
+    func changes(for userID: UUID) -> AsyncStream<UUID>
+}
+
 public protocol FamilyRepository: Sendable {
     func myFamilies() async throws(FamiliarError) -> [FamilyMembership]
     func createFamily(name: String, colorHex: String) async throws(FamiliarError) -> Family

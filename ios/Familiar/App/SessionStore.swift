@@ -23,7 +23,7 @@ final class SessionStore {
 
     let dependencies: AppDependencies
     private let defaults: UserDefaults
-    private var userID: UUID?
+    private(set) var userID: UUID?
     private var authTask: Task<Void, Never>?
 
     init(dependencies: AppDependencies, defaults: UserDefaults = .standard) {
@@ -125,6 +125,24 @@ final class SessionStore {
 
     func membership(_ familyID: UUID) -> FamilyMembership? {
         families.first { $0.id == familyID }
+    }
+
+    /// Mitglied einer Familie (für Namen und Profilbilder von zugewiesenen Personen).
+    func member(_ userID: UUID, in familyID: UUID) -> FamilyMember? {
+        membership(familyID)?.members.first { $0.userID == userID }
+    }
+
+    /// Anzeigename; wer die Familie verlassen hat, erscheint neutral.
+    func displayName(of userID: UUID, in familyID: UUID) -> String {
+        if userID == self.userID, let profile { return profile.displayName }
+        return member(userID, in: familyID)?.displayName ?? String(localized: "Ehemaliges Mitglied")
+    }
+
+    /// Anzeigefarben: ähnliche Familienfarben werden lokal leicht verschoben (Plan, Abschnitt 4).
+    var familyDisplayColors: [UUID: RGBColor] {
+        let inputs = families.map { FamilyColorInput(familyID: $0.id.uuidString, color: $0.family.color) }
+        let resolved = FamilyColorResolver.displayColors(for: inputs)
+        return Dictionary(uniqueKeysWithValues: families.map { ($0.id, resolved[$0.id.uuidString] ?? $0.family.color) })
     }
 
     func refreshFamilies() async throws(FamiliarError) {

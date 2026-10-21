@@ -308,10 +308,12 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
    - Familie erstellen/beitreten, Einladung teilen (Universal Link + Code), Sitzung halten, Abmelden.
    - `docs/setup/universal-links.md`: AASA-Datei für deine Domain.
 3. **Aufgaben-Kern**
+   - **Stand 2026-10-21:** umgesetzt (Migration 0007, Startliste, Details, Editor mit Fotos/Kamera, Bildansicht, Undo-Hinweis, Realtime-Hinweise). Regeln: [ADR 0007](decisions/0007-task-rules.md).
    - DB: tasks, assignees, images + Storage-Policies; RPCs create, update, complete, uncomplete, delete; Sichtbarkeit durchgesetzt.
    - UI: Startliste, Detail, Editor (klein-display-tauglich), PhotosPicker + Kamera (`UIImagePickerController`-Wrapper), Galerie.
    - Realtime-Broadcast.
 4. **Verlauf**
+   - **Stand 2026-10-21:** umgesetzt (Verlauf-Ansicht mit Wiederherstellen, Undo-Hinweis, tägliche 30-Tage-Bereinigung per `pg_cron` → Edge Function `purge-history` mit Einmal-Token).
    - View, Wiederherstellen, Undo-Banner, 30-Tage-Löschung (Cron + `storage-purge`).
 5. **Wiederholungen**
    - Serien, Generator, Projektion, Scope-Dialoge, Serien-Löschen/-Wiederherstellen; Monatstag-Regel (E2).
@@ -345,7 +347,7 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
 - **Einladungen:** Universal Links über deine Domain.
 
 **Noch offen, Vorschläge gelten, solange du nichts anderes sagst (Bestätigung vor der jeweiligen Phase):**
-- **E2 – Fehlender Monatstag (z. B. 31.):** Vorschlag: auf den letzten Tag des Monats verschieben. Fallen mehrere Tage auf denselben Termin (30. + 31. im Februar), entsteht nur ein Vorkommen.
+- **E2 – Fehlender Monatstag (z. B. 31.):** **entschieden 2026-10-21:** auf den letzten Tag des Monats verschieben; fallen mehrere Tage auf denselben Termin (30. + 31. im Februar), entsteht nur ein Vorkommen.
 - **E3 – Erste Erinnerung ohne Uhrzeit:**
   - *Ohne Datum:* 24 h nach Zuweisung, dann alle 24 h.
   - *Nur Datum:* Benachrichtigung + Live Activity um 08:00 Ortszeit (Aufgaben-Zeitzone) am Tag selbst; liegt das Datum heute oder in der Vergangenheit, sofort. Erste Erinnerung 24 h später, dann alle 24 h.

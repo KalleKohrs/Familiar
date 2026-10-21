@@ -1,8 +1,8 @@
-# Datenmodell (Stand Phase 2 „Auth & Onboarding“)
+# Datenmodell (Stand Phase 4 „Verlauf“)
 
 Dieses Dokument beschreibt die Tabellen, Funktionen und RPCs aus den Migrationen
-`supabase/migrations/0001`–`0006`. Rechte und Policies im Detail: [rls-matrix.md](rls-matrix.md).
-Aufgaben, Bilder, Serien, Geräte und Kalender kommen ab Phase 3 dazu.
+`supabase/migrations/0001`–`0008`. Rechte und Policies im Detail: [rls-matrix.md](rls-matrix.md).
+Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 0007](decisions/0007-task-rules.md).
 
 ## Migrationsstand (Projekt `ldeouecoaqyfvubhrjei`)
 
@@ -14,6 +14,8 @@ Aufgaben, Bilder, Serien, Geräte und Kalender kommen ab Phase 3 dazu.
 | `0004_family_rpcs` | 2026-10-20 | **manuell im Supabase-SQL-Editor** (die MCP-Bestätigung für Statements mit `delete` wurde in der App automatisch abgelehnt). Eintrag in `supabase_migrations.schema_migrations` (Version `20261020182858`) nachträglich ergänzt; Inhalt per SHA-256 gegen die Datei geprüft. |
 | `0005_invite_attempts_deny_policy` | 2026-10-20 | Supabase-MCP `apply_migration` |
 | `0006_avatars_storage` | 2026-10-20 | Supabase-MCP `apply_migration` (Phase 2) |
+| `0007_tasks` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (MCP-Bestätigung abgelehnt). Der Eintrag `20261020205741` in `schema_migrations` wurde vorher versehentlich mit dem Inhalt `select 1;` angelegt (ohne Wirkung); das Korrigieren des gespeicherten Texts wurde ebenfalls automatisch abgelehnt. Maßgeblich ist die Datei (SHA-256 `47e10558a612314b…`). |
+| `0008_history_purge` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Auch hier wurde der Eintrag `20261021044920` vorher versehentlich mit einer wirkungslosen Platzhalter-Abfrage angelegt; maßgeblich ist die Datei (SHA-256 `3d7a39442fb049e3…`). |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -134,6 +136,64 @@ Privater Bucket `avatars` (Limit 1 MB, nur `image/jpeg`). Genau ein Bild pro Per
   die Datei bleibt liegen und wird bei der Kontolöschung (Phase 9) entfernt.
 - Anzeige über signierte URLs (`createSignedURL`); Cache-Schlüssel in der App: Pfad + `profiles.updated_at`.
 - Tests: `supabase/tests/0002_storage_avatars.sql` (16 Prüfungen, grün am 2026-10-20).
+
+## Aufgaben (0007)
+
+### `public.tasks`
+
+| Spalte | Typ | Regeln |
+|---|---|---|
+| `id` | uuid PK | |
+| `family_id` | uuid | → `families` `on delete cascade` |
+| `series_id`, `occurrence_date` | uuid, date | für Serien (Phase 5); beide null oder beide gesetzt; `unique (series_id, occurrence_date)` |
+| `created_by` | uuid null | → `profiles` |
+| `title` | text | 1–200 Zeichen (getrimmt) |
+| `description` | text null | höchstens 4000 Zeichen; leer → null |
+| `start_date`, `start_time`, `timezone` | date null, time null, text | Uhrzeit nur mit Datum; Zeitzone IANA (geprüft gegen `pg_timezone_names`) |
+| `starts_at`, `sort_at` | timestamptz | per Trigger `compute_task_times`: Datum + Uhrzeit (sonst 00:00) in `timezone`; `sort_at = coalesce(starts_at, created_at)` |
+| `completion_mode` | `completion_mode` | `any_one` \| `each` |
+| `completed_at`, `completed_by`, `completion_source` | | komplett erledigt; Quelle `assignee` \| `creator` |
+| `deleted_at`, `deleted_by`, `deleted_by_series_op` | | weiches Löschen; Serien-Löschung ab Phase 5 |
+| `version` | integer | +1 bei jeder Änderung über die RPCs (Konfliktschutz) |
+
+### `public.task_assignees`, `public.images`, `public.task_image_links`
+
+- `task_assignees(task_id, user_id, assigned_by, assigned_at, completed_at)` – Status pro Person.
+- `images(id, family_id, path, thumb_path, width, height, created_by)` – Pfade `{family_id}/{id}.jpg` und `…_thumb.jpg`.
+- `task_image_links(task_id, image_id, position)` – Reihenfolge der Bilder.
+
+### Sichtbarkeit
+
+`private.can_view_task(task)`: Mitglied der Familie **und** (Sichtbarkeit `all` **oder** Ersteller **oder** zugewiesen) – Entscheidung F1. Gilt gleich für Aufgaben, Zuweisungen, Bilder (Tabelle und Storage) und später den Verlauf. Die Policy auf `tasks` nutzt Mengenfunktionen (`my_family_ids`, `my_all_tasks_family_ids`, `my_assigned_task_ids`).
+
+### RPCs
+
+| RPC | Wer | Hinweise |
+|---|---|---|
+| `create_task(p_family_id, p_title, p_completion_mode, p_assignee_ids, p_description?, p_start_date?, p_start_time?, p_timezone?, p_images?)` | Mitglied | ≥ 1 Person, alle Mitglieder; Bilder vorher hochladen |
+| `update_task(p_task_id, p_expected_version, …gleiche Felder)` | Mitglied mit Sicht, offene Aufgabe | vollständiger Stand; null entfernt Beschreibung/Datum |
+| `complete_task(p_task_id, p_scope 'self'\|'all')` | siehe ADR 0007 | idempotent |
+| `uncomplete_task(p_task_id, p_scope)` | `self`: zugewiesene Person; `all`: Mitglied mit Sicht | |
+| `delete_task(p_task_id)`, `restore_task(p_task_id)` | Mitglied mit Sicht | weich, idempotent |
+
+Neue Fehlerschlüssel: `invalid_task_title`, `invalid_task_description`, `invalid_start`, `invalid_timezone`, `invalid_completion_mode`, `assignees_required`, `assignee_not_member`, `too_many_images`, `invalid_image`, `task_not_found`, `task_conflict`, `task_closed`, `completion_mode_locked`, `not_allowed_to_complete`, `invalid_scope`.
+
+### Storage `task-images` und Realtime
+
+- Privater Bucket, 5 MB, nur JPEG. Hochladen in den Ordner einer eigenen Familie mit Dateinamen `{uuid}.jpg`/`{uuid}_thumb.jpg`; Lesen nur, wenn das Bild an eine sichtbare Aufgabe angehängt ist.
+- Trigger `tasks_broadcast_change` → `realtime.send('task_changed', topic 'user:<uid>', privat)` an alle Familienmitglieder. Policy `realtime_receive_own_user_channel`: Empfang nur auf dem eigenen Kanal.
+
+Tests: `supabase/tests/0003_tasks.sql` (49 Prüfungen) und `0004_tasks_papierkorb.sql` (7), grün am 2026-10-21. I1 (Realtime-Nachrichten in der Datenbank) wird übersprungen, solange der Realtime-Dienst keine Tagespartition angelegt hat.
+
+## Verlauf und 30-Tage-Bereinigung (0008)
+
+- **Verlauf** = Aufgaben mit `completed_at` oder `deleted_at` in den letzten 30 Tagen; die App fragt `tasks` direkt ab (gleiche RLS wie überall). Gelöscht hat Vorrang vor erledigt. Wiederherstellen: gelöschte per `restore_task`, erledigte per `uncomplete_task(…, 'all')` – jedes Mitglied mit Sicht.
+- **Bereinigung** täglich 03:15 UTC (`cron.job` `familiar-purge-history`):
+  1. `private.start_history_purge()` erzeugt ein Einmal-Token (gespeichert nur als SHA-256 in `private.cron_tokens`) und ruft per `pg_net` die Edge Function `purge-history` auf (`verify_jwt = false`, eigene Prüfung über das Token).
+  2. Die Function löst das Token mit dem Secret-Key über `public.purge_expired_history(p_token)` ein (nur `service_role`; Token 15 Minuten gültig, nur einmal).
+  3. Die RPC löscht Aufgaben, die seit mehr als 30 Tagen erledigt oder gelöscht sind, und Bildzeilen ohne Verknüpfung (älter als 1 Tag), und liefert alle Dateien in `task-images` ohne Bildzeile (älter als 1 Tag). Die Function löscht diese über die Storage-API.
+- `private.app_settings`: `functions_base_url` je Umgebung (Dev: `https://ldeouecoaqyfvubhrjei.supabase.co/functions/v1`).
+- Tests: `supabase/tests/0005_history_purge.sql` (7/7); End-to-End am 2026-10-21: HTTP 200, Token eingelöst.
 
 ## RLS-Hilfsfunktionen (0003, Schema `private`)
 

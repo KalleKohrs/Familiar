@@ -105,7 +105,10 @@ final class OnboardingUITests: XCTestCase {
 extension XCUIElement {
     /// Leert ein Textfeld und tippt neuen Text.
     func clearAndType(_ text: String) {
+        // Ans Ende des Textes tippen, damit das Löschen den ganzen Inhalt erfasst
+        // (bei mehrzeiligen Feldern landet der Cursor sonst mitten im Text).
         tap()
+        coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
         if let current = value as? String, !current.isEmpty {
             typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count))
         }

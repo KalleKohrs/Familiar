@@ -1,3 +1,4 @@
+import FamiliarCore
 import FamiliarDesign
 import SwiftUI
 
@@ -8,6 +9,8 @@ struct RootTabView: View {
     @State private var isCreatingTask = false
     @State private var createTaskRequests = 0
     @State private var tabBarHeight: CGFloat = 0
+    @Environment(SessionStore.self) private var session
+    @Environment(TaskStore.self) private var tasks
 
     var body: some View {
         TabView(selection: $selection) {
@@ -21,22 +24,29 @@ struct RootTabView: View {
                         // Inhalte im NavigationStack hier nicht (im Simulator geprüft).
                         // Verschachtelte horizontale Scroll-Ansichten setzen den Rand auf 0 zurück.
                         .contentMargins(.bottom, tabBarHeight)
+                        .environment(\.floatingTabBarHeight, tabBarHeight)
+                        .environment(\.openNewTask, OpenNewTaskAction(action: openNewTask))
                 } label: {
                     Label(tab.title, systemImage: tab.systemImage)
                 }
             }
         }
         .overlay(alignment: .bottom) {
-            FloatingTabBar(selection: $selection) {
-                createTaskRequests += 1
-                isCreatingTask = true
-            }
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
+            FloatingTabBar(selection: $selection, onCreateTask: openNewTask)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
         }
         .sheet(isPresented: $isCreatingTask) {
-            NewTaskSheet()
+            TaskEditorView(mode: .create)
+        }
+        .task(id: session.userID) {
+            if let userID = session.userID { await tasks.start(userID: userID) }
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: createTaskRequests)
+    }
+
+    private func openNewTask() {
+        createTaskRequests += 1
+        isCreatingTask = true
     }
 
     @ViewBuilder

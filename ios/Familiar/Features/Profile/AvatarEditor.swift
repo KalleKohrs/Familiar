@@ -27,7 +27,7 @@ struct AvatarEditor: View {
 
             HStack(spacing: FamiliarSpacing.s) {
                 // Das Label von PhotosPicker ist eine Sendable-Closure: Titel vorher berechnen.
-                let pickerTitle: LocalizedStringKey = hasAvatar ? "Bild ändern" : "Bild wählen"
+                let pickerTitle = hasAvatar ? String(localized: "Bild ändern") : String(localized: "Bild wählen")
                 PhotosPicker(selection: $selection, matching: .images, photoLibrary: .shared()) {
                     Text(pickerTitle)
                 }
@@ -61,7 +61,7 @@ struct AvatarEditor: View {
                 selection = nil
             }
             guard let data = try? await item.loadTransferable(type: Data.self),
-                  let jpeg = AvatarImageProcessor.jpegData(from: data) else {
+                  let jpeg = ImageProcessor.avatarJPEG(from: data) else {
                 errorMessage = String(localized: "Das Bild konnte nicht gelesen werden. Bitte wähle ein anderes.")
                 return
             }
