@@ -134,3 +134,12 @@ Nach Rückmeldung „nicht clean genug“ an der Referenz ausgerichtet:
 - Punkte unter dem Tag (max. 3) in Familienfarbe: voll = Aufgabe, blass = geplanter Serientermin bzw. erledigt. Outlook-Termine (Phase 8): Ring statt Punkt und in der Liste mit Anbieter-Namen – nie nur über Farbe unterschieden.
 - Tagesliste: Zeilen mit Uhrzeit links (bzw. „Ganzer Tag“), Titel, Wiederholung/Familie; erledigt = durchgestrichen mit grünem Haken; geplante Serientermine mit „Geplant“ und nicht antippbar.
 - VoiceOver je Tag: „21. Oktober, 2 Aufgaben, 1 geplant“.
+
+## Eigenständigkeit statt Standard-Look (2026-10-21)
+
+Recherche zu typischen Merkmalen KI-generierter („vibe-coded“) Apps: Standardschriften (Inter, Systemschrift), lila-blaue Verläufe, Leuchteffekte im Dunkelmodus, Karten um alles, große Symbole über jeder Überschrift, Versal-Überschriften mit Sperrung, Akzentfarbe überall. Konsequenzen für Familiar:
+
+- **Schrift:** Überschriften, Kartentitel und Gruppenlabels in **Bricolage Grotesque** (variabel mit optischen Größen, SIL OFL; `FamiliarTypeface`), Fließtext bleibt SF Pro für Lesbarkeit und Dynamic Type. Die Systemschrift „New York“ wird nicht mehr verwendet.
+- **Gruppenlabels** in normaler Schreibweise („Heute 2“) statt Versalien mit Sperrung.
+- **Akzentfarbe** nur für das Plus, Hauptaktionen und „heute“; Schalter für Rechte in Grün.
+- Offene Punkte für den nächsten Design-Durchgang: Leucht-Orb über Leerzuständen und Ambient-Schein zurücknehmen, Karten nur für einzeln bedienbare Einträge (nicht um Leerzustände und Hinweise).

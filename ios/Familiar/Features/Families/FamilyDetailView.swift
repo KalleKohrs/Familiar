@@ -227,7 +227,8 @@ struct FamilyDetailView: View {
                 ForEach(Array(Self.permissionOrder.enumerated()), id: \.offset) { index, item in
                     Toggle(item.1, isOn: permissionBinding(item.0, in: membership))
                         .font(FamiliarFont.body)
-                        .tint(FamiliarColor.accent)
+                        // Kein Orange: Akzent bleibt den wichtigsten Aktionen vorbehalten.
+                        .tint(FamiliarColor.success)
                         .disabled(isWorking)
                         .padding(.vertical, FamiliarSpacing.xs)
                         .accessibilityIdentifier("familyDetail.permission.\(index)")

@@ -75,9 +75,7 @@ struct TasksHomeView: View {
                 .foregroundStyle(FamiliarColor.textTertiary)
                 .monospacedDigit()
         }
-        .font(FamiliarFont.meta.weight(.semibold))
-        .textCase(.uppercase)
-        .tracking(0.6)
+        .font(FamiliarFont.groupLabel)
         .padding(.top, FamiliarSpacing.s)
         .padding(.leading, FamiliarSpacing.xxs)
         .accessibilityElement(children: .combine)

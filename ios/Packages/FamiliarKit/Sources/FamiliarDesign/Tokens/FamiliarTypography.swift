@@ -1,16 +1,36 @@
+import CoreText
 import SwiftUI
 
-/// Schrift-Tokens. Alle basieren auf Dynamic-Type-Textstilen und skalieren
-/// mit der Systemschriftgröße. Überschriften nutzen New York (Serif), Fließtext SF Pro.
+/// Eigene Schrift für Überschriften, Titel und Zahlen: Bricolage Grotesque (variabel, mit optischen
+/// Größen; SIL Open Font License, siehe Resources/Fonts). Fließtext bleibt SF Pro für beste Lesbarkeit.
+/// Bewusst keine Standard-Serifen/Systemschrift für Überschriften – Familiar soll eigenständig wirken.
+public enum FamiliarTypeface {
+    public static let family = "Bricolage Grotesque"
+
+    /// Einmal beim Start aufrufen (App, Widget-Extension, Previews).
+    public static func register() {
+        guard let url = Bundle.module.url(forResource: "BricolageGrotesque", withExtension: "ttf",
+                                          subdirectory: "Fonts")
+                ?? Bundle.module.url(forResource: "BricolageGrotesque", withExtension: "ttf") else { return }
+        CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+    }
+
+    /// Skaliert mit Dynamic Type relativ zum Textstil.
+    public static func font(size: CGFloat, relativeTo style: Font.TextStyle, weight: Font.Weight) -> Font {
+        Font.custom(family, size: size, relativeTo: style).weight(weight)
+    }
+}
+
+/// Schrift-Tokens. Alle skalieren mit der Systemschriftgröße (Dynamic Type).
 public enum FamiliarFont {
-    /// Große Bildschirmtitel (Standard 34 pt).
-    public static let display = Font.system(.largeTitle, design: .serif, weight: .semibold)
-    /// Abschnitts- und Sheet-Titel (Standard 22 pt).
-    public static let title = Font.system(.title2, design: .serif, weight: .semibold)
-    /// Gruppen-Überschriften (Standard 17 pt).
-    public static let sectionTitle = Font.headline
-    /// Titel in Cards (Standard 17 pt).
-    public static let cardTitle = Font.body.weight(.semibold)
+    /// Große Bildschirmtitel.
+    public static let display = FamiliarTypeface.font(size: 36, relativeTo: .largeTitle, weight: .bold)
+    /// Abschnitts- und Sheet-Titel.
+    public static let title = FamiliarTypeface.font(size: 24, relativeTo: .title2, weight: .semibold)
+    /// Gruppen-Überschriften.
+    public static let sectionTitle = FamiliarTypeface.font(size: 17, relativeTo: .headline, weight: .semibold)
+    /// Titel in Cards.
+    public static let cardTitle = FamiliarTypeface.font(size: 18, relativeTo: .body, weight: .semibold)
     public static let body = Font.body
     /// Sekundärinformationen wie Beschreibungen (Standard 15 pt).
     public static let secondary = Font.subheadline
@@ -19,6 +39,8 @@ public enum FamiliarFont {
     public static let caption = Font.caption.weight(.medium)
     /// Uhrzeiten mit gleich breiten Ziffern.
     public static let time = Font.footnote.monospacedDigit().weight(.medium)
+    /// Kleine Überschriften über Listenabschnitten („Heute“, „Morgen“) – ohne Versalien und Sperrung.
+    public static let groupLabel = FamiliarTypeface.font(size: 15, relativeTo: .subheadline, weight: .semibold)
 }
 
 public enum FamiliarSpacing {

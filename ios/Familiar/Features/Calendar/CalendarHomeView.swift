@@ -241,9 +241,7 @@ struct CalendarHomeView: View {
     private var dayList: some View {
         let dayEntries = entries[selected] ?? []
         Text(dayTitle)
-            .font(FamiliarFont.meta.weight(.semibold))
-            .textCase(.uppercase)
-            .tracking(0.6)
+            .font(FamiliarFont.groupLabel)
             .foregroundStyle(FamiliarColor.textSecondary)
             .padding(.top, FamiliarSpacing.xs)
             .padding(.leading, FamiliarSpacing.xxs)

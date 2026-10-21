@@ -18,7 +18,8 @@ let package = Package(
         // Domänenlogik ohne UI-Abhängigkeiten.
         .target(name: "FamiliarCore"),
         // Design-Tokens und wiederverwendbare SwiftUI-Komponenten.
-        .target(name: "FamiliarDesign", dependencies: ["FamiliarCore"]),
+        // Enthält die Schrift Bricolage Grotesque (SIL Open Font License, Resources/Fonts).
+        .target(name: "FamiliarDesign", dependencies: ["FamiliarCore"], resources: [.process("Resources")]),
         // Live-Activity-Attribute, gemeinsam für App und Widget-Extension.
         .target(name: "FamiliarActivity", dependencies: ["FamiliarCore"]),
         // Datenzugriff über Supabase (Auth, Datenbank, Storage). Nur für die App, nicht für die Extension.

@@ -9,6 +9,7 @@ struct FamiliarApp: App {
     @State private var taskImages: TaskImageStore
 
     init() {
+        FamiliarTypeface.register()
         let dependencies = AppDependencies.live()
         _session = State(initialValue: SessionStore(dependencies: dependencies))
         _avatars = State(initialValue: AvatarImageStore(profiles: dependencies.profiles))

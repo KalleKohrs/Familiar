@@ -672,6 +672,7 @@ extension AppDependencies {
 extension View {
     /// Umgebung für Xcode-Previews mit dem In-Memory-Backend.
     func previewEnvironment(_ scenario: InMemoryBackend.Scenario) -> some View {
+        FamiliarTypeface.register()
         let dependencies = AppDependencies.inMemory(scenario: scenario)
         let session = SessionStore(dependencies: dependencies, defaults: UserDefaults(suiteName: "preview") ?? .standard)
         return self
