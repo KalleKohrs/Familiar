@@ -26,4 +26,4 @@ Microsoft-Dokumentation: [Grant tenant-wide admin consent](https://learn.microso
 
 ## Kontakt
 
-Fragen zur Freigabe: [kontakt@familiar-app.de]. Weitere Informationen: [Datenschutzerklärung](/datenschutz/).
+Fragen zur Freigabe: [info@familiar-app.de](mailto:info@familiar-app.de). Weitere Informationen: [Datenschutzerklärung](/datenschutz/).

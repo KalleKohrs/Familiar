@@ -6,10 +6,10 @@
 
 Familiar wird von einer Privatperson entwickelt und betrieben:
 
-[Vorname Nachname]
-[Straße Hausnummer]
-[PLZ Ort]
-E-Mail: [datenschutz@familiar-app.de]
+Kalle Kohrs
+Claus-von-Stauffenberg-Weg 1
+21684 Stade
+E-Mail: [info@familiar-app.de](mailto:info@familiar-app.de)
 
 ## 2. Grundsätze
 
@@ -36,12 +36,11 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 
 | Dienst | Zweck | Sitz / Übermittlung |
 |---|---|---|
-| **Supabase Inc.** | Datenbank, Anmeldung, Dateispeicher, Server-Funktionen | Server in der EU ([Region, z. B. Frankfurt]); Unternehmen in den USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
-| **Resend, Inc.** | Versand der Anmelde-Codes per E-Mail | USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln [bzw. Angemessenheitsbeschluss/Data Privacy Framework, falls zertifiziert] |
+| **Supabase Inc.** | Datenbank, Anmeldung, Dateispeicher, Server-Funktionen | Server in der EU (Frankfurt am Main); Unternehmen in den USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
+| **Resend, Inc.** | Versand der Anmelde-Codes per E-Mail | USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
 | **Apple Inc.** (Apple Push Notification service) | Zustellung von Mitteilungen und Live-Anzeigen; erhält Geräte-Token und Mitteilungsinhalt (z. B. Aufgabentitel) | USA bzw. Apple Distribution International (Irland) |
 | **Microsoft** | Nur bei verbundenem Outlook: Abruf deiner Termine | nach den Bedingungen deines Microsoft-Kontos |
 | **Apple** – nur bei „Mit Apple anmelden“ | Anmeldung; beim Löschen deines Kontos widerrufen wir die Verknüpfung bei Apple | USA bzw. Apple Distribution International (Irland) |
-| [**Google** – nur falls „Mit Google anmelden“ freigeschaltet wird] | Anmeldung | [ergänzen, wenn freigeschaltet] |
 
 ## 5. Speicherdauer
 
@@ -49,7 +48,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 - **Erledigte und gelöschte Aufgaben:** 30 Tage im Verlauf (zum Wiederherstellen), danach automatisch endgültig gelöscht – einschließlich Bildern.
 - **Mitteilungs-Aufträge, beendete Live-Anzeigen, abgemeldete Geräte:** 30 Tage, danach automatisch gelöscht.
 - **Outlook-Termine:** nur ein Fenster von 7 Tagen zurück bis 120 Tage voraus; ältere fallen beim Abgleich weg; beim Trennen sofort gelöscht.
-- **Server-Protokolle:** [laut Supabase-Tarif, z. B. 7 Tage].
+- **Server-Protokolle:** bis zu 7 Tage (Aufbewahrung durch Supabase).
 
 ## 6. Konto löschen
 
@@ -57,9 +56,9 @@ In der App unter **Profil › Konto löschen**. Gelöscht werden dein Konto, Pro
 
 ## 7. Deine Rechte
 
-Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO) sowie auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft (z. B. Outlook trennen, Mitteilungen in iOS abschalten). Schreib dazu an [datenschutz@familiar-app.de].
+Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO) sowie auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft (z. B. Outlook trennen, Mitteilungen in iOS abschalten). Schreib dazu an [info@familiar-app.de](mailto:info@familiar-app.de).
 
-Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren, z. B. in deinem Bundesland: [zuständige Behörde des Verantwortlichen ergänzen].
+Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren, z. B. bei der für uns zuständigen: Die Landesbeauftragte für den Datenschutz Niedersachsen, Prinzenstraße 5, 30159 Hannover, poststelle@lfd.niedersachsen.de.
 
 ## 8. Sicherheit
 
@@ -67,7 +66,7 @@ Verbindungen sind verschlüsselt (TLS). Zugriffsrechte werden in der Datenbank f
 
 ## 9. Kinder
 
-[Klären: Mindestalter für ein eigenes Konto, z. B. 16 Jahre (Art. 8 DSGVO) bzw. Nutzung jüngerer Kinder nur mit Einwilligung der Eltern.]
+Familiar richtet sich an Personen ab 16 Jahren. Jüngere Kinder dürfen Familiar nur mit Einwilligung ihrer Eltern nutzen (Art. 8 DSGVO).
 
 ## 10. Änderungen
 

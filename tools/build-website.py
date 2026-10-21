@@ -3,9 +3,9 @@
 
 Aufruf (im Projektordner):  python3 tools/build-website.py
 Unterstützt nur, was die Texte brauchen: Überschriften, Absätze, Listen, Tabellen, Zitate,
-**fett**, `Code` und [Links](url). Entwurfs-Hinweise (Zitat-Absätze mit „Entwurf“) und
-Platzhalter in eckigen Klammern bleiben sichtbar markiert, damit nichts Unfertiges unbemerkt
-online geht.
+**fett**, `Code` und [Links](url). Entwurfs-Hinweise (Zitat-Absätze) und „(Entwurf)“ in
+Überschriften erscheinen nicht auf der Website; übrige Platzhalter in eckigen Klammern werden
+gelb markiert, damit nichts Unfertiges unbemerkt online geht.
 """
 import html
 import pathlib
@@ -59,10 +59,11 @@ def render(markdown: str) -> str:
         elif stripped.startswith("#"):
             flush()
             level = len(stripped) - len(stripped.lstrip("#"))
-            out.append(f"<h{level}>{inline(stripped[level:].strip())}</h{level}>")
+            title = stripped[level:].strip().replace(" (Entwurf)", "")
+            out.append(f"<h{level}>{inline(title)}</h{level}>")
         elif stripped.startswith(">"):
+            # Entwurfs-Hinweise sind für die Arbeit im Repo, nicht für die Website.
             flush()
-            out.append(f'<aside class="draft">{inline(stripped.lstrip("> "))}</aside>')
         elif stripped.startswith("|"):
             if paragraph or items:
                 flush()

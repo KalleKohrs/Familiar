@@ -28,4 +28,4 @@ Profil › Konto löschen. Was dabei gelöscht wird, steht in der [Datenschutzer
 
 ## Kontakt
 
-[kontakt@familiar-app.de]
+[info@familiar-app.de](mailto:info@familiar-app.de)
