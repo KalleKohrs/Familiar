@@ -6,5 +6,10 @@
 	     laut Provisioning-Profil „production“. -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- Einladungslinks https://familiar-app.de/join/… (apple-app-site-association auf der Website). -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:familiar-app.de</string>
+	</array>
 </dict>
 </plist>

@@ -34,6 +34,7 @@ final class SessionStore {
     /// Beobachtet den Anmeldestatus; der erste Wert ist die gespeicherte Sitzung.
     func start() {
         guard authTask == nil else { return }
+        restorePendingInvite()
         let states = dependencies.auth.authStates()
         authTask = Task { [weak self] in
             for await state in states {
@@ -66,6 +67,33 @@ final class SessionStore {
         } catch {
             phase = error == .notAuthenticated ? .signedOut : .failed(error)
         }
+    }
+
+    // MARK: Einladungslinks
+
+    private static let pendingInviteKey = "invite.pendingCode"
+
+    /// Code aus einem geöffneten Einladungslink. Bleibt über Anmeldung und Neustart vorgemerkt,
+    /// bis die Person beitritt oder ablehnt (Plan Abschnitt 6).
+    private(set) var pendingInviteCode: String?
+
+    /// `true`, wenn der Link ein Einladungslink war.
+    @discardableResult
+    func receive(_ url: URL) -> Bool {
+        guard let code = InviteLink.code(from: url) else { return false }
+        pendingInviteCode = code
+        defaults.set(code, forKey: Self.pendingInviteKey)
+        return true
+    }
+
+    func clearPendingInvite() {
+        pendingInviteCode = nil
+        defaults.removeObject(forKey: Self.pendingInviteKey)
+    }
+
+    /// Nach dem Start: vorgemerkten Code aus einer früheren Sitzung übernehmen.
+    private func restorePendingInvite() {
+        if pendingInviteCode == nil { pendingInviteCode = defaults.string(forKey: Self.pendingInviteKey) }
     }
 
     // MARK: Onboarding

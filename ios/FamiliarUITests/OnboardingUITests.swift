@@ -100,6 +100,33 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["header.family"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons["header.family"].label, "Familie Beispiel, Familien verwalten")
     }
+
+    /// Einladungslink vor der Anmeldung geöffnet: bleibt vorgemerkt und wird nach dem Profil erfragt.
+    @MainActor
+    func testInviteLinkOpenedBeforeSignIn() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-FamiliarInMemoryBackend", "-FamiliarOpenURL", "https://familiar-app.de/join/TEST-2345"]
+        app.launch()
+
+        let email = app.textFields["signIn.email"]
+        XCTAssertTrue(email.waitForExistence(timeout: 10))
+        email.tap()
+        email.typeText("ben@example.test")
+        app.buttons["signIn.send"].tap()
+        let code = app.textFields["code.field"]
+        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        code.typeText("123456")
+        app.buttons["code.submit"].tap()
+
+        XCTAssertTrue(app.buttons["profile.continue"].waitForExistence(timeout: 5))
+        app.buttons["profile.continue"].tap()
+
+        XCTAssertTrue(app.staticTexts["Familie beitreten?"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Code T E S T 2 3 4 5"].exists)
+        app.buttons["invite.join"].tap()
+        XCTAssertTrue(app.buttons["header.family"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["header.family"].label, "Familie Beispiel, Familien verwalten")
+    }
 }
 
 extension XCUIElement {

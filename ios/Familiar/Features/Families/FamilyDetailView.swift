@@ -187,7 +187,7 @@ struct FamilyDetailView: View {
                         .font(FamiliarFont.meta)
                         .foregroundStyle(FamiliarColor.textSecondary)
                     ShareLink(item: shareText(invite: invite, family: membership.family)) {
-                        Label("Code teilen", systemImage: "square.and.arrow.up")
+                        Label("Einladung teilen", systemImage: "square.and.arrow.up")
                     }
                     .buttonStyle(.familiarPrimary)
                 }
@@ -293,7 +293,12 @@ struct FamilyDetailView: View {
     // MARK: Aktionen
 
     private func shareText(invite: FamilyInvite, family: Family) -> String {
-        String(localized: "Komm in unsere Familie „\(family.name)“ bei Familiar! Öffne die App, wähle „Mit Code beitreten“ und gib diesen Code ein: \(InviteCode.formatted(invite.code)) (gültig bis \(invite.expiresAt.formatted(date: .abbreviated, time: .omitted))).")
+        let code = InviteCode.formatted(invite.code)
+        let until = invite.expiresAt.formatted(date: .abbreviated, time: .omitted)
+        guard let link = InviteLink.url(for: invite.code) else {
+            return String(localized: "Komm in unsere Familie „\(family.name)“ bei Familiar! Code: \(code) (gültig bis \(until)).")
+        }
+        return String(localized: "Komm in unsere Familie „\(family.name)“ bei Familiar: \(link.absoluteString)\nOder in der App „Mit Code beitreten“ wählen: \(code) (gültig bis \(until)).")
     }
 
     private func run(_ action: @escaping () async throws(FamiliarError) -> Void) {

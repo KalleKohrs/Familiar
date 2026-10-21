@@ -35,3 +35,23 @@ public enum InviteCode {
         return "\(code.prefix(4))-\(code.suffix(4))"
     }
 }
+
+/// Einladungslinks `https://familiar-app.de/join/ABCD-EFGH` (Universal Link, Plan Abschnitt 6).
+/// Ohne App öffnet der Link eine Seite mit dem Code und dem Weg in den App Store.
+public enum InviteLink {
+    public static let host = "familiar-app.de"
+
+    public static func url(for code: String) -> URL? {
+        guard InviteCode.isValid(code) else { return nil }
+        return URL(string: "https://\(host)/join/\(InviteCode.formatted(code))")
+    }
+
+    /// Code aus einem Einladungslink; `nil` für alle anderen Adressen.
+    public static func code(from url: URL) -> String? {
+        guard url.scheme == "https",
+              let urlHost = url.host()?.lowercased(), urlHost == host || urlHost == "www.\(host)" else { return nil }
+        let parts = url.pathComponents.filter { $0 != "/" }
+        guard parts.count == 2, parts[0].lowercased() == "join", InviteCode.isValid(parts[1]) else { return nil }
+        return InviteCode.normalize(parts[1])
+    }
+}

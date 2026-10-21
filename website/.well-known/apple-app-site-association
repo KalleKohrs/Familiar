@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "7B67698VVC.de.kohrs.familiar"
+        ],
+        "components": [
+          {
+            "/": "/join/*",
+            "comment": "Familien-Einladungen"
+          }
+        ]
+      }
+    ]
+  }
+}

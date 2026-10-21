@@ -1,0 +1,2 @@
+# Netlify / Cloudflare Pages: jede Einladung zeigt dieselbe Seite (Code liest die Seite aus der Adresse).
+/join/*  /join/index.html  200
