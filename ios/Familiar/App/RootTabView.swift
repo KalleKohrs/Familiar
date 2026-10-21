@@ -13,7 +13,7 @@ struct RootTabView: View {
 
     /// Abstand der Leiste zur Bildschirmunterkante: auf Geräten mit Home-Indikator wie Apples
     /// Leiste (konzentrisch zu den Displayecken), sonst etwas knapper.
-    private var barBottomInset: CGFloat { bottomSafeArea > 0 ? FloatingTabBar.edgeInset : 12 }
+    private var barBottomInset: CGFloat { bottomSafeArea > 0 ? FloatingTabBar.bottomInset : 12 }
 
     /// Platz, den Inhalte unten freihalten (relativ zur Safe Area), plus etwas Luft.
     private var contentInset: CGFloat {
@@ -71,6 +71,11 @@ struct RootTabView: View {
 
     private func openNewTask() {
         createTaskRequests += 1
+        // Ohne Recht in allen Familien: erklären statt ein Formular zeigen, das nicht speichern kann.
+        if !session.families.isEmpty && !session.canCreateTasksAnywhere {
+            tasks.notify(String(localized: "In deinen Familien dürfen nur Admins Aufgaben anlegen."))
+            return
+        }
         isCreatingTask = true
     }
 

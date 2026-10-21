@@ -17,6 +17,7 @@ struct FamiliesSheet: View {
                             FamilyRowLabel(membership: membership)
                         }
                         .buttonStyle(.familiarCard)
+                        .accessibilityIdentifier("families.row.\(membership.family.name)")
                     }
 
                     FamiliarSectionHeader("Weitere Familie")

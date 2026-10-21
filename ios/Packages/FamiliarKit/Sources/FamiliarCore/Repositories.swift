@@ -14,6 +14,8 @@ public protocol AuthService: Sendable {
     func verifyEmailCode(_ code: String, email: String) async throws(FamiliarError)
     /// `everywhere = false`: nur dieses Gerät; `true`: alle Sitzungen des Kontos.
     func signOut(everywhere: Bool) async throws(FamiliarError)
+    /// Konto endgültig löschen (Edge Function `account-delete`); danach abgemeldet.
+    func deleteAccount() async throws(FamiliarError)
 }
 
 public protocol ProfileRepository: Sendable {
@@ -65,6 +67,14 @@ public protocol FamilyRepository: Sendable {
     func joinFamily(code: String) async throws(FamiliarError) -> JoinFamilyResult
     func createInvite(familyID: UUID) async throws(FamiliarError) -> FamilyInvite
     func leaveFamily(familyID: UUID) async throws(FamiliarError) -> LeaveFamilyResult
+    /// Name, Farbe, Sichtbarkeit (Recht „Familie bearbeiten“).
+    func updateFamily(familyID: UUID, name: String, colorHex: String, visibility: TaskVisibility) async throws(FamiliarError)
+    /// Schalter für Mitglieder setzen (nur Admin); nur die übergebenen Rechte ändern sich.
+    func setPermissions(familyID: UUID, _ changes: [FamilyPermission: Bool]) async throws(FamiliarError)
+    func setMemberRole(familyID: UUID, userID: UUID, role: FamilyRole) async throws(FamiliarError)
+    func removeMember(familyID: UUID, userID: UUID) async throws(FamiliarError)
+    /// Familie samt Aufgaben löschen (nur Admin).
+    func deleteFamily(familyID: UUID) async throws(FamiliarError)
 }
 
 /// Persönliche Termine aus externen Kalendern (Plan, Abschnitt 7) – anbieterunabhängig.

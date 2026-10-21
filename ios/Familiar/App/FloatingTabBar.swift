@@ -13,9 +13,13 @@ struct FloatingTabBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var selectionNamespace
 
-    /// Maße wie die System-Leiste ab iOS 26 (im Simulator an der Fotos-App gemessen).
-    static let barHeight: CGFloat = 62
-    static let edgeInset: CGFloat = 21
+    /// Maße wie die System-Leiste ab iOS 26, pixelgenau an einem App-Store-Screenshot gemessen
+    /// (iPhone, 393 pt breit): 20 pt Seitenrand, 22 pt zur Unterkante, 61 pt hoch,
+    /// Auswahl-Kapsel 4 pt seitlich und 6,5 pt oben/unten eingerückt.
+    static let barHeight: CGFloat = 61
+    static let edgeInset: CGFloat = 20
+    static let bottomInset: CGFloat = 22
+    private static let selectionInset = EdgeInsets(top: 6.5, leading: 4, bottom: 6.5, trailing: 4)
     private var barHeight: CGFloat { Self.barHeight }
 
     var body: some View {
@@ -37,7 +41,7 @@ struct FloatingTabBar: View {
                 tabButton(tab)
             }
         }
-        .padding(FamiliarSpacing.xxs)
+        .padding(Self.selectionInset)
         .frame(minHeight: barHeight)
         .glassEffect(.regular, in: .capsule)
         // Bewusst ohne `.isTabBar`-Container: Damit legt SwiftUI Symbol und Text jedes Bereichs
@@ -61,7 +65,7 @@ struct FloatingTabBar: View {
                     .lineLimit(1)
             }
             .foregroundStyle(isSelected ? FamiliarColor.accent : FamiliarColor.textPrimary)
-            .frame(maxWidth: .infinity, minHeight: barHeight - 2 * FamiliarSpacing.xxs)
+            .frame(maxWidth: .infinity, minHeight: barHeight - Self.selectionInset.top - Self.selectionInset.bottom)
             .background {
                 if isSelected {
                     selectionIndicator

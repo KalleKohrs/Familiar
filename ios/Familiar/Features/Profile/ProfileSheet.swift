@@ -11,6 +11,8 @@ struct ProfileSheet: View {
     @State private var isSaving = false
     @State private var isSigningOut = false
     @State private var confirmSignOutEverywhere = false
+    @State private var confirmDeleteAccount = false
+    @State private var isDeletingAccount = false
     @State private var errorMessage: String?
     @State private var savedMessage: String?
 
@@ -76,6 +78,22 @@ struct ProfileSheet: View {
                             .disabled(isSigningOut)
                     }
                     .padding(.top, FamiliarSpacing.m)
+
+                    VStack(alignment: .leading, spacing: FamiliarSpacing.xs) {
+                        Button(role: .destructive) { confirmDeleteAccount = true } label: {
+                            HStack(spacing: FamiliarSpacing.xs) {
+                                if isDeletingAccount { ProgressView() }
+                                Text("Konto löschen")
+                            }
+                        }
+                        .buttonStyle(.familiarDestructive)
+                        .disabled(isDeletingAccount || isSigningOut)
+                        .accessibilityIdentifier("profile.deleteAccount")
+                        Text("Löscht dein Profil und deine Mitgliedschaften endgültig. Familien, in denen du allein bist, werden mit gelöscht.")
+                            .font(FamiliarFont.meta)
+                            .foregroundStyle(FamiliarColor.textSecondary)
+                    }
+                    .padding(.top, FamiliarSpacing.l)
                 }
                 .padding(FamiliarSpacing.m)
             }
@@ -95,6 +113,20 @@ struct ProfileSheet: View {
             } message: {
                 Text("Alle Sitzungen deines Kontos werden beendet. Bereits geöffnete Apps merken das spätestens nach einer Stunde.")
             }
+            .sheet(isPresented: $confirmDeleteAccount) {
+                FamiliarChoiceSheet(
+                    systemImage: "person.crop.circle.badge.xmark", tint: FamiliarColor.danger,
+                    title: "Konto endgültig löschen?",
+                    message: "Dein Profil, dein Profilbild und deine Mitgliedschaften werden gelöscht. Familien, in denen du allein bist, verschwinden samt Aufgaben. Bist du einziger Admin, übernimmt die Person, die am längsten dabei ist. Von dir hochgeladene Fotos an Familienaufgaben bleiben für die Familie erhalten. Das lässt sich nicht rückgängig machen."
+                ) {
+                    Button("Konto endgültig löschen", role: .destructive) {
+                        confirmDeleteAccount = false
+                        deleteAccount()
+                    }
+                    .buttonStyle(.familiarDestructive)
+                    .accessibilityIdentifier("profile.deleteAccountConfirm")
+                }
+            }
             .onAppear { name = session.profile?.displayName ?? "" }
         }
     }
@@ -108,6 +140,19 @@ struct ProfileSheet: View {
             do throws(FamiliarError) {
                 try await session.saveDisplayName(name)
                 savedMessage = String(localized: "Name gespeichert.")
+            } catch {
+                errorMessage = error.message
+            }
+        }
+    }
+
+    private func deleteAccount() {
+        isDeletingAccount = true
+        errorMessage = nil
+        Task {
+            defer { isDeletingAccount = false }
+            do throws(FamiliarError) {
+                try await session.deleteAccount()
             } catch {
                 errorMessage = error.message
             }

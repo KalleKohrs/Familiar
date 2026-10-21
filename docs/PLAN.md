@@ -331,6 +331,7 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
    - OAuth-Functions, Vault, Kalenderauswahl, Filter-Setup, `outlook-sync`.
    - **S3: realer Testtermin.**
 9. **Familienrechte & Profil**
+   - **Stand 2026-10-21:** umgesetzt (Migration 0010, Edge Function `account-delete`). E4 entschieden und erweitert: Admins schalten für Mitglieder ein/aus – einladen, Familie bearbeiten, Mitglieder entfernen **und** Aufgaben anlegen, bearbeiten, löschen/wiederherstellen (Abweichung vom Guide auf Wunsch des Nutzers); Abhaken und Rückgängig bleiben für alle erlaubt. Mitglieder zu Admins machen/entfernen, Familie bearbeiten/löschen, Konto löschen.
    - Admin-Schalter (E4), Mitglieder verwalten, Konto löschen.
 10. **Qualität & Release-Vorbereitung**
     - VoiceOver, Dynamic Type bis AX5, „Bewegung reduzieren“/„Transparenz reduzieren“/„Kontrast erhöhen“.

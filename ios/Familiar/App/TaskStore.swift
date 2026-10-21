@@ -251,6 +251,11 @@ final class TaskStore {
         scheduleBannerDismissal()
     }
 
+    /// Hinweis unten anzeigen (z. B. fehlendes Recht), ohne dass eine Aktion lief.
+    func notify(_ message: String) {
+        showError(message)
+    }
+
     private func showError(_ message: String) {
         undo = nil
         actionError = message

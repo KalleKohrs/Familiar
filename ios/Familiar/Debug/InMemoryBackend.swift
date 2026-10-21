@@ -153,6 +153,26 @@ extension InMemoryBackend: AuthService {
         user = nil
         publish()
     }
+
+    func deleteAccount() async throws(FamiliarError) {
+        let me = try requireUser()
+        for (familyID, familyMembers) in members where familyMembers.contains(where: { $0.userID == me }) {
+            let others = familyMembers.filter { $0.userID != me }
+            if others.isEmpty {
+                families[familyID] = nil
+                members[familyID] = nil
+            } else {
+                var remaining = others
+                if !remaining.contains(where: { $0.role == .admin }), let index = remaining.indices.first {
+                    remaining[index].role = .admin
+                }
+                members[familyID] = remaining
+            }
+        }
+        profiles[me] = nil
+        user = nil
+        publish()
+    }
 }
 
 extension InMemoryBackend: ProfileRepository {
@@ -264,6 +284,61 @@ extension InMemoryBackend: FamilyRepository {
     }
 }
 
+
+extension InMemoryBackend {
+    private func requireMembership(_ familyID: UUID) throws(FamiliarError) -> FamilyMembership {
+        let me = try requireUser()
+        guard let membership = membership(familyID, for: me) else {
+            throw .app(key: .familyNotFound, message: "Familie nicht gefunden oder du bist kein Mitglied.")
+        }
+        return membership
+    }
+
+    private func requireAdmin(_ familyID: UUID) throws(FamiliarError) {
+        guard try requireMembership(familyID).myRole == .admin else {
+            throw .app(key: .adminRequired, message: "Nur Admins dürfen das.")
+        }
+    }
+
+    func updateFamily(familyID: UUID, name: String, colorHex: String, visibility: TaskVisibility) async throws(FamiliarError) {
+        guard try requireMembership(familyID).allows(.manageFamily) else {
+            throw .app(key: .permissionDeniedManageFamily, message: "Du darfst diese Familie nicht bearbeiten.")
+        }
+        families[familyID]?.name = name
+        families[familyID]?.colorHex = colorHex
+        families[familyID]?.taskVisibility = visibility
+    }
+
+    func setPermissions(familyID: UUID, _ changes: [FamilyPermission: Bool]) async throws(FamiliarError) {
+        try requireAdmin(familyID)
+        for (permission, allowed) in changes { families[familyID]?.setMembersMay(permission, allowed) }
+    }
+
+    func setMemberRole(familyID: UUID, userID: UUID, role: FamilyRole) async throws(FamiliarError) {
+        try requireAdmin(familyID)
+        let admins = members[familyID]?.filter { $0.role == .admin } ?? []
+        if role == .member, admins.count == 1, admins.first?.userID == userID {
+            throw .app(key: .lastAdmin, message: "Die Familie braucht mindestens einen Admin. Ernenne zuerst eine andere Person zum Admin.")
+        }
+        if let index = members[familyID]?.firstIndex(where: { $0.userID == userID }) {
+            members[familyID]?[index].role = role
+        }
+    }
+
+    func removeMember(familyID: UUID, userID: UUID) async throws(FamiliarError) {
+        guard try requireMembership(familyID).allows(.removeMembers) else {
+            throw .app(key: .permissionDeniedRemoveMembers, message: "Du darfst in dieser Familie keine Mitglieder entfernen.")
+        }
+        members[familyID]?.removeAll { $0.userID == userID }
+    }
+
+    func deleteFamily(familyID: UUID) async throws(FamiliarError) {
+        try requireAdmin(familyID)
+        families[familyID] = nil
+        members[familyID] = nil
+        for task in tasks.values where task.familyID == familyID { tasks[task.id] = nil }
+    }
+}
 
 extension InMemoryBackend: TaskRepository {
     private func visibleTask(_ id: UUID) throws(FamiliarError) -> TaskItem {

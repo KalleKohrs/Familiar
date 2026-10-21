@@ -42,6 +42,15 @@ final class SupabaseAuthService: AuthService {
         }
     }
 
+    func deleteAccount() async throws(FamiliarError) {
+        // Die Function prüft das mitgeschickte Nutzer-JWT und löscht serverseitig (Migration 0010).
+        _ = try await perform {
+            try await client.functions.invoke("account-delete", options: FunctionInvokeOptions(method: .post))
+        }
+        // Lokale Sitzung beenden; das Konto existiert nicht mehr.
+        _ = try? await client.auth.signOut(scope: .local)
+    }
+
     func signOut(everywhere: Bool) async throws(FamiliarError) {
         // Achtung: Das SDK meldet ohne Angabe überall ab (`.global`).
         try await perform {

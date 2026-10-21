@@ -172,10 +172,49 @@ final class SessionStore {
         try await refreshFamilies()
     }
 
+    // MARK: Familie verwalten (Phase 9)
+
+    func updateFamily(_ familyID: UUID, name: String, colorHex: String, visibility: TaskVisibility) async throws(FamiliarError) {
+        try await dependencies.families.updateFamily(familyID: familyID, name: name, colorHex: colorHex, visibility: visibility)
+        try await refreshFamilies()
+    }
+
+    func setPermission(_ permission: FamilyPermission, allowed: Bool, in familyID: UUID) async throws(FamiliarError) {
+        try await dependencies.families.setPermissions(familyID: familyID, [permission: allowed])
+        try await refreshFamilies()
+    }
+
+    func setRole(_ role: FamilyRole, for userID: UUID, in familyID: UUID) async throws(FamiliarError) {
+        try await dependencies.families.setMemberRole(familyID: familyID, userID: userID, role: role)
+        try await refreshFamilies()
+    }
+
+    func removeMember(_ userID: UUID, from familyID: UUID) async throws(FamiliarError) {
+        try await dependencies.families.removeMember(familyID: familyID, userID: userID)
+        try await refreshFamilies()
+    }
+
+    func deleteFamily(_ familyID: UUID) async throws(FamiliarError) {
+        try await dependencies.families.deleteFamily(familyID: familyID)
+        try await refreshFamilies()
+    }
+
+    /// Mindestens eine Familie, in der der Nutzer Aufgaben anlegen darf.
+    var canCreateTasksAnywhere: Bool { families.contains { $0.allows(.createTasks) } }
+
+    func allows(_ permission: FamilyPermission, in familyID: UUID) -> Bool {
+        membership(familyID)?.allows(permission) ?? false
+    }
+
     // MARK: Abmelden
 
     /// Der Anmeldestatus meldet danach `signedOut`; Gerätetokens werden ab Phase 7 vorher entfernt.
     func signOut(everywhere: Bool) async throws(FamiliarError) {
         try await dependencies.auth.signOut(everywhere: everywhere)
+    }
+
+    /// Konto endgültig löschen; danach meldet der Anmeldestatus `signedOut`.
+    func deleteAccount() async throws(FamiliarError) {
+        try await dependencies.auth.deleteAccount()
     }
 }

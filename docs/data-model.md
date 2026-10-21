@@ -17,6 +17,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0007_tasks` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (MCP-Bestätigung abgelehnt). Der Eintrag `20261020205741` in `schema_migrations` wurde vorher versehentlich mit dem Inhalt `select 1;` angelegt (ohne Wirkung); das Korrigieren des gespeicherten Texts wurde ebenfalls automatisch abgelehnt. Maßgeblich ist die Datei (SHA-256 `47e10558a612314b…`). |
 | `0008_history_purge` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Auch hier wurde der Eintrag `20261021044920` vorher versehentlich mit einer wirkungslosen Platzhalter-Abfrage angelegt; maßgeblich ist die Datei (SHA-256 `3d7a39442fb049e3…`). |
 | `0009_recurrence` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`-Anweisungen; vorher kein Platzhalter-Eintrag). Inhalt per SHA-256 `86cf70d71478f91b…` gegen die Zwischenablage geprüft; Tests `supabase/tests/0006_recurrence.sql`: 42/42 grün. |
+| `0010_family_permissions` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (SHA-256 `3fa201b6d20879ca…`). Tests `supabase/tests/0007_family_permissions.sql`: 23/23 grün. |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -216,6 +217,14 @@ Realtime: Änderungen an `task_series` (außer reinem Fortschreiben der Wasserst
 `task_changed` (Inhalt `series_id`, `family_id`). Neue Fehlerschlüssel: `invalid_recurrence`,
 `recurrence_requires_date`, `not_an_occurrence`, `series_not_found`, `series_deleted`, `restore_series_instead`,
 `series_deletion_not_found`, `invalid_range`.
+
+## Familienrechte und Konto (0010)
+
+- `families`: neue Schalter `members_can_create_tasks`, `members_can_edit_tasks`, `members_can_delete_tasks` (Standard `true`); `has_family_permission` kennt `create_tasks`, `edit_tasks`, `delete_tasks`.
+- Alle Aufgaben-RPCs prüfen das passende Recht (`private.require_task_permission`): anlegen (`create_task`, `create_recurring_task`), bearbeiten (`update_task`, `update_series_from`), löschen/wiederherstellen (`delete_task`, `delete_series`, `restore_task`, `restore_series_deletion`). Abhaken/Rückgängig unverändert für alle.
+- `set_family_permissions` mit sechs Schaltern (null = unverändert), `delete_family` (nur Admin).
+- `prepare_account_deletion(user)` nur für `service_role`: Familien ohne weitere Mitglieder löschen, Admin-Rolle an das am längsten dabei befindliche Mitglied weitergeben, Besitz an Aufgabenbildern lösen (Supabase: Nutzer mit eigenen Storage-Objekten lassen sich nicht löschen), Profilbild-Pfade liefern. Die Edge Function `account-delete` (verify_jwt) ermittelt den Nutzer aus dem JWT, löscht die Profilbilder über die Storage-API und danach den Auth-Nutzer.
+- Neue Fehlerschlüssel: `permission_denied_create_tasks`, `permission_denied_edit_tasks`, `permission_denied_delete_tasks`.
 
 ## RLS-Hilfsfunktionen (0003, Schema `private`)
 

@@ -68,6 +68,11 @@ struct TaskEditorView: View {
         draft.recurrence?.normalized != original.recurrence?.normalized
     }
 
+    /// Familien, in denen der Nutzer Aufgaben anlegen darf (Admin-Schalter, Migration 0010).
+    private var creatableFamilies: [FamilyMembership] {
+        session.families.filter { $0.allows(.createTasks) }
+    }
+
     private var members: [FamilyMember] {
         guard let familyID = draft.familyID else { return [] }
         return session.membership(familyID)?.sortedMembers ?? []
@@ -88,7 +93,7 @@ struct TaskEditorView: View {
                         .accessibilityIdentifier("editor.missing")
                 }
                 titleSection.id(Anchor.title)
-                if editingTask == nil && session.families.count > 1 {
+                if editingTask == nil && creatableFamilies.count > 1 {
                     familySection.id(Anchor.family)
                 }
                 if showsRepeat {
@@ -170,7 +175,7 @@ struct TaskEditorView: View {
             .onChange(of: draft.hasDate) { _, _ in focusedField = nil }
             .announcesChanges(of: errorMessage)
             .onAppear {
-                if draft.familyID == nil { draft.familyID = session.families.first?.id }
+                if draft.familyID == nil { draft.familyID = creatableFamilies.first?.id }
                 original.familyID = draft.familyID
             }
             .task {
@@ -207,7 +212,7 @@ struct TaskEditorView: View {
     private var familySection: some View {
         Section("Familie") {
             Picker("Familie", selection: $draft.familyID) {
-                ForEach(session.families) { membership in
+                ForEach(creatableFamilies) { membership in
                     Text(membership.family.name).tag(Optional(membership.id))
                 }
             }

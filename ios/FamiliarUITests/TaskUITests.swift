@@ -210,3 +210,47 @@ final class CalendarUITests: XCTestCase {
         XCTAssertTrue(app.buttons["calendar.today"].waitForNonExistence(timeout: 5))
     }
 }
+
+/// Familienrechte (Phase 9): Admin schaltet ein Recht für Mitglieder ab und macht Anna zur Admin.
+final class FamilyAdminUITests: XCTestCase {
+    override func setUp() {
+        continueAfterFailure = false
+    }
+
+    @MainActor
+    func testAdminCanRestrictMembersAndPromoteSomeone() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-FamiliarInMemoryBackend", "-FamiliarInMemoryScenario", "ready"]
+        app.launch()
+        XCTAssertTrue(app.buttons["header.family"].waitForExistence(timeout: 10))
+        app.buttons["header.family"].tap()
+        let row = app.buttons["families.row.Familie Kohrs"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
+
+        // Erster Schalter: „Aufgaben anlegen“.
+        let createTasks = app.switches["familyDetail.permission.0"]
+        XCTAssertTrue(createTasks.waitForExistence(timeout: 5))
+        XCTAssertEqual(createTasks.value as? String, "1")
+        createTasks.switches.firstMatch.tap()
+        XCTAssertTrue(NSPredicate(format: "value == '0'").evaluate(with: createTasks) ||
+                      createTasks.waitForValue("0"))
+
+        app.buttons["familyDetail.member.Anna"].tap()
+        let promote = app.buttons["Zum Admin machen"]
+        XCTAssertTrue(promote.waitForExistence(timeout: 5))
+        promote.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == 'Admin'")).element(boundBy: 1).waitForExistence(timeout: 5))
+    }
+}
+
+private extension XCUIElement {
+    func waitForValue(_ expected: String, timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date.now.addingTimeInterval(timeout)
+        while Date.now < deadline {
+            if (value as? String) == expected { return true }
+            RunLoop.current.run(until: .now.addingTimeInterval(0.2))
+        }
+        return false
+    }
+}

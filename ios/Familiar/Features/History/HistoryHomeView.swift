@@ -130,8 +130,11 @@ private struct HistoryRow: View {
             .accessibilityElement(children: .combine)
             .accessibilityHint("Öffnet die Details")
 
-            RestoreButton(entry: .task(task), label: "\(task.title) wiederherstellen")
-                .accessibilityIdentifier("history.restore.\(task.title)")
+            // Gelöschtes wiederherstellen braucht das Recht „löschen“; Erledigtes wieder öffnen dürfen alle.
+            if kind != .deleted || session.allows(.deleteTasks, in: task.familyID) {
+                RestoreButton(entry: .task(task), label: "\(task.title) wiederherstellen")
+                    .accessibilityIdentifier("history.restore.\(task.title)")
+            }
         }
         .familiarCard(padding: FamiliarSpacing.m)
         .opacity(store.busyTaskIDs.contains(task.id) ? 0.6 : 1)
@@ -222,8 +225,10 @@ private struct SeriesDeletionRow: View {
             }
             .accessibilityElement(children: .combine)
 
-            RestoreButton(entry: entry, label: String(localized: "Serie \(title) wiederherstellen"))
-                .accessibilityIdentifier("history.restoreSeries.\(title)")
+            if session.allows(.deleteTasks, in: deletion.familyID) {
+                RestoreButton(entry: entry, label: String(localized: "Serie \(title) wiederherstellen"))
+                    .accessibilityIdentifier("history.restoreSeries.\(title)")
+            }
         }
         .familiarCard(padding: FamiliarSpacing.m)
         .opacity(store.busyTaskIDs.contains(deletion.id) ? 0.6 : 1)

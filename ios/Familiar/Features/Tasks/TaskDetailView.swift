@@ -65,7 +65,7 @@ struct TaskDetailView: View {
             .padding(FamiliarSpacing.m)
         }
         .toolbar {
-            if task.isOpen {
+            if task.isOpen && session.allows(.editTasks, in: task.familyID) {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Bearbeiten") { editing = task }
                         .accessibilityIdentifier("task.edit")
@@ -220,7 +220,7 @@ struct TaskDetailView: View {
                     .font(FamiliarFont.secondary)
                     .foregroundStyle(FamiliarColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-            } else if !task.isOpen {
+            } else if !task.isOpen && (task.deletedAt == nil || session.allows(.deleteTasks, in: task.familyID)) {
                 Button {
                     Task { _ = await store.restoreFromHistory(.task(task)); fetched = try? await store.fetch(task.id) }
                 } label: {
@@ -230,7 +230,7 @@ struct TaskDetailView: View {
                 .disabled(busy)
                 .accessibilityIdentifier("task.restore")
             }
-            if task.isOpen {
+            if task.isOpen && session.allows(.deleteTasks, in: task.familyID) {
                 Button("Aufgabe löschen", role: .destructive) { confirmDelete = true }
                     .buttonStyle(.familiarDestructive)
                     .disabled(busy)
