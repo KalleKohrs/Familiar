@@ -58,15 +58,15 @@ Laut Apple-Hilfe „Register an App ID“:
 
 Hinweis: Die in der App-ID aktivierten Capabilities sind eine Erlaubnisliste. Zusätzlich werden sie im Xcode-Target eingetragen; das übernehme ich in den jeweiligen Phasen (Entitlements-Datei), Xcode synchronisiert die Provisioning-Profile dann automatisch.
 
-## 4. APNs-Schlüssel (.p8) erstellen – erst in Phase 7 nötig
+## 4. APNs-Schlüssel (.p8) erstellen (Mitteilungen & Live Activities)
 
 Laut Apple-Hilfe „Create a private key to access a service“:
 
 1. In **Certificates, Identifiers & Profiles** **Keys** wählen, oben links **+**.
-2. **Key Name**: z. B. „Familiar APNs Sandbox“.
+2. **Key Name**: z. B. „Familiar APNs“.
 3. Haken bei **Apple Push Notification service (APNs)** → **Continue**.
 4. Neben „Apple Push Notification service“ auf **Configure** klicken:
-   - **Environment**: zunächst **Sandbox** (Entwicklung). Für den Release später einen zweiten Schlüssel für **Production** (Apple empfiehlt getrennte, umgebungsspezifische Schlüssel).
+   - **Environment**: **Sandbox & Production**. Ein Schlüssel für beide Umgebungen: Familiar merkt sich pro Gerät, ob es ein Entwicklungs-Build (Sandbox) oder eine TestFlight-/App-Store-Version (Production) ist, und wählt den passenden APNs-Server selbst. Wird die Option nicht angeboten, sag mir Bescheid – dann richten wir zwei Schlüssel ein.
    - **Key type**: **Team Scoped** (für alle Apps des Teams) ist am einfachsten.
 5. Konfiguration prüfen → **Confirm**.
 6. **Download** klicken. **Achtung:** Der Schlüssel kann nur ein einziges Mal heruntergeladen werden. Die `.p8`-Datei sicher aufbewahren (nicht im Projektordner, nicht in iCloud-Desktop).
@@ -83,7 +83,6 @@ Supabase-Dashboard → Projekt → **Edge Functions › Secrets** → folgende S
 | `APNS_KEY_ID` | Key ID aus Schritt 8 |
 | `APNS_TEAM_ID` | Team-ID aus Abschnitt 1 |
 | `APNS_TOPIC` | deine Bundle-ID |
-| `APNS_ENVIRONMENT` | `sandbox` (später `production`) |
 
 Danach mir nur Bescheid geben, *dass* die Secrets angelegt sind – nie die Werte.
 

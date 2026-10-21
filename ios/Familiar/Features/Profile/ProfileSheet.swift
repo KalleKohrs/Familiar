@@ -1,12 +1,15 @@
 import FamiliarCore
 import FamiliarDesign
 import SwiftUI
+import UIKit
 
-/// Profil und Einstellungen (Profilbild oben rechts). Kalender, Mitteilungen und „Konto löschen“
-/// kommen in den Phasen 6, 7 und 9 dazu.
+/// Profil und Einstellungen (Profilbild oben rechts): Name, Bild, Outlook, Mitteilungen, Abmelden,
+/// Konto löschen.
 struct ProfileSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(OutlookStore.self) private var outlook
+    @Environment(NotificationStore.self) private var notifications
+    @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var isSaving = false
@@ -91,6 +94,35 @@ struct ProfileSheet: View {
                         .accessibilityIdentifier("profile.outlook")
                     }
 
+                    if notifications.isAvailable {
+                        VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                            FamiliarSectionHeader("Mitteilungen")
+                            Button(action: openNotificationSettings) {
+                                HStack(spacing: FamiliarSpacing.s) {
+                                    Image(systemName: notificationsOn ? "bell.badge" : "bell.slash")
+                                        .font(.title3)
+                                        .foregroundStyle(FamiliarColor.textSecondary)
+                                        .accessibilityHidden(true)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(notificationsOn ? "Eingeschaltet" : "Ausgeschaltet")
+                                            .font(FamiliarFont.cardTitle)
+                                            .foregroundStyle(FamiliarColor.textPrimary)
+                                        Text(notificationsOn ? "In den iOS-Einstellungen ändern" : "Antippen zum Einschalten")
+                                            .font(FamiliarFont.meta)
+                                            .foregroundStyle(FamiliarColor.textSecondary)
+                                    }
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "arrow.up.forward")
+                                        .font(.footnote.weight(.semibold))
+                                        .foregroundStyle(FamiliarColor.textTertiary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.familiarCard)
+                            .accessibilityIdentifier("profile.notifications")
+                        }
+                    }
+
                     #if DEBUG
                     NavigationLink("Design-System ansehen") {
                         DesignGalleryView()
@@ -158,6 +190,7 @@ struct ProfileSheet: View {
                 }
             }
             .onAppear { name = session.profile?.displayName ?? "" }
+            .task { await notifications.refreshAuthorization() }
         }
     }
 
@@ -185,6 +218,21 @@ struct ProfileSheet: View {
                 try await session.deleteAccount()
             } catch {
                 errorMessage = error.message
+            }
+        }
+    }
+
+    private var notificationsOn: Bool {
+        notifications.authorization == .authorized || notifications.authorization == .provisional
+    }
+
+    /// Noch nie gefragt: System-Abfrage; sonst die Mitteilungs-Einstellungen von Familiar öffnen.
+    private func openNotificationSettings() {
+        Task {
+            if notifications.authorization == .notDetermined {
+                await notifications.requestAuthorization()
+            } else if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                openURL(url)
             }
         }
     }

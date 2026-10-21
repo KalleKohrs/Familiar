@@ -723,7 +723,8 @@ extension AppDependencies {
         let backend = InMemoryBackend(scenario: scenario)
         return AppDependencies(auth: backend, profiles: backend, families: backend, tasks: backend,
                                calendars: InMemoryCalendars(
-                                   connected: ProcessInfo.processInfo.arguments.contains("-FamiliarInMemoryOutlook")))
+                                   connected: ProcessInfo.processInfo.arguments.contains("-FamiliarInMemoryOutlook")),
+                               devices: InMemoryDevices(), supportsPush: false)
     }
 }
 
@@ -739,9 +740,20 @@ extension View {
             .environment(TaskStore(repository: dependencies.tasks))
             .environment(TaskImageStore(tasks: dependencies.tasks))
             .environment(OutlookStore(repository: dependencies.calendars))
+            .environment(NotificationStore(devices: dependencies.devices, isEnabled: false))
             .preferredColorScheme(.dark)
             .tint(FamiliarColor.accent)
             .task { session.start() }
     }
 }
 #endif
+
+/// Geräte ohne Server: Mitteilungen gibt es im In-Memory-Backend nicht.
+struct InMemoryDevices: DeviceRepository {
+    func registerDevice(token: String, environment: PushEnvironment, pushToStartToken: String?,
+                        appVersion: String?, timezone: String?) async throws(FamiliarError) {}
+    func unregisterDevice(token: String) async throws(FamiliarError) {}
+    func registerLiveActivity(taskID: UUID, deviceToken: String, activityID: String,
+                              updateToken: String) async throws(FamiliarError) {}
+    func endLiveActivity(deviceToken: String, activityID: String) async throws(FamiliarError) {}
+}

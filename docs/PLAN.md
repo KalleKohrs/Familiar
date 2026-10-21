@@ -323,7 +323,7 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
    - Monatsansicht mit Aufgaben + Projektionen.
    - Anbieter-Abstraktion im Client.
 7. **Push & Live Activities**
-   - **Stand 2026-10-21:** Server fertig (Migrationen 0012–0014, Edge Function `push-dispatch`, Tests 29/29, S2 bestanden). Versand startet, sobald die APNs-Secrets gesetzt sind (Launch-Liste Punkt 1). App-Seite folgt.
+   - **Stand 2026-10-21:** Server fertig (Migrationen 0012–0014, Edge Function `push-dispatch`, Tests 29/29, S2 bestanden). Versand startet, sobald die APNs-Secrets gesetzt sind (Launch-Liste Punkt 1). App-Seite fertig: Erklärung vor der System-Abfrage, Geräte- und Push-to-Start-Token, Live-Activity-Tokens, Abhaken in der Activity (`CompleteTaskIntent`), Abgleich beim Öffnen (`LiveActivityRules`), Antippen öffnet die Aufgabe, Abmelden meldet das Gerät ab. Live-Test auf echtem Gerät braucht das Apple Developer Program.
    - **Spike S2** zuerst.
    - devices, Outbox, `push-dispatch`.
    - Widget-Extension, `CompleteTaskIntent`, Push-to-Start, Abgleich beim Vordergrund.

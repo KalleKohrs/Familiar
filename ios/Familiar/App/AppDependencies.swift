@@ -10,6 +10,9 @@ struct AppDependencies {
     let families: any FamilyRepository
     let tasks: any TaskRepository
     let calendars: any ExternalCalendarRepository
+    let devices: any DeviceRepository
+    /// Mitteilungen und Live Activities nur mit echtem Backend (nicht in UI-Tests/Previews).
+    var supportsPush = true
 
     static func live() -> AppDependencies {
         #if DEBUG
@@ -22,6 +25,6 @@ struct AppDependencies {
         }
         let backend = SupabaseBackend(configuration: configuration)
         return AppDependencies(auth: backend.auth, profiles: backend.profiles, families: backend.families, tasks: backend.tasks,
-                               calendars: backend.calendars)
+                               calendars: backend.calendars, devices: backend.devices)
     }
 }

@@ -32,6 +32,7 @@ public struct SupabaseBackend: Sendable {
     public let families: any FamilyRepository
     public let tasks: any TaskRepository
     public let calendars: any ExternalCalendarRepository
+    public let devices: any DeviceRepository
 
     public init(configuration: SupabaseConfiguration) {
         let client = SupabaseClient(
@@ -49,6 +50,7 @@ public struct SupabaseBackend: Sendable {
         families = SupabaseFamilyRepository(client: client)
         tasks = SupabaseTaskRepository(client: client)
         calendars = SupabaseCalendarRepository(client: client)
+        devices = SupabaseDeviceRepository(client: client)
     }
 }
 

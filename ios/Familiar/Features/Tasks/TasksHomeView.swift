@@ -8,6 +8,7 @@ struct TasksHomeView: View {
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var store
     @Environment(\.openNewTask) private var openNewTask
+    @Environment(NotificationStore.self) private var notifications
     @Namespace private var transition
     @State private var path: [UUID] = []
     @State private var gallery: GalleryState?
@@ -44,6 +45,14 @@ struct TasksHomeView: View {
                     .navigationTransition(.zoom(sourceID: taskID, in: transition))
             }
             .overlay(alignment: .bottom) { TaskBanner() }
+            // Mitteilung angetippt: die Aufgabe direkt öffnen.
+            .onChange(of: notifications.requestedTaskID, initial: true) { _, taskID in
+                guard let taskID else { return }
+                showsFamilies = false
+                showsProfile = false
+                path = [taskID]
+                notifications.requestedTaskID = nil
+            }
             .sheet(isPresented: $showsFamilies) { FamiliesSheet() }
             .sheet(isPresented: $showsProfile) { ProfileSheet() }
             .fullScreenCover(item: $gallery) { state in

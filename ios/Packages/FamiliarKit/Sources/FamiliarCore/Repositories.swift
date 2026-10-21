@@ -88,3 +88,21 @@ public protocol ExternalCalendarRepository: Sendable {
     func requestSync() async throws(FamiliarError) -> Bool
     func events(from: Date, to: Date) async throws(FamiliarError) -> [ExternalEvent]
 }
+
+/// APNs-Umgebung des Geräte-Tokens: Xcode-Debug-Builds nutzen die Sandbox, TestFlight und App Store
+/// die Produktion.
+public enum PushEnvironment: String, Codable, Hashable, Sendable {
+    case sandbox
+    case production
+}
+
+/// Geräte und Live Activities für Mitteilungen (Migration 0012). Tokens als Hex-Text.
+public protocol DeviceRepository: Sendable {
+    func registerDevice(token: String, environment: PushEnvironment, pushToStartToken: String?,
+                        appVersion: String?, timezone: String?) async throws(FamiliarError)
+    /// Vor dem Abmelden aufrufen: Das Gerät bekommt danach keine Mitteilungen mehr.
+    func unregisterDevice(token: String) async throws(FamiliarError)
+    func registerLiveActivity(taskID: UUID, deviceToken: String, activityID: String,
+                              updateToken: String) async throws(FamiliarError)
+    func endLiveActivity(deviceToken: String, activityID: String) async throws(FamiliarError)
+}

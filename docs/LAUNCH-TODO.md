@@ -6,7 +6,7 @@ Grundsatz (2026-10-21): Familiar wird von Anfang an so gebaut, wie es zum App-St
 
 | # | Punkt | Warum | Kosten | Dauer (ca.) |
 |---|---|---|---|---|
-| 1 | **Apple Developer Program** | Ohne geht nichts davon: TestFlight, App Store, Mitteilungen & Live Activities (Phase 7 – Server ist fertig und wartet nur auf den APNs-Schlüssel: Secrets `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_TOPIC`), „Mit Apple anmelden“, Einladungslinks (Universal Links) | 99 €/Jahr | 30 min + Prüfung durch Apple (1–2 Tage) |
+| 1 | **Apple Developer Program** | Ohne geht nichts davon: TestFlight, App Store, Mitteilungen & Live Activities (Phase 7 – Server ist fertig und wartet nur auf den APNs-Schlüssel: Secrets `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_TOPIC`, Anleitung [setup/apple.md](setup/apple.md) Abschnitt 4; App-ID braucht die Capability „Push Notifications“), „Mit Apple anmelden“, Einladungslinks (Universal Links) | 99 €/Jahr | 30 min + Prüfung durch Apple (1–2 Tage) |
 | 2 | **Produktions-Projekt bei Supabase** (getrennt vom Entwicklungsprojekt) mit **Pro-Tarif** | Echte Nutzerdaten getrennt von Tests; tägliche Backups mit Wiederherstellung auf die Minute (PITR), kein Pausieren | ab ca. 25 $/Monat (+ PITR) | 30 min, Migrationen spiele ich ein |
 | 3 | **Microsoft: Herausgeber verifizieren** (Publisher Verification) | Ohne Verifizierung blockieren viele Firmen die Outlook-Anbindung (wie bei dir) | kostenlos (Microsoft AI Cloud Partner Program) | 1 h + Prüfung |
 | 4 | **Microsoft: Zertifikat statt Client Secret** | Von Microsoft für den Produktivbetrieb empfohlen; läuft nicht nach 6 Monaten ab | kostenlos | 15 min – ich erzeuge das Zertifikat, du lädst es hoch |

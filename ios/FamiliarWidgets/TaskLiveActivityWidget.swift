@@ -1,4 +1,5 @@
 import ActivityKit
+import AppIntents
 import FamiliarActivity
 import FamiliarCore
 import FamiliarDesign
@@ -6,8 +7,8 @@ import SwiftUI
 import WidgetKit
 
 /// Live Activity einer Aufgabe auf Sperrbildschirm und in der Dynamic Island.
-/// Phase 0: Darstellung im Design-System. Abhak-Button (App Intent) und
-/// Push-Anbindung folgen in Phase 7.
+/// Gestartet per Push-to-Start (`push-dispatch`) oder beim Abgleich in der App; der Abhak-Knopf
+/// erscheint nur, wenn die Person laut Erledigungsart abhaken darf (`canComplete`).
 struct TaskLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TaskActivityAttributes.self) { context in
@@ -31,7 +32,13 @@ struct TaskLiveActivityWidget: Widget {
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    AssigneeInitialsRow(assignees: context.state.assignees)
+                    HStack {
+                        AssigneeInitialsRow(assignees: context.state.assignees)
+                        Spacer(minLength: 0)
+                        if context.state.canComplete {
+                            CompleteButton(taskID: context.attributes.taskID)
+                        }
+                    }
                 }
             } compactLeading: {
                 Image(systemName: "checklist")
@@ -72,6 +79,9 @@ private struct TaskActivityLockScreenView: View {
                 AssigneeInitialsRow(assignees: context.state.assignees)
             }
             Spacer(minLength: 0)
+            if context.state.canComplete {
+                CompleteButton(taskID: context.attributes.taskID)
+            }
         }
         .padding(FamiliarSpacing.m)
     }
@@ -86,10 +96,27 @@ private struct StartTimeText: View {
                 .font(.footnote.monospacedDigit().weight(.medium))
                 .foregroundStyle(FamiliarColor.textSecondary)
         } else {
-            Text("Jetzt")
+            Text("Heute")
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(FamiliarColor.textSecondary)
         }
+    }
+}
+
+/// Abhaken ohne die App zu öffnen (``CompleteTaskIntent`` läuft im App-Prozess).
+private struct CompleteButton: View {
+    let taskID: UUID
+
+    var body: some View {
+        Button(intent: CompleteTaskIntent(taskID: taskID)) {
+            Image(systemName: "checkmark")
+                .font(.body.weight(.bold))
+                .foregroundStyle(FamiliarColor.onAccent)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(FamiliarColor.accent))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Erledigt")
     }
 }
 

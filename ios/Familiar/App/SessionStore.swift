@@ -209,12 +209,17 @@ final class SessionStore {
     // MARK: Abmelden
 
     /// Der Anmeldestatus meldet danach `signedOut`; Gerätetokens werden ab Phase 7 vorher entfernt.
+    /// Läuft vor dem Abmelden (Gerät für Mitteilungen abmelden, solange die Sitzung noch gilt).
+    var beforeSignOut: (() async -> Void)?
+
     func signOut(everywhere: Bool) async throws(FamiliarError) {
+        await beforeSignOut?()
         try await dependencies.auth.signOut(everywhere: everywhere)
     }
 
     /// Konto endgültig löschen; danach meldet der Anmeldestatus `signedOut`.
     func deleteAccount() async throws(FamiliarError) {
+        await beforeSignOut?()
         try await dependencies.auth.deleteAccount()
     }
 }

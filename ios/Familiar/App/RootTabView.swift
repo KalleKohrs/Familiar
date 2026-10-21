@@ -10,6 +10,7 @@ struct RootTabView: View {
     @State private var createTaskRequests = 0
     @State private var tabBarHeight: CGFloat = 0
     @State private var bottomSafeArea: CGFloat = 0
+    @State private var showsNotificationPrimer = false
 
     /// Abstand der Leiste zur Bildschirmunterkante: auf Geräten mit Home-Indikator wie Apples
     /// Leiste (konzentrisch zu den Displayecken), sonst etwas knapper.
@@ -22,6 +23,8 @@ struct RootTabView: View {
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var tasks
     @Environment(OutlookStore.self) private var outlook
+    @Environment(NotificationStore.self) private var notifications
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView(selection: $selection) {
@@ -70,7 +73,33 @@ struct RootTabView: View {
         .task(id: session.userID) {
             if session.userID != nil { await outlook.reload() } else { outlook.stop() }
         }
+        .task(id: session.userID) {
+            guard let userID = session.userID else { return }
+            await notifications.start(userID: userID)
+            // Einmal je Konto erklären, wofür Familiar Mitteilungen nutzt – erst dann fragt das System.
+            if notifications.isAvailable && notifications.authorization == .notDetermined
+                && !notifications.hasAskedForPermission(userID) {
+                showsNotificationPrimer = true
+            }
+        }
+        .task(id: tasks.changeToken) { await reconcileLiveActivities() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await reconcileLiveActivities() } }
+        }
+        .onChange(of: notifications.requestedTaskID) { _, taskID in
+            if taskID != nil { selection = .tasks }
+        }
+        .sheet(isPresented: $showsNotificationPrimer) {
+            NotificationPrimerView()
+        }
         .sensoryFeedback(.impact(weight: .medium), trigger: createTaskRequests)
+    }
+
+    /// Nur mit geladener Liste abgleichen – sonst würden laufende Activities fälschlich beendet.
+    private func reconcileLiveActivities() async {
+        guard tasks.state == .loaded else { return }
+        await notifications.refreshAuthorization()
+        await notifications.reconcile(openTasks: tasks.tasks, families: session.families)
     }
 
     private func openNewTask() {
