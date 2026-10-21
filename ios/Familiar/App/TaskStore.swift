@@ -37,6 +37,8 @@ final class TaskStore {
     /// Verlauf: erledigte und gelöschte Aufgaben sowie gelöschte Serien der letzten 30 Tage, neueste zuerst.
     private(set) var history: [HistoryEntry] = []
     private(set) var historyState: LoadState = .idle
+    /// Gab es in dieser Sitzung offene Aufgaben? Dann heißt die leere Liste „Alles erledigt“.
+    private(set) var hadOpenTasks = false
 
     private let repository: any TaskRepository
     private var userID: UUID?
@@ -71,6 +73,7 @@ final class TaskStore {
         state = .idle
         history = []
         historyState = .idle
+        hadOpenTasks = false
         undo = nil
     }
 
@@ -119,10 +122,15 @@ final class TaskStore {
     }
 
     func reload() async {
-        if tasks.isEmpty { state = .loading }
+        // Ladeanzeige nur beim ersten Laden – sonst blitzen Platzhalter auf, sobald die letzte
+        // Aufgabe erledigt ist.
+        if state == .idle { state = .loading }
         do throws(FamiliarError) {
             tasks = TaskRules.homeOrder(try await repository.openTasks())
+            if !tasks.isEmpty { hadOpenTasks = true }
             state = .loaded
+            // Leere Liste: am Verlauf erkennen, ob „Alles erledigt“ oder „Noch keine Aufgaben“ passt.
+            if tasks.isEmpty && historyState == .idle { await reloadHistory() }
         } catch {
             // Beim Aktualisieren bleibt die bisherige Liste stehen.
             if tasks.isEmpty { state = .failed(error) } else { showError(error.message) }

@@ -187,9 +187,11 @@ select tests.expect('K4 Mia wird Admin der gemeinsamen Familie',
 select tests.expect('K5 gemeinsame Familie und Aufgabe bleiben',
   (select count(*)::text from public.tasks where family_id = tests.id('f')), '1');
 
-select tests.expect('L2 Admin (jetzt Mia) löscht die Familie samt Aufgaben',
-  tests.run_as(tests.u('mia'), format($$select 'ok' from (select public.delete_family(%L)) as x$$, tests.id('f'))) || '/' ||
-  (select count(*)::text from public.tasks where family_id = tests.id('f')), 'ok/0');
+select tests.expect('L2 Admin (jetzt Mia) löscht die Familie',
+  tests.run_as(tests.u('mia'), format($$select 'ok' from (select public.delete_family(%L)) as x$$, tests.id('f'))), 'ok');
+-- Eigener Befehl: im selben Befehl wäre noch der alte Stand sichtbar.
+select tests.expect('L3 Aufgaben der Familie sind mit gelöscht',
+  (select count(*)::text from public.tasks where family_id = tests.id('f')), '0');
 
 select
   (select count(*) from tests.results) as gesamt,

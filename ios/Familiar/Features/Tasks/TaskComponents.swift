@@ -274,6 +274,10 @@ struct TaskCard: View {
     let onOpenImages: () -> Void
     /// Sofortige Rückmeldung beim Abhaken, bevor der Server antwortet.
     @State private var pendingDone: Bool?
+    /// Karte blendet an Ort und Stelle aus, bevor sie aus der Liste fällt – so rücken die
+    /// anderen erst nach, wenn sie weg ist (keine Überlagerung).
+    @State private var isLeaving = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let action = session.userID.flatMap { TaskRules.actions(for: task, userID: $0).first }
@@ -350,18 +354,40 @@ struct TaskCard: View {
             }
         }
         .familiarCard(padding: FamiliarSpacing.m)
-        .opacity(busy && pendingDone == nil ? 0.6 : 1)
+        .opacity(isLeaving ? 0 : (busy && pendingDone == nil ? 0.6 : 1))
+        .scaleEffect(isLeaving && !reduceMotion ? 0.97 : 1)
         .sensoryFeedback(.success, trigger: pendingDone) { _, new in new == true }
         .onChange(of: task.version) { _, _ in pendingDone = nil }
     }
 
-    /// Haken sofort zeigen (Feder-Animation), kurz stehen lassen, dann speichern.
+    /// Haken sofort zeigen (Feder-Animation), kurz stehen lassen, Karte ausblenden, dann speichern.
     private func check(_ action: TaskCompletionAction) {
         pendingDone = action != .undoMine
         Task {
             try? await Task.sleep(for: .milliseconds(350))
+            if willLeaveList(after: action) {
+                withAnimation(FamiliarMotion.animation(.easeOut(duration: 0.22), reduceMotion: reduceMotion)) {
+                    isLeaving = true
+                }
+                try? await Task.sleep(for: .milliseconds(230))
+            }
             await store.perform(action, on: task)
+            // Bleibt die Karte (z. B. Fehler oder andere müssen noch abhaken), wieder einblenden.
+            withAnimation(FamiliarMotion.animation(.easeOut(duration: 0.2), reduceMotion: reduceMotion)) {
+                isLeaving = false
+            }
             pendingDone = nil
+        }
+    }
+
+    /// Verschwindet die Aufgabe nach dem Abhaken aus der offenen Liste?
+    private func willLeaveList(after action: TaskCompletionAction) -> Bool {
+        switch action {
+        case .completeForAll: return true
+        case .undoMine: return false
+        case .completeForMe:
+            guard task.completionMode == .each, let me = session.userID else { return true }
+            return task.assignees.allSatisfy { $0.userID == me || $0.isDone }
         }
     }
 
@@ -390,12 +416,22 @@ struct TaskBanner: View {
     var body: some View {
         VStack {
             if let undo = store.undo {
-                banner(text: undo.message, systemImage: "checkmark.circle.fill", tint: FamiliarColor.success) {
-                    Button("Rückgängig") { Task { await store.performUndo() } }
-                        .font(FamiliarFont.body.weight(.semibold))
-                        .foregroundStyle(FamiliarColor.accent)
-                        .frame(minHeight: FamiliarSize.minimumTouchTarget)
-                        .accessibilityIdentifier("banner.undo")
+                let isDeletion = undo.kind == .restore || { if case .restoreSeries = undo.kind { true } else { false } }()
+                banner(text: undo.message,
+                       systemImage: isDeletion ? "trash.circle.fill" : "checkmark.circle.fill",
+                       tint: isDeletion ? FamiliarColor.textSecondary : FamiliarColor.success) {
+                    Button { Task { await store.performUndo() } } label: {
+                        Text("Rückgängig")
+                            .font(FamiliarFont.secondary.weight(.semibold))
+                            .foregroundStyle(FamiliarColor.accent)
+                            .padding(.horizontal, FamiliarSpacing.s)
+                            .frame(minHeight: 34)
+                            .background(Capsule().fill(FamiliarColor.accent.opacity(0.16)))
+                            .frame(minHeight: FamiliarSize.minimumTouchTarget)
+                            .contentShape(.capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("banner.undo")
                 }
             } else if let error = store.actionError {
                 banner(text: error, systemImage: "exclamationmark.circle.fill", tint: FamiliarColor.danger) {
@@ -407,7 +443,7 @@ struct TaskBanner: View {
                 }
             }
         }
-        .padding(.horizontal, FamiliarSpacing.m)
+        .padding(.horizontal, FloatingTabBar.edgeInset)
         .padding(.bottom, tabBarHeight + FamiliarSpacing.s)
         .familiarAnimation(value: store.undo?.id)
         .familiarAnimation(value: store.actionError)
@@ -426,7 +462,7 @@ struct TaskBanner: View {
             action()
         }
         .padding(.leading, FamiliarSpacing.m)
-        .padding(.trailing, FamiliarSpacing.xs)
+        .padding(.trailing, FamiliarSpacing.s)
         .frame(minHeight: 52)
         .glassEffect(.regular, in: .capsule)
         .transition(FamiliarMotion.appearTransition(reduceMotion: reduceMotion))

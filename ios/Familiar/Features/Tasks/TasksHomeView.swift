@@ -21,6 +21,8 @@ struct TasksHomeView: View {
                     header
                     content
                 }
+                // Weicher Wechsel zwischen Liste und Leerzustand (z. B. nach der letzten Aufgabe).
+                .familiarAnimation(value: store.tasks.isEmpty)
                 .padding(.horizontal, FamiliarSpacing.m)
                 .padding(.top, FamiliarSpacing.s)
             }
@@ -95,18 +97,33 @@ struct TasksHomeView: View {
             .familiarCard()
         } else {
             if store.tasks.isEmpty {
-                FamiliarEmptyState(
-                    systemImage: "checklist",
-                    title: "Noch keine Aufgaben",
-                    message: "Lege über das Plus unten rechts die erste Aufgabe an.",
-                    actionTitle: "Aufgabe anlegen",
-                    action: { openNewTask() }
-                )
-                .familiarCard()
+                if store.hadOpenTasks || !store.history.isEmpty {
+                    FamiliarEmptyState(
+                        systemImage: "checkmark",
+                        title: "Alles erledigt",
+                        message: "Gerade ist nichts offen. Neue Aufgaben legst du über das Plus an."
+                    )
+                    .familiarCard()
+                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                    .accessibilityIdentifier("tasks.allDone")
+                } else {
+                    FamiliarEmptyState(
+                        systemImage: "checklist",
+                        title: "Noch keine Aufgaben",
+                        message: "Lege über das Plus unten rechts die erste Aufgabe an.",
+                        actionTitle: "Aufgabe anlegen",
+                        action: { openNewTask() }
+                    )
+                    .familiarCard()
+                    .transition(.opacity)
+                }
             } else {
-                LazyVStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                // Normaler VStack statt LazyVStack: Familienlisten sind kurz, und Ein-/Ausblenden
+                // bleibt sauber (LazyVStack ließ ausgeblendete Karten kurz über Überschriften stehen).
+                VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
                     ForEach(TaskRules.homeSections(store.tasks), id: \.section) { group in
                         sectionTitle(group.section, count: group.tasks.count)
+                            .transition(.opacity)
                         ForEach(group.tasks) { task in
                             TaskCard(
                                 task: task,
@@ -115,11 +132,12 @@ struct TasksHomeView: View {
                             )
                             .matchedTransitionSource(id: task.id, in: transition)
                             .transition(.asymmetric(insertion: .opacity,
-                                                    removal: .opacity.combined(with: .scale(scale: 0.96))))
+                                                    removal: .opacity.combined(with: .scale(scale: 0.96, anchor: .top))))
                         }
                     }
                 }
                 .familiarAnimation(value: store.tasks.map(\.id))
+                .transition(.opacity)
             }
         }
     }

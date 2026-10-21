@@ -13,7 +13,10 @@ struct FloatingTabBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var selectionNamespace
 
-    private let barHeight: CGFloat = 60
+    /// Maße wie die System-Leiste ab iOS 26 (im Simulator an der Fotos-App gemessen).
+    static let barHeight: CGFloat = 62
+    static let edgeInset: CGFloat = 21
+    private var barHeight: CGFloat { Self.barHeight }
 
     var body: some View {
         GlassEffectContainer(spacing: FamiliarSpacing.s) {
@@ -22,7 +25,7 @@ struct FloatingTabBar: View {
                 createButton
             }
         }
-        .padding(.horizontal, FamiliarSpacing.m)
+        .padding(.horizontal, Self.edgeInset)
         // Wie die System-Tab-Bar: Beschriftungen wachsen nur begrenzt mit,
         // bei großen Schriftgrößen hilft der Large Content Viewer (lange drücken).
         .dynamicTypeSize(...DynamicTypeSize.xLarge)
@@ -50,8 +53,8 @@ struct FloatingTabBar: View {
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: tab.systemImage)
-                    .font(.title3.weight(.medium))
-                    .frame(height: 24)
+                    .font(.system(size: 22, weight: .medium))
+                    .frame(height: 26)
                     .accessibilityHidden(true)
                 Text(tab.title)
                     .font(.caption2.weight(.semibold))
@@ -75,10 +78,13 @@ struct FloatingTabBar: View {
         }
     }
 
-    /// Helle Kapsel hinter dem aktiven Bereich; gleitet mit, bei „Bewegung reduzieren“ nur Überblendung.
+    /// Dunkle Kapsel hinter dem aktiven Bereich (wie die System-Leiste im dunklen Erscheinungsbild,
+    /// z. B. App Store); gleitet mit, bei „Bewegung reduzieren“ nur Überblendung.
     @ViewBuilder
     private var selectionIndicator: some View {
-        let capsule = Capsule().fill(FamiliarColor.textPrimary.opacity(0.10))
+        let capsule = Capsule()
+            .fill(Color.black.opacity(0.32))
+            .overlay(Capsule().strokeBorder(FamiliarColor.hairline, lineWidth: 0.5))
         if reduceMotion {
             capsule.transition(.opacity)
         } else {
