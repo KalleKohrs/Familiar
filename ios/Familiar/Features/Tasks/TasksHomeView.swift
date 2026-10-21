@@ -101,7 +101,7 @@ struct TasksHomeView: View {
                         title: "Alles erledigt",
                         message: "Gerade ist nichts offen. Neue Aufgaben legst du über das Plus an."
                     )
-                    .familiarCard()
+                    .padding(.vertical, FamiliarSpacing.xl)
                     .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     .accessibilityIdentifier("tasks.allDone")
                 } else {
@@ -112,7 +112,7 @@ struct TasksHomeView: View {
                         actionTitle: "Aufgabe anlegen",
                         action: { openNewTask() }
                     )
-                    .familiarCard()
+                    .padding(.vertical, FamiliarSpacing.xl)
                     .transition(.opacity)
                 }
             } else {

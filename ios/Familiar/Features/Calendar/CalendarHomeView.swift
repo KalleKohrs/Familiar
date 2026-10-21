@@ -127,12 +127,16 @@ struct CalendarHomeView: View {
                 }
             }
             .accessibilityHidden(true)
+            // Dichtes Raster wächst nur begrenzt mit (wie Apples Kalender); alle Inhalte stehen in
+            // voller Größe in der Tagesliste, lange Drücken zeigt den Tag vergrößert.
+            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: FamiliarSpacing.xxs) {
                 ForEach(grid, id: \.self) { day in
                     dayCell(day)
                 }
             }
+            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
             .id(month)
             .transition(reduceMotion ? .opacity : .asymmetric(
                 insertion: .move(edge: direction > 0 ? .trailing : .leading).combined(with: .opacity),
@@ -167,7 +171,11 @@ struct CalendarHomeView: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .accessibilityLabel(label)
+        .accessibilityShowsLargeContentViewer {
+            Label(label, systemImage: systemImage)
+        }
     }
 
     private func dayCell(_ day: LocalDate) -> some View {
@@ -204,6 +212,9 @@ struct CalendarHomeView: View {
         .accessibilityLabel(cellLabel(day, entries: dayEntries, isToday: isToday))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityIdentifier("calendar.day.\(day.description)")
+        .accessibilityShowsLargeContentViewer {
+            Text(cellLabel(day, entries: dayEntries, isToday: isToday))
+        }
     }
 
     /// Bis zu drei Punkte in Familienfarbe: voll für Aufgaben, blass für geplante Serientermine.
@@ -264,7 +275,7 @@ struct CalendarHomeView: View {
                 .font(FamiliarFont.secondary)
                 .foregroundStyle(FamiliarColor.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .familiarCard(padding: FamiliarSpacing.m)
+                .padding(.horizontal, FamiliarSpacing.xxs)
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(dayEntries.enumerated()), id: \.element.id) { index, entry in

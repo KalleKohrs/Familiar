@@ -168,8 +168,11 @@ struct TaskMetaTags: View {
 struct AssigneeAvatars: View {
     @Environment(SessionStore.self) private var session
     let task: TaskItem
-    var diameter: CGFloat = 26
+    /// Wächst mit der Schriftgröße mit (begrenzt), damit Initialen lesbar bleiben.
+    @ScaledMetric(relativeTo: .footnote) private var scaledDiameter: CGFloat = 26
     var maxVisible = 5
+
+    private var diameter: CGFloat { min(scaledDiameter, 40) }
 
     var body: some View {
         // Kleiner Abstand statt Überlappung, damit Häkchen-Abzeichen nie verdeckt werden.
@@ -274,6 +277,7 @@ struct TaskCard: View {
     let onOpenImages: () -> Void
     /// Sofortige Rückmeldung beim Abhaken, bevor der Server antwortet.
     @State private var pendingDone: Bool?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// Karte blendet an Ort und Stelle aus, bevor sie aus der Liste fällt – so rücken die
     /// anderen erst nach, wenn sie weg ist (keine Überlagerung).
     @State private var isLeaving = false
@@ -333,14 +337,20 @@ struct TaskCard: View {
                 }
             }
 
-            HStack(spacing: FamiliarSpacing.s) {
-                AssigneeAvatars(task: task)
-                if task.completionMode == .each && task.assignees.count > 1 {
-                    let progress = TaskRules.progress(task)
-                    Text("\(progress.done)/\(progress.total) erledigt")
-                        .font(FamiliarFont.meta.monospacedDigit())
-                        .foregroundStyle(FamiliarColor.textSecondary)
-                        .accessibilityLabel("\(progress.done) von \(progress.total) erledigt")
+            // Große Schriften: Fortschritt unter die Profilbilder, damit nichts umbricht.
+            let footer = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: FamiliarSpacing.xs))
+                : AnyLayout(HStackLayout(spacing: FamiliarSpacing.s))
+            HStack(alignment: .center, spacing: FamiliarSpacing.s) {
+                footer {
+                    AssigneeAvatars(task: task)
+                    if task.completionMode == .each && task.assignees.count > 1 {
+                        let progress = TaskRules.progress(task)
+                        Text("\(progress.done)/\(progress.total) erledigt")
+                            .font(FamiliarFont.meta.monospacedDigit())
+                            .foregroundStyle(FamiliarColor.textSecondary)
+                            .accessibilityLabel("\(progress.done) von \(progress.total) erledigt")
+                    }
                 }
                 Spacer(minLength: 0)
                 if let action {

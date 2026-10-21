@@ -61,6 +61,8 @@ public struct CompletionCheckButton: View {
     let isDone: Bool
     let tint: Color
     let action: () -> Void
+    /// Wächst mit der Schriftgröße mit (begrenzt).
+    @ScaledMetric(relativeTo: .body) private var size: CGFloat = 40
 
     public init(isDone: Bool, tint: Color = FamiliarColor.accent, action: @escaping () -> Void) {
         self.isDone = isDone
@@ -79,13 +81,14 @@ public struct CompletionCheckButton: View {
                 Circle()
                     .strokeBorder(isDone ? tint : FamiliarColor.lightEdge, lineWidth: 1)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: min(size, 60) * 0.375, weight: .bold))
                     .foregroundStyle(isDone ? FamiliarColor.onAccent : FamiliarColor.textTertiary)
                     .symbolEffect(.bounce, value: isDone)
             }
-            .frame(width: 40, height: 40)
+            .frame(width: min(size, 60), height: min(size, 60))
             .scaleEffect(isDone ? 1.0 : 0.96)
-            .frame(width: FamiliarSize.minimumTouchTarget, height: FamiliarSize.minimumTouchTarget)
+            .frame(width: max(FamiliarSize.minimumTouchTarget, min(size, 60)),
+                   height: max(FamiliarSize.minimumTouchTarget, min(size, 60)))
             .contentShape(Circle())
         }
         .buttonStyle(.plain)

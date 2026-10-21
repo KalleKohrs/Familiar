@@ -49,7 +49,7 @@ struct HistoryHomeView: View {
                     title: "Noch kein Verlauf",
                     message: "Erledigte und gelöschte Aufgaben bleiben hier 30 Tage und lassen sich wiederherstellen."
                 )
-                .familiarCard()
+                .padding(.vertical, FamiliarSpacing.xl)
             } else {
                 ForEach(sections, id: \.day) { section in
                     FamiliarSectionHeader(section.title)

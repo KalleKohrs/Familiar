@@ -15,6 +15,7 @@ struct TaskEditorView: View {
     @Environment(TaskStore.self) private var store
     @Environment(TaskImageStore.self) private var images
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let mode: Mode
     @State private var draft: TaskDraft
@@ -417,7 +418,11 @@ struct TaskEditorView: View {
     /// die Erklärung steht nur einmal darunter – für die gewählte Art.
     private var modeSection: some View {
         Section {
-            HStack(spacing: FamiliarSpacing.xs) {
+            // Große Schriften: Kacheln untereinander statt nebeneinander.
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(spacing: FamiliarSpacing.xs))
+                : AnyLayout(HStackLayout(spacing: FamiliarSpacing.xs))
+            layout {
                 ForEach([CompletionMode.anyOne, .each], id: \.self) { mode in
                     modeTile(mode)
                 }
