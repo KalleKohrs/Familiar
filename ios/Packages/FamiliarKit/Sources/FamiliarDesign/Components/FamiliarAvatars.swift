@@ -38,16 +38,19 @@ public struct AvatarView: View {
         }
         .frame(width: diameter, height: diameter)
         .clipShape(Circle())
-        .overlay(Circle().strokeBorder(FamiliarColor.hairline, lineWidth: 1))
-        .opacity(completion == .done ? 0.45 : 1)
+        // Erledigt: grüner Ring plus Häkchen-Abzeichen (nicht nur über Farbe erkennbar).
+        .overlay(Circle().strokeBorder(completion == .done ? FamiliarColor.success : FamiliarColor.hairline,
+                                       lineWidth: completion == .done ? 2 : 1))
         .overlay(alignment: .bottomTrailing) {
             if completion == .done {
-                Image(systemName: "checkmark.circle.fill")
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(FamiliarColor.onAccent, FamiliarColor.success)
-                    .font(.system(size: max(diameter * 0.42, 11)))
-                    .background(Circle().fill(FamiliarColor.card).padding(1))
-                    .offset(x: diameter * 0.08, y: diameter * 0.08)
+                let badge = max(diameter * 0.42, 12)
+                Image(systemName: "checkmark")
+                    .font(.system(size: badge * 0.55, weight: .heavy))
+                    .foregroundStyle(FamiliarColor.onAccent)
+                    .frame(width: badge, height: badge)
+                    .background(Circle().fill(FamiliarColor.success))
+                    .overlay(Circle().strokeBorder(FamiliarColor.canvas, lineWidth: 1.5))
+                    .offset(x: badge * 0.2, y: badge * 0.2)
             }
         }
         .accessibilityElement(children: .ignore)

@@ -154,7 +154,7 @@ Sichtbarkeit gilt identisch für Details, Bilder (Storage-Policy über `task_ima
 - **30-Tage-Löschung:** täglicher `pg_cron`-Job (Zeilen) plus `storage-purge` für verwaiste Bilder.
 
 **Startseite:**
-- Aufgaben aller Familien in einer Liste. Zuerst Aufgaben ohne Datum (neueste oben), dann datierte chronologisch nach `sort_at`; nur-Datum zählt als Tagesbeginn.
+- Aufgaben aller Familien in einer Liste. Abschnitte Überfällig · Heute · Morgen · Später; Aufgaben ohne Datum stehen in „Heute“ ganz oben (neueste oben), datierte chronologisch nach `sort_at` (Wunsch vom 2026-10-21); nur-Datum zählt als Tagesbeginn.
 - Überfällige Aufgaben sind markiert. Keine Filter.
 
 **Familienfarben:**
@@ -316,6 +316,7 @@ Jede Phase beginnt mit einem **Doku-Check**: aktuelle Apple-, Supabase- oder Mic
    - **Stand 2026-10-21:** umgesetzt (Verlauf-Ansicht mit Wiederherstellen, Undo-Hinweis, tägliche 30-Tage-Bereinigung per `pg_cron` → Edge Function `purge-history` mit Einmal-Token).
    - View, Wiederherstellen, Undo-Banner, 30-Tage-Löschung (Cron + `storage-purge`).
 5. **Wiederholungen**
+   - **Stand 2026-10-21:** umgesetzt (Migration 0009, Wiederholung im Editor, Geltungsbereich beim Bearbeiten und Löschen, Serien-Eintrag im Verlauf, Erzeugung alle 5 Minuten per `pg_cron`, Projektion für den Kalender). Regeln: [ADR 0008](decisions/0008-recurrence.md).
    - Serien, Generator, Projektion, Scope-Dialoge, Serien-Löschen/-Wiederherstellen; Monatstag-Regel (E2).
 6. **Kalender**
    - Monatsansicht mit Aufgaben + Projektionen.

@@ -58,4 +58,13 @@ public enum AppErrorKey: String, CaseIterable, Hashable, Sendable {
     case completionModeLocked = "completion_mode_locked"
     case notAllowedToComplete = "not_allowed_to_complete"
     case invalidScope = "invalid_scope"
+    // Wiederholungen (Migration 0009)
+    case invalidRecurrence = "invalid_recurrence"
+    case recurrenceRequiresDate = "recurrence_requires_date"
+    case notAnOccurrence = "not_an_occurrence"
+    case seriesNotFound = "series_not_found"
+    case seriesDeleted = "series_deleted"
+    case restoreSeriesInstead = "restore_series_instead"
+    case seriesDeletionNotFound = "series_deletion_not_found"
+    case invalidRange = "invalid_range"
 }

@@ -72,10 +72,79 @@ struct TaskDecodingTests {
         #expect((object["p_images"] as? [[String: Any]])?.first?["width"] as? Int == 10)
     }
 
+    @Test func occurrenceWithEmbeddedSeries() throws {
+        let json = """
+        {
+          "id": "7d3c1e2a-0b4f-4c5d-8e6f-7a8b9c0d1e2f",
+          "family_id": "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b",
+          "series_id": "5e5e5e5e-5e5e-4e5e-8e5e-5e5e5e5e5e5e", "occurrence_date": "2026-10-21",
+          "created_by": null, "title": "Blumen gießen", "description": null,
+          "start_date": "2026-10-21", "start_time": null, "timezone": "Europe/Berlin",
+          "starts_at": "2026-10-20T22:00:00+00:00", "completion_mode": "any_one", "is_detached": true,
+          "completed_at": null, "completed_by": null, "completion_source": null,
+          "deleted_at": null, "deleted_by": null, "deleted_by_series_op": null,
+          "version": 1, "created_at": "2026-10-20T20:00:00+00:00",
+          "task_assignees": [], "task_image_links": [],
+          "task_series": {"id": "5e5e5e5e-5e5e-4e5e-8e5e-5e5e5e5e5e5e", "family_id": "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b",
+                          "title": "Blumen gießen", "freq": "weekly", "weekdays": [1, 4], "month_days": [],
+                          "start_date": "2026-10-19", "deleted_at": null}
+        }
+        """
+        let task = try decoder.decode(TaskItem.self, from: Data(json.utf8))
+        #expect(task.isOccurrence)
+        #expect(task.isDetached)
+        #expect(task.occurrenceDate == LocalDate(year: 2026, month: 10, day: 21))
+        #expect(task.series?.rule == .weekly([1, 4]))
+        #expect(task.series?.startDate == LocalDate(year: 2026, month: 10, day: 19))
+    }
+
+    @Test func seriesDeletionDecodes() throws {
+        let json = """
+        {"id": "d1111111-1111-4111-8111-111111111111", "series_id": "5e5e5e5e-5e5e-4e5e-8e5e-5e5e5e5e5e5e",
+         "family_id": "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b", "deleted_by": "a1111111-1111-4111-8111-111111111111",
+         "deleted_at": "2026-10-21T08:00:00.5+00:00", "restored_at": null, "restored_by": null,
+         "task_series": {"id": "5e5e5e5e-5e5e-4e5e-8e5e-5e5e5e5e5e5e", "family_id": "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b",
+                         "title": "Miete", "freq": "monthly", "weekdays": [], "month_days": [1, 31],
+                         "start_date": "2026-10-01", "deleted_at": "2026-10-21T08:00:00.5+00:00"}}
+        """
+        let deletion = try decoder.decode(SeriesDeletion.self, from: Data(json.utf8))
+        #expect(deletion.series?.title == "Miete")
+        #expect(deletion.series?.rule == .monthly([1, 31]))
+        #expect(deletion.restoredAt == nil)
+    }
+
+    @Test func seriesParamsCarryTheRule() throws {
+        let input = TaskInput(
+            familyID: UUID(), title: "Sport", description: nil, startDate: LocalDate(year: 2026, month: 10, day: 21),
+            startTime: nil, timezone: "Europe/Berlin", completionMode: .anyOne, assigneeIDs: [UUID()], images: [],
+            recurrence: .weekly([1, 5])
+        )
+        let data = try JSONEncoder().encode(TaskParams(input: input))
+        let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(object["p_freq"] as? String == "weekly")
+        #expect(object["p_weekdays"] as? [Int] == [1, 5])
+        #expect(object["p_month_days"] as? [Int] == [])
+        #expect(object["p_family_id"] != nil)
+
+        let single = TaskInput(
+            familyID: UUID(), title: "Einmalig", description: nil, startDate: nil, startTime: nil,
+            timezone: "Europe/Berlin", completionMode: .anyOne, assigneeIDs: [UUID()], images: []
+        )
+        let singleObject = try #require(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(TaskParams(input: single))) as? [String: Any]
+        )
+        #expect(singleObject["p_freq"] == nil)
+    }
+
+    @Test func broadcastPayloadYieldsSeriesID() {
+        let id = UUID()
+        #expect(SupabaseTaskRepository.changedID(in: ["payload": ["series_id": .string(id.uuidString)]]) == id)
+    }
+
     @Test func broadcastPayloadYieldsTaskID() {
         let id = UUID()
         let message: JSONObject = ["event": "task_changed", "payload": ["task_id": .string(id.uuidString.lowercased())]]
-        #expect(SupabaseTaskRepository.taskID(in: message) == id)
-        #expect(SupabaseTaskRepository.taskID(in: ["payload": ["other": "x"]]) == nil)
+        #expect(SupabaseTaskRepository.changedID(in: message) == id)
+        #expect(SupabaseTaskRepository.changedID(in: ["payload": ["other": "x"]]) == nil)
     }
 }

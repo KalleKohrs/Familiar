@@ -20,6 +20,7 @@ final class TaskStore {
         enum Kind: Equatable {
             case uncomplete(CompletionScope)
             case restore
+            case restoreSeries(deletionID: UUID)
         }
 
         let id = UUID()
@@ -33,8 +34,8 @@ final class TaskStore {
     private(set) var undo: UndoOffer?
     private(set) var actionError: String?
     private(set) var busyTaskIDs: Set<UUID> = []
-    /// Verlauf: erledigte und gelöschte Aufgaben der letzten 30 Tage, neueste zuerst.
-    private(set) var history: [TaskItem] = []
+    /// Verlauf: erledigte und gelöschte Aufgaben sowie gelöschte Serien der letzten 30 Tage, neueste zuerst.
+    private(set) var history: [HistoryEntry] = []
     private(set) var historyState: LoadState = .idle
 
     private let repository: any TaskRepository
@@ -82,7 +83,9 @@ final class TaskStore {
     func reloadHistory() async {
         if history.isEmpty { historyState = .loading }
         do throws(FamiliarError) {
-            history = try await repository.historyTasks()
+            let tasks = try await repository.historyTasks()
+            let deletions = try await repository.seriesDeletions()
+            history = HistoryRules.entries(tasks, deletions: deletions)
             historyState = .loaded
         } catch {
             if history.isEmpty { historyState = .failed(error) } else { showError(error.message) }
@@ -90,15 +93,21 @@ final class TaskStore {
     }
 
     /// Wiederherstellen aus dem Verlauf (jedes Mitglied mit Sicht, Guide, Abschnitt 3):
-    /// gelöschte Aufgaben kommen zurück, erledigte werden wieder offen.
-    func restoreFromHistory(_ task: TaskItem) async -> Bool {
-        busyTaskIDs.insert(task.id)
-        defer { busyTaskIDs.remove(task.id) }
+    /// gelöschte Aufgaben kommen zurück, erledigte werden wieder offen, gelöschte Serien
+    /// samt ihrer offenen Vorkommen wieder aktiv.
+    func restoreFromHistory(_ entry: HistoryEntry) async -> Bool {
+        busyTaskIDs.insert(entry.id)
+        defer { busyTaskIDs.remove(entry.id) }
         do throws(FamiliarError) {
-            switch HistoryRules.kind(of: task) {
-            case .deleted: try await repository.restore(taskID: task.id)
-            case .completed: try await repository.uncomplete(taskID: task.id, scope: .all)
-            case nil: return true
+            switch entry {
+            case .seriesDeletion(let deletion):
+                try await repository.restoreSeries(deletionID: deletion.id)
+            case .task(let task):
+                switch HistoryRules.kind(of: task) {
+                case .deleted: try await repository.restore(taskID: task.id)
+                case .completed: try await repository.uncomplete(taskID: task.id, scope: .all)
+                case nil: return true
+                }
             }
             await refreshAll()
             return true
@@ -177,6 +186,21 @@ final class TaskStore {
         }
     }
 
+    /// „Gesamte Serie“ löschen (Guide, Abschnitt 4); ein Verlaufseintrag mit Rückgängig.
+    func deleteSeries(from task: TaskItem) async -> Bool {
+        busyTaskIDs.insert(task.id)
+        defer { busyTaskIDs.remove(task.id) }
+        do throws(FamiliarError) {
+            let deletionID = try await repository.deleteSeries(fromTaskID: task.id)
+            offerUndo(task.id, message: String(localized: "Serie gelöscht"), kind: .restoreSeries(deletionID: deletionID))
+            await refreshAll()
+            return true
+        } catch {
+            showError(error.message)
+            return false
+        }
+    }
+
     func performUndo() async {
         guard let offer = undo else { return }
         undo = nil
@@ -184,6 +208,7 @@ final class TaskStore {
             switch offer.kind {
             case .uncomplete(let scope): try await repository.uncomplete(taskID: offer.taskID, scope: scope)
             case .restore: try await repository.restore(taskID: offer.taskID)
+            case .restoreSeries(let deletionID): try await repository.restoreSeries(deletionID: deletionID)
             }
         } catch {
             showError(error.message)
@@ -219,9 +244,17 @@ final class TaskStore {
 
     // MARK: Anlegen und Bearbeiten
 
-    /// Lädt neue Bilder hoch und legt die Aufgabe an bzw. speichert den vollständigen Stand.
-    func save(_ draft: TaskDraft, editing original: TaskItem?, onUploadProgress: (Int, Int) -> Void = { _, _ in })
-        async throws(FamiliarError) -> TaskItem {
+    /// Geltungsbereich beim Bearbeiten eines Vorkommens (Guide, Abschnitt 4).
+    enum EditScope {
+        case thisOccurrence
+        case thisAndFuture
+    }
+
+    /// Lädt neue Bilder hoch und legt die Aufgabe bzw. Serie an oder speichert den vollständigen Stand.
+    /// Liefert die gespeicherte Aufgabe; beim Anlegen einer Serie `nil` (die Vorkommen erscheinen in der Liste).
+    @discardableResult
+    func save(_ draft: TaskDraft, editing original: TaskItem?, scope: EditScope = .thisOccurrence,
+              onUploadProgress: (Int, Int) -> Void = { _, _ in }) async throws(FamiliarError) -> TaskItem? {
         guard let input = draft.input() else {
             throw .unknown(message: "Ungültiger Entwurf")
         }
@@ -233,9 +266,18 @@ final class TaskStore {
             onUploadProgress(index + 1, newImages.count)
             try await repository.upload(image, familyID: input.familyID)
         }
-        let saved: TaskItem
+        let saved: TaskItem?
         if let original {
-            saved = try await repository.updateTask(id: original.id, expectedVersion: original.version, input)
+            if original.isOccurrence && scope == .thisAndFuture && input.recurrence != nil {
+                saved = try await repository.updateSeries(fromTaskID: original.id, expectedVersion: original.version, input)
+            } else {
+                var single = input
+                single.recurrence = nil
+                saved = try await repository.updateTask(id: original.id, expectedVersion: original.version, single)
+            }
+        } else if input.recurrence != nil {
+            try await repository.createSeries(input)
+            saved = nil
         } else {
             saved = try await repository.createTask(input)
         }

@@ -58,6 +58,7 @@ Alle Stile basieren auf Dynamic-Type-Textstilen und skalieren mit der Systemschr
 
 ## Materialien und Licht
 
+Referenzbilder: [`design/reference-overview.webp`](design/reference-overview.webp), [`design/reference-feed.webp`](design/reference-feed.webp).
 Leitbild aus der Design-Referenz vom 2026-10-20: dunkles Aubergine-Graphit, weiches Ambient-Licht, leicht durchscheinende Cards mit Lichtkante, leuchtender Orange-Orb als Markenelement, schwebende runde Glas-Buttons mit orangem Plus.
 
 - **Ambient-Hintergrund** (`FamiliarAmbientBackground`, über `familiarScreenBackground()`): `canvas` plus zwei statische Radialverläufe – warm oben (`glowWarm`, 16 %), Pflaume unten links (`glowPlum`, 28 %). Keine Animation, kein Blur; bei „Kontrast erhöhen“ oder „Transparenz reduzieren“ auf 40 % reduziert.
@@ -111,3 +112,16 @@ Offene und erledigte Personen sind ohne Farbwahrnehmung unterscheidbar: Erledigt
 - Kontrast mindestens 4,5 : 1 für Fließtext; „Kontrast erhöhen“ getestet.
 - „Bewegung reduzieren“ und „Transparenz reduzieren“ getestet.
 - Kleine Displays (iPhone 17e) und Tastatur geprüft.
+
+## Aufgabenliste und Editor (Überarbeitung 2026-10-21)
+
+Nach Rückmeldung „nicht clean genug“ an der Referenz ausgerichtet:
+
+- **Kopf:** große Überschrift in New York (`FamiliarFont.display`) im Inhalt statt der System-Navigationsüberschrift; keine Zählzeile.
+- **Gliederung:** Abschnitte „Überfällig · Heute · Morgen · Später“ (`TaskRules.homeSections`) als kleine Versal-Überschriften mit Anzahl. Aufgaben ohne Datum stehen in „Heute“ ganz oben (neueste zuerst).
+- **Karte:** Titel, darunter *eine* ruhige Infozeile aus Text mit kleinen Symbolen (Start bzw. „Überfällig“, Wiederholung, Familie mit Farbpunkt) statt Chips; Beschreibung höchstens zwei Zeilen; Miniatur rechts oben. Unten Personen links und der runde Glas-Knopf zum Abhaken rechts (40 pt, wie die runden Bedienelemente der Referenz). Kein farbiger Randstreifen mehr.
+- **Abhaken:** Der Haken füllt sich sofort (Symbol-Federeffekt, Erfolgs-Haptik), nach 0,35 s wird gespeichert; die Karte blendet mit leichter Verkleinerung aus.
+- **Erledigungsart:** im Editor zwei Kacheln nebeneinander (Symbol + Kurztitel), Erklärung nur einmal darunter; in den Details ein kleines Etikett (Erklärung als VoiceOver-Hinweis).
+- **Profilbilder an Aufgaben:** mit kleinem Abstand statt Überlappung; erledigt = grüner Ring plus Häkchen-Abzeichen (keine Abschwächung).
+- **Entscheidungsfragen** (Löschen, Geltungsbereich bei Serien): `FamiliarChoiceSheet` – kleines Blatt von unten mit Symbol, Überschrift, Erklärung und Knöpfen statt System-Aktionsmenü.
+- **Editor:** Tastatur verschwindet beim Scrollen und bei jeder Auswahl; „Weiter“ springt vom Titel zur Beschreibung. Beim Speichern mit fehlenden Angaben: Sprung zur ersten Stelle, rote Hinweise direkt am Abschnitt, Fehler-Haptik.

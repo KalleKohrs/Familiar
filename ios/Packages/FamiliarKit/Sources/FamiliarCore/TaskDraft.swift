@@ -54,6 +54,8 @@ public struct TaskInput: Hashable, Sendable {
     public var completionMode: CompletionMode
     public var assigneeIDs: [UUID]
     public var images: [TaskImageReference]
+    /// Wiederholungsregel (normalisiert); `nil` bei Einzelaufgaben. Dann ist `startDate` gesetzt.
+    public var recurrence: RecurrenceRule?
 
     public init(
         familyID: UUID,
@@ -64,7 +66,8 @@ public struct TaskInput: Hashable, Sendable {
         timezone: String,
         completionMode: CompletionMode,
         assigneeIDs: [UUID],
-        images: [TaskImageReference]
+        images: [TaskImageReference],
+        recurrence: RecurrenceRule? = nil
     ) {
         self.familyID = familyID
         self.title = title
@@ -75,6 +78,7 @@ public struct TaskInput: Hashable, Sendable {
         self.completionMode = completionMode
         self.assigneeIDs = assigneeIDs
         self.images = images
+        self.recurrence = recurrence
     }
 }
 
@@ -96,6 +100,8 @@ public struct TaskDraft: Hashable, Sendable {
     public var completionMode: CompletionMode?
     public var assigneeIDs: [UUID] = []
     public var images: [DraftImage] = []
+    /// `nil` = keine Wiederholung. Eine Wiederholung braucht ein Startdatum (erstes Vorkommen).
+    public var recurrence: RecurrenceRule?
 
     public init(familyID: UUID?, now: Date = .now, timeZone: TimeZone = .current) {
         self.familyID = familyID
@@ -122,7 +128,11 @@ public struct TaskDraft: Hashable, Sendable {
         completionMode = task.completionMode
         assigneeIDs = task.assignees.map(\.userID)
         images = task.images.map(DraftImage.existing)
+        recurrence = task.series?.rule
     }
+
+    /// Mit Wiederholung ist das Datum immer gesetzt (erstes bzw. dieses Vorkommen).
+    public var usesDate: Bool { hasDate || recurrence != nil }
 
     public enum Issue: Hashable, Sendable {
         case familyMissing
@@ -132,6 +142,7 @@ public struct TaskDraft: Hashable, Sendable {
         case assigneesMissing
         case completionModeMissing
         case tooManyImages
+        case recurrenceIncomplete
     }
 
     public var issues: [Issue] {
@@ -144,6 +155,7 @@ public struct TaskDraft: Hashable, Sendable {
         if assigneeIDs.isEmpty { issues.append(.assigneesMissing) }
         if completionMode == nil { issues.append(.completionModeMissing) }
         if images.count > Self.maxImages { issues.append(.tooManyImages) }
+        if let recurrence, !recurrence.isComplete { issues.append(.recurrenceIncomplete) }
         return issues
     }
 
@@ -165,8 +177,8 @@ public struct TaskDraft: Hashable, Sendable {
             familyID: familyID,
             title: InputRules.trimmed(title),
             description: trimmedDescription.isEmpty ? nil : trimmedDescription,
-            startDate: hasDate ? date : nil,
-            startTime: hasDate && hasTime ? time : nil,
+            startDate: usesDate ? date : nil,
+            startTime: usesDate && hasTime ? time : nil,
             timezone: timezone,
             completionMode: completionMode,
             assigneeIDs: assigneeIDs,
@@ -175,7 +187,8 @@ public struct TaskDraft: Hashable, Sendable {
                 case .existing(let image): TaskImageReference(id: image.id, width: image.width, height: image.height)
                 case .new(let image): TaskImageReference(id: image.id, width: image.width, height: image.height)
                 }
-            }
+            },
+            recurrence: recurrence?.normalized
         )
     }
 }

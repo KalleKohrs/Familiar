@@ -68,6 +68,31 @@ public enum TaskRules {
         return LocalDate(now, timeZone: task.timeZone) > startDate
     }
 
+    /// Abschnitte der Startseite in fester Reihenfolge. Aufgaben ohne Datum gehören zu „Heute“
+    /// (dort zuerst, neueste oben), Überfälliges steht davor.
+    public enum HomeSection: Int, CaseIterable, Hashable, Sendable {
+        case overdue
+        case today
+        case tomorrow
+        case later
+    }
+
+    /// Ordnet die Aufgaben (Reihenfolge wie `homeOrder`) den Abschnitten zu; leere Abschnitte entfallen.
+    /// Der Tag zählt in der Zeitzone der Aufgabe.
+    public static func homeSections(_ tasks: [TaskItem], now: Date = .now) -> [(section: HomeSection, tasks: [TaskItem])] {
+        let grouped = Dictionary(grouping: homeOrder(tasks)) { task -> HomeSection in
+            guard let startDate = task.startDate else { return .today }
+            if isOverdue(task, now: now) { return .overdue }
+            let today = LocalDate(now, timeZone: task.timeZone)
+            if startDate <= today { return .today }
+            if startDate == today.adding(days: 1) { return .tomorrow }
+            return .later
+        }
+        return HomeSection.allCases.compactMap { section in
+            grouped[section].map { (section, $0) }
+        }
+    }
+
     /// Fortschritt bei „einzeln“, z. B. 1 von 3.
     public static func progress(_ task: TaskItem) -> (done: Int, total: Int) {
         (task.assignees.filter(\.isDone).count, task.assignees.count)
@@ -110,10 +135,54 @@ public enum HistoryRules {
         return max(0, Int((expiry.timeIntervalSince(now) / 86_400).rounded(.down)))
     }
 
-    /// Neueste zuerst; nur Einträge innerhalb der Aufbewahrungsfrist.
+    /// Neueste zuerst; nur Einträge innerhalb der Aufbewahrungsfrist. Mit der Serie gelöschte
+    /// Vorkommen erscheinen nicht einzeln (Guide, Abschnitt 4), sondern als ein Serien-Eintrag.
     public static func entries(_ tasks: [TaskItem], now: Date = .now) -> [TaskItem] {
         tasks
-            .filter { task in expiry(of: task).map { $0 > now } ?? false }
+            .filter { task in task.deletedBySeriesOp == nil && (expiry(of: task).map { $0 > now } ?? false) }
             .sorted { (date(of: $0) ?? .distantPast) > (date(of: $1) ?? .distantPast) }
+    }
+
+    /// Aufgaben und Serien-Löschungen zusammen, neueste zuerst.
+    public static func entries(_ tasks: [TaskItem], deletions: [SeriesDeletion], now: Date = .now) -> [HistoryEntry] {
+        let retention = Double(retentionDays) * 86_400
+        let taskEntries = entries(tasks, now: now).map(HistoryEntry.task)
+        let deletionEntries = deletions
+            .filter { $0.restoredAt == nil && $0.deletedAt.addingTimeInterval(retention) > now }
+            .map(HistoryEntry.seriesDeletion)
+        return (taskEntries + deletionEntries).sorted { $0.date > $1.date }
+    }
+
+    /// Verbleibende ganze Tage eines Verlaufseintrags, mindestens 0.
+    public static func daysRemaining(for entry: HistoryEntry, now: Date = .now) -> Int {
+        let expiry = entry.date.addingTimeInterval(Double(retentionDays) * 86_400)
+        return max(0, Int((expiry.timeIntervalSince(now) / 86_400).rounded(.down)))
+    }
+}
+
+/// Ein Eintrag im Verlauf: erledigte bzw. gelöschte Aufgabe oder gelöschte Serie.
+public enum HistoryEntry: Hashable, Identifiable, Sendable {
+    case task(TaskItem)
+    case seriesDeletion(SeriesDeletion)
+
+    public var id: UUID {
+        switch self {
+        case .task(let task): task.id
+        case .seriesDeletion(let deletion): deletion.id
+        }
+    }
+
+    public var date: Date {
+        switch self {
+        case .task(let task): HistoryRules.date(of: task) ?? .distantPast
+        case .seriesDeletion(let deletion): deletion.deletedAt
+        }
+    }
+
+    public var familyID: UUID {
+        switch self {
+        case .task(let task): task.familyID
+        case .seriesDeletion(let deletion): deletion.familyID
+        }
     }
 }

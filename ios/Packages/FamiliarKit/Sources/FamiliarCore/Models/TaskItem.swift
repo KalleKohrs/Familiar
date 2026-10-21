@@ -72,6 +72,16 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
     public var createdAt: Date
     public var assignees: [TaskAssignee]
     public var images: [TaskImage]
+    /// Serie, zu der dieses Vorkommen gehört (`nil` bei Einzelaufgaben).
+    public var seriesID: UUID?
+    /// Ursprünglicher Termin des Vorkommens in der Serie (bleibt beim Verschieben gleich).
+    public var occurrenceDate: LocalDate?
+    /// Mit „Nur dieses Vorkommen“ geändert; spätere Serienänderungen lassen es in Ruhe.
+    public var isDetached: Bool
+    /// Mit der ganzen Serie gelöscht – erscheint nicht einzeln im Verlauf.
+    public var deletedBySeriesOp: UUID?
+    /// Eingebettete Serie (Regel), sofern sichtbar.
+    public var series: TaskSeries?
 
     public init(
         id: UUID,
@@ -92,7 +102,12 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         version: Int = 1,
         createdAt: Date = .now,
         assignees: [TaskAssignee],
-        images: [TaskImage] = []
+        images: [TaskImage] = [],
+        seriesID: UUID? = nil,
+        occurrenceDate: LocalDate? = nil,
+        isDetached: Bool = false,
+        deletedBySeriesOp: UUID? = nil,
+        series: TaskSeries? = nil
     ) {
         self.id = id
         self.familyID = familyID
@@ -113,6 +128,11 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         self.createdAt = createdAt
         self.assignees = assignees
         self.images = images
+        self.seriesID = seriesID
+        self.occurrenceDate = occurrenceDate
+        self.isDetached = isDetached
+        self.deletedBySeriesOp = deletedBySeriesOp
+        self.series = series
     }
 
     enum CodingKeys: String, CodingKey {
@@ -131,6 +151,11 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         case createdAt = "created_at"
         case assignees = "task_assignees"
         case imageLinks = "task_image_links"
+        case seriesID = "series_id"
+        case occurrenceDate = "occurrence_date"
+        case isDetached = "is_detached"
+        case deletedBySeriesOp = "deleted_by_series_op"
+        case series = "task_series"
     }
 
     /// Eingebettete Verknüpfung `task_image_links(position, images(*))`.
@@ -162,9 +187,15 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         images = (try container.decodeIfPresent([ImageLink].self, forKey: .imageLinks) ?? [])
             .sorted { $0.position < $1.position }
             .compactMap(\.images)
+        seriesID = try container.decodeIfPresent(UUID.self, forKey: .seriesID)
+        occurrenceDate = try container.decodeIfPresent(LocalDate.self, forKey: .occurrenceDate)
+        isDetached = try container.decodeIfPresent(Bool.self, forKey: .isDetached) ?? false
+        deletedBySeriesOp = try container.decodeIfPresent(UUID.self, forKey: .deletedBySeriesOp)
+        series = try container.decodeIfPresent(TaskSeries.self, forKey: .series)
     }
 
     public var timeZone: TimeZone { TimeZone(identifier: timezone) ?? .current }
     public var hasStart: Bool { startDate != nil }
     public var isOpen: Bool { completedAt == nil && deletedAt == nil }
+    public var isOccurrence: Bool { seriesID != nil }
 }

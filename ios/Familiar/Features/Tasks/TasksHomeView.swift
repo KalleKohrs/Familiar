@@ -17,15 +17,9 @@ struct TasksHomeView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                VStack(spacing: FamiliarSpacing.s) {
+                VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                    header
                     content
-                    #if DEBUG
-                    NavigationLink("Design-System ansehen") {
-                        DesignGalleryView()
-                    }
-                    .buttonStyle(.familiarSecondary)
-                    .padding(.top, FamiliarSpacing.l)
-                    #endif
                 }
                 .padding(.horizontal, FamiliarSpacing.m)
                 .padding(.top, FamiliarSpacing.s)
@@ -33,6 +27,8 @@ struct TasksHomeView: View {
             .refreshable { await store.reload() }
             .familiarScreenBackground()
             .navigationTitle("Aufgaben")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(removing: .title)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     FamilyHeaderButton(title: session.familyHeaderTitle) { showsFamilies = true }
@@ -52,6 +48,38 @@ struct TasksHomeView: View {
                 ImageGalleryView(images: state.images, startIndex: state.index)
             }
         }
+    }
+
+    /// Große Überschrift in New York wie in der Design-Referenz.
+    private var header: some View {
+        Text("Aufgaben")
+            .font(FamiliarFont.display)
+            .foregroundStyle(FamiliarColor.textPrimary)
+            .accessibilityAddTraits(.isHeader)
+            .padding(.bottom, FamiliarSpacing.xxs)
+    }
+
+    private func sectionTitle(_ section: TaskRules.HomeSection, count: Int) -> some View {
+        let title: String = switch section {
+        case .overdue: String(localized: "Überfällig")
+        case .today: String(localized: "Heute")
+        case .tomorrow: String(localized: "Morgen")
+        case .later: String(localized: "Später")
+        }
+        return HStack(spacing: FamiliarSpacing.xs) {
+            Text(title)
+                .foregroundStyle(section == .overdue ? FamiliarColor.danger : FamiliarColor.textSecondary)
+            Text("\(count)")
+                .foregroundStyle(FamiliarColor.textTertiary)
+                .monospacedDigit()
+        }
+        .font(FamiliarFont.meta.weight(.semibold))
+        .textCase(.uppercase)
+        .tracking(0.6)
+        .padding(.top, FamiliarSpacing.s)
+        .padding(.leading, FamiliarSpacing.xxs)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder
@@ -76,14 +104,19 @@ struct TasksHomeView: View {
                 )
                 .familiarCard()
             } else {
-                LazyVStack(spacing: FamiliarSpacing.s) {
-                    ForEach(store.tasks) { task in
-                        TaskCard(
-                            task: task,
-                            onOpen: { path.append(task.id) },
-                            onOpenImages: { gallery = GalleryState(images: task.images, index: 0) }
-                        )
-                        .matchedTransitionSource(id: task.id, in: transition)
+                LazyVStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                    ForEach(TaskRules.homeSections(store.tasks), id: \.section) { group in
+                        sectionTitle(group.section, count: group.tasks.count)
+                        ForEach(group.tasks) { task in
+                            TaskCard(
+                                task: task,
+                                onOpen: { path.append(task.id) },
+                                onOpenImages: { gallery = GalleryState(images: task.images, index: 0) }
+                            )
+                            .matchedTransitionSource(id: task.id, in: transition)
+                            .transition(.asymmetric(insertion: .opacity,
+                                                    removal: .opacity.combined(with: .scale(scale: 0.96))))
+                        }
                     }
                 }
                 .familiarAnimation(value: store.tasks.map(\.id))

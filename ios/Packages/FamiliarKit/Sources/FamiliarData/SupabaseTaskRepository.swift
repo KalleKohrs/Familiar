@@ -6,7 +6,8 @@ final class SupabaseTaskRepository: TaskRepository {
     private let client: SupabaseClient
     private static let bucket = "task-images"
     private static let select =
-        "*, task_assignees(user_id, completed_at), task_image_links(position, images(id, path, thumb_path, width, height))"
+        "*, task_assignees(user_id, completed_at), task_image_links(position, images(id, path, thumb_path, width, height)), "
+        + "task_series(id, family_id, title, freq, weekdays, month_days, start_date, deleted_at)"
 
     init(client: SupabaseClient) {
         self.client = client
@@ -40,6 +41,7 @@ final class SupabaseTaskRepository: TaskRepository {
             try await client.from("tasks")
                 .select(Self.select)
                 .or("completed_at.gte.\(iso),deleted_at.gte.\(iso)")
+                .is("deleted_by_series_op", value: nil)
                 .execute()
                 .value
         }
@@ -98,6 +100,45 @@ final class SupabaseTaskRepository: TaskRepository {
         }
     }
 
+    func createSeries(_ input: TaskInput) async throws(FamiliarError) {
+        _ = try await perform {
+            try await client.rpc("create_recurring_task", params: TaskParams(input: input)).execute()
+        }
+    }
+
+    func updateSeries(fromTaskID taskID: UUID, expectedVersion: Int, _ input: TaskInput) async throws(FamiliarError) -> TaskItem {
+        let params = TaskParams(input: input, taskID: taskID, expectedVersion: expectedVersion)
+        let row: TaskRowID = try await perform {
+            try await client.rpc("update_series_from", params: params).execute().value
+        }
+        return try await task(id: row.id)
+    }
+
+    func deleteSeries(fromTaskID taskID: UUID) async throws(FamiliarError) -> UUID {
+        let row: TaskRowID = try await perform {
+            try await client.rpc("delete_series", params: ["p_task_id": taskID.uuidString]).execute().value
+        }
+        return row.id
+    }
+
+    func restoreSeries(deletionID: UUID) async throws(FamiliarError) {
+        _ = try await perform {
+            try await client.rpc("restore_series_deletion", params: ["p_deletion_id": deletionID.uuidString]).execute()
+        }
+    }
+
+    func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {
+        let since = Date.now.addingTimeInterval(-Double(HistoryRules.retentionDays) * 86_400)
+        return try await perform {
+            try await client.from("series_deletions")
+                .select("*, task_series(id, family_id, title, freq, weekdays, month_days, start_date, deleted_at)")
+                .is("restored_at", value: nil)
+                .gte("deleted_at", value: since.formatted(.iso8601))
+                .execute()
+                .value
+        }
+    }
+
     func imageURL(path: String) async throws(FamiliarError) -> URL {
         try await perform {
             try await client.storage.from(Self.bucket).createSignedURL(path: path, expiresIn: 60 * 60)
@@ -119,8 +160,8 @@ final class SupabaseTaskRepository: TaskRepository {
                     return
                 }
                 for await message in messages {
-                    if let taskID = Self.taskID(in: message) {
-                        continuation.yield(taskID)
+                    if let id = Self.changedID(in: message) {
+                        continuation.yield(id)
                     }
                 }
                 continuation.finish()
@@ -132,19 +173,21 @@ final class SupabaseTaskRepository: TaskRepository {
         }
     }
 
-    /// `task_id` aus der Broadcast-Nachricht (`{"payload": {"task_id": …}}`).
-    static func taskID(in message: JSONObject) -> UUID? {
+    /// `task_id` bzw. `series_id` aus der Broadcast-Nachricht (`{"payload": {"task_id": …}}`).
+    static func changedID(in message: JSONObject) -> UUID? {
         let payload = message["payload"]?.objectValue ?? message
-        return payload["task_id"]?.stringValue.flatMap(UUID.init(uuidString:))
+        let id = payload["task_id"]?.stringValue ?? payload["series_id"]?.stringValue
+        return id.flatMap(UUID.init(uuidString:))
     }
 }
 
-/// Rückgabe der RPCs (komplette tasks-Zeile); gebraucht wird nur die ID zum Neuladen mit Einbettungen.
+/// Rückgabe der RPCs (komplette Zeile); gebraucht wird nur die ID zum Neuladen mit Einbettungen.
 private struct TaskRowID: Decodable {
     let id: UUID
 }
 
-/// Parameter von `create_task` und `update_task`; `nil` wird nicht gesendet (Standardwert der RPC).
+/// Parameter von `create_task`/`update_task` und – mit Wiederholung – `create_recurring_task`/
+/// `update_series_from`; `nil` wird nicht gesendet (Standardwert der RPC).
 struct TaskParams: Encodable {
     let taskID: UUID?
     let expectedVersion: Int?
@@ -157,6 +200,7 @@ struct TaskParams: Encodable {
     let startTime: LocalTime?
     let timezone: String
     let images: [TaskImageReference]
+    let recurrence: RecurrenceRule?
 
     init(input: TaskInput, taskID: UUID? = nil, expectedVersion: Int? = nil) {
         self.taskID = taskID
@@ -170,6 +214,7 @@ struct TaskParams: Encodable {
         startTime = input.startTime
         timezone = input.timezone
         images = input.images
+        recurrence = input.recurrence
     }
 
     enum CodingKeys: String, CodingKey {
@@ -184,6 +229,9 @@ struct TaskParams: Encodable {
         case startTime = "p_start_time"
         case timezone = "p_timezone"
         case images = "p_images"
+        case freq = "p_freq"
+        case weekdays = "p_weekdays"
+        case monthDays = "p_month_days"
     }
 
     // Beschreibung, Datum und Uhrzeit werden bei update_task immer gesendet (auch null),
@@ -201,5 +249,10 @@ struct TaskParams: Encodable {
         try container.encode(startTime, forKey: .startTime)
         try container.encode(timezone, forKey: .timezone)
         try container.encode(images, forKey: .images)
+        if let recurrence {
+            try container.encode(recurrence.frequency, forKey: .freq)
+            try container.encode(recurrence.weekdays, forKey: .weekdays)
+            try container.encode(recurrence.monthDays, forKey: .monthDays)
+        }
     }
 }

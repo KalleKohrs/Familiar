@@ -2,7 +2,8 @@ import FamiliarCore
 import FamiliarDesign
 import SwiftUI
 
-/// Bereich „Verlauf“: erledigte und gelöschte Aufgaben der letzten 30 Tage (Guide, Abschnitt 5).
+/// Bereich „Verlauf“: erledigte und gelöschte Aufgaben sowie gelöschte Serien der letzten 30 Tage
+/// (Guide, Abschnitte 4 und 5).
 /// Jedes Mitglied mit Sicht auf eine Aufgabe darf sie wiederherstellen (Guide, Abschnitt 3).
 struct HistoryHomeView: View {
     @Environment(TaskStore.self) private var store
@@ -53,9 +54,14 @@ struct HistoryHomeView: View {
                 ForEach(sections, id: \.day) { section in
                     FamiliarSectionHeader(section.title)
                         .padding(.top, FamiliarSpacing.s)
-                    ForEach(section.tasks) { task in
-                        HistoryRow(task: task) { path.append(task.id) }
-                            .matchedTransitionSource(id: task.id, in: transition)
+                    ForEach(section.entries) { entry in
+                        switch entry {
+                        case .task(let task):
+                            HistoryRow(task: task) { path.append(task.id) }
+                                .matchedTransitionSource(id: task.id, in: transition)
+                        case .seriesDeletion(let deletion):
+                            SeriesDeletionRow(deletion: deletion, entry: entry)
+                        }
                     }
                 }
             }
@@ -63,10 +69,10 @@ struct HistoryHomeView: View {
     }
 
     /// Einträge nach Tag gruppiert (Heute, Gestern, Datum), neueste zuerst.
-    private var sections: [(day: Date, title: String, tasks: [TaskItem])] {
+    private var sections: [(day: Date, title: String, entries: [HistoryEntry])] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: store.history) { task in
-            calendar.startOfDay(for: HistoryRules.date(of: task) ?? .distantPast)
+        let grouped = Dictionary(grouping: store.history) { entry in
+            calendar.startOfDay(for: entry.date)
         }
         return grouped.keys.sorted(by: >).map { day in
             let title: String
@@ -124,19 +130,8 @@ private struct HistoryRow: View {
             .accessibilityElement(children: .combine)
             .accessibilityHint("Öffnet die Details")
 
-            Button {
-                Task { _ = await store.restoreFromHistory(task) }
-            } label: {
-                Image(systemName: "arrow.uturn.backward")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(FamiliarColor.accent)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(FamiliarColor.accent.opacity(0.14)))
-            }
-            .buttonStyle(.plain)
-            .disabled(store.busyTaskIDs.contains(task.id))
-            .accessibilityLabel("\(task.title) wiederherstellen")
-            .accessibilityIdentifier("history.restore.\(task.title)")
+            RestoreButton(entry: .task(task), label: "\(task.title) wiederherstellen")
+                .accessibilityIdentifier("history.restore.\(task.title)")
         }
         .familiarCard(padding: FamiliarSpacing.m)
         .opacity(store.busyTaskIDs.contains(task.id) ? 0.6 : 1)
@@ -159,5 +154,87 @@ private struct HistoryRow: View {
         case nil:
             return ""
         }
+    }
+}
+
+/// Runder Knopf „Wiederherstellen“ für einen Verlaufseintrag.
+private struct RestoreButton: View {
+    @Environment(TaskStore.self) private var store
+    let entry: HistoryEntry
+    let label: String
+
+    var body: some View {
+        Button {
+            Task { _ = await store.restoreFromHistory(entry) }
+        } label: {
+            Image(systemName: "arrow.uturn.backward")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(FamiliarColor.accent)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(FamiliarColor.accent.opacity(0.14)))
+        }
+        .buttonStyle(.plain)
+        .disabled(store.busyTaskIDs.contains(entry.id))
+        .accessibilityLabel(label)
+    }
+}
+
+/// Eine gelöschte Serie: ein Eintrag statt vieler einzelner Vorkommen (Guide, Abschnitt 4).
+private struct SeriesDeletionRow: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(TaskStore.self) private var store
+    let deletion: SeriesDeletion
+    let entry: HistoryEntry
+
+    private var title: String {
+        deletion.series?.title ?? String(localized: "Wiederkehrende Aufgabe")
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: FamiliarSpacing.s) {
+            HStack(alignment: .top, spacing: FamiliarSpacing.s) {
+                Image(systemName: "repeat.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(FamiliarColor.danger)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: FamiliarSpacing.xxs) {
+                    Text(title)
+                        .font(FamiliarFont.cardTitle)
+                        .foregroundStyle(FamiliarColor.textPrimary)
+                    Text(statusText)
+                        .font(FamiliarFont.secondary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
+                    if let rule = deletion.series?.rule {
+                        Text(RecurrenceFormatting.summary(rule))
+                            .font(FamiliarFont.meta)
+                            .foregroundStyle(FamiliarColor.textSecondary)
+                    }
+                    let days = HistoryRules.daysRemaining(for: entry)
+                    Text(days == 1 ? "Noch 1 Tag im Verlauf" : "Noch \(days) Tage im Verlauf")
+                        .font(FamiliarFont.meta)
+                        .foregroundStyle(FamiliarColor.textTertiary)
+                    if session.families.count > 1, let family = session.membership(deletion.familyID)?.family {
+                        FamilyBadge(name: family.name,
+                                    color: Color(session.familyDisplayColors[deletion.familyID] ?? family.color))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .accessibilityElement(children: .combine)
+
+            RestoreButton(entry: entry, label: String(localized: "Serie \(title) wiederherstellen"))
+                .accessibilityIdentifier("history.restoreSeries.\(title)")
+        }
+        .familiarCard(padding: FamiliarSpacing.m)
+        .opacity(store.busyTaskIDs.contains(deletion.id) ? 0.6 : 1)
+    }
+
+    private var statusText: String {
+        let time = deletion.deletedAt.formatted(date: .omitted, time: .shortened)
+        if let actor = deletion.deletedBy {
+            let name = session.displayName(of: actor, in: deletion.familyID)
+            return String(localized: "Serie gelöscht von \(name) · \(time)")
+        }
+        return String(localized: "Serie gelöscht · \(time)")
     }
 }

@@ -56,7 +56,7 @@ extension ButtonStyle where Self == FamiliarButtonStyle {
     public static var familiarDestructive: FamiliarButtonStyle { FamiliarButtonStyle(kind: .destructive) }
 }
 
-/// Runder Abhak-Button: 28 pt sichtbar, mindestens 44 pt Touch-Fläche.
+/// Runder Abhak-Button: 40 pt sichtbar, mindestens 44 pt Touch-Fläche.
 public struct CompletionCheckButton: View {
     let isDone: Bool
     let tint: Color
@@ -68,22 +68,25 @@ public struct CompletionCheckButton: View {
         self.action = action
     }
 
+    /// Runder Glas-Knopf wie die Bedienelemente der Design-Referenz: offen mit zartem Haken,
+    /// erledigt orange gefüllt; der Haken federt beim Umschalten (System-Symboleffekt,
+    /// respektiert „Bewegung reduzieren“).
     public var body: some View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .strokeBorder(isDone ? tint : FamiliarColor.textTertiary, lineWidth: 2)
-                    .background(Circle().fill(isDone ? tint : .clear))
-                if isDone {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(FamiliarColor.onAccent)
-                        .transition(.opacity)
-                }
+                    .fill(isDone ? tint : FamiliarColor.cardGlassPressed)
+                Circle()
+                    .strokeBorder(isDone ? tint : FamiliarColor.lightEdge, lineWidth: 1)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(isDone ? FamiliarColor.onAccent : FamiliarColor.textTertiary)
+                    .symbolEffect(.bounce, value: isDone)
             }
-            .frame(width: 28, height: 28)
+            .frame(width: 40, height: 40)
+            .scaleEffect(isDone ? 1.0 : 0.96)
             .frame(width: FamiliarSize.minimumTouchTarget, height: FamiliarSize.minimumTouchTarget)
-            .contentShape(Rectangle())
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .familiarAnimation(FamiliarMotion.snappy, value: isDone)

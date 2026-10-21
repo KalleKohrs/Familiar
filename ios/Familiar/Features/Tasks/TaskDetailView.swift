@@ -72,14 +72,39 @@ struct TaskDetailView: View {
                 }
             }
         }
-        .confirmationDialog("Aufgabe löschen?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Löschen", role: .destructive) {
-                Task {
-                    if await store.delete(task) { dismiss() }
+        .sheet(isPresented: $confirmDelete) {
+            if task.isOccurrence {
+                FamiliarChoiceSheet(
+                    systemImage: "trash", tint: FamiliarColor.danger,
+                    title: "Wiederkehrende Aufgabe löschen?",
+                    message: "Bei der ganzen Serie entfallen alle offenen Termine; erledigte bleiben. Beides lässt sich 30 Tage lang im Verlauf wiederherstellen."
+                ) {
+                    Button("Nur diesen Termin löschen", role: .destructive) { deleteNow(task, series: false) }
+                        .buttonStyle(.familiarDestructive)
+                        .accessibilityIdentifier("delete.single")
+                    Button("Ganze Serie löschen", role: .destructive) { deleteNow(task, series: true) }
+                        .buttonStyle(.familiarDestructive)
+                        .accessibilityIdentifier("delete.series")
+                }
+            } else {
+                FamiliarChoiceSheet(
+                    systemImage: "trash", tint: FamiliarColor.danger,
+                    title: "Aufgabe löschen?",
+                    message: "Sie landet im Verlauf und lässt sich dort 30 Tage lang wiederherstellen."
+                ) {
+                    Button("Löschen", role: .destructive) { deleteNow(task, series: false) }
+                        .buttonStyle(.familiarDestructive)
+                        .accessibilityIdentifier("delete.confirm")
                 }
             }
-        } message: {
-            Text("Die Aufgabe landet im Verlauf und lässt sich dort 30 Tage lang wiederherstellen.")
+        }
+    }
+
+    private func deleteNow(_ task: TaskItem, series: Bool) {
+        confirmDelete = false
+        Task {
+            let deleted = series ? await store.deleteSeries(from: task) : await store.delete(task)
+            if deleted { dismiss() }
         }
     }
 
@@ -99,21 +124,19 @@ struct TaskDetailView: View {
                     .textSelection(.enabled)
             }
             TaskMetaTags(task: task)
+            if task.isOccurrence && task.isDetached {
+                Text("Dieses Vorkommen wurde einzeln geändert; Änderungen an der Serie gelten hier nicht.")
+                    .font(FamiliarFont.meta)
+                    .foregroundStyle(FamiliarColor.textTertiary)
+            }
             if !task.isOpen {
                 FamiliarTag(task.deletedAt != nil ? "Gelöscht" : "Erledigt",
                             systemImage: task.deletedAt != nil ? "trash" : "checkmark",
                             tone: task.deletedAt != nil ? .danger : .success)
             }
-            VStack(alignment: .leading, spacing: FamiliarSpacing.xxs) {
-                Text(TaskFormatting.modeTitle(task.completionMode))
-                    .font(FamiliarFont.sectionTitle)
-                    .foregroundStyle(FamiliarColor.textPrimary)
-                Text(TaskFormatting.modeExplanation(task.completionMode))
-                    .font(FamiliarFont.secondary)
-                    .foregroundStyle(FamiliarColor.textSecondary)
-            }
-            .padding(.top, FamiliarSpacing.xs)
-            .accessibilityElement(children: .combine)
+            FamiliarTag(TaskFormatting.modeTitle(task.completionMode),
+                        systemImage: TaskFormatting.modeSymbol(task.completionMode), tone: .neutral)
+                .accessibilityHint(TaskFormatting.modeExplanation(task.completionMode))
             if let creator = task.createdBy {
                 Text("Erstellt von \(session.displayName(of: creator, in: task.familyID))")
                     .font(FamiliarFont.meta)
@@ -192,9 +215,14 @@ struct TaskDetailView: View {
                 .buttonStyle(action == actions.first ? .familiarPrimary : .familiarSecondary)
                 .disabled(busy)
             }
-            if !task.isOpen {
+            if task.deletedBySeriesOp != nil {
+                Text("Mit der ganzen Serie gelöscht. Im Verlauf lässt sich die Serie wiederherstellen.")
+                    .font(FamiliarFont.secondary)
+                    .foregroundStyle(FamiliarColor.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if !task.isOpen {
                 Button {
-                    Task { _ = await store.restoreFromHistory(task) ; fetched = try? await store.fetch(task.id) }
+                    Task { _ = await store.restoreFromHistory(.task(task)); fetched = try? await store.fetch(task.id) }
                 } label: {
                     Label(task.deletedAt != nil ? "Wiederherstellen" : "Wieder öffnen", systemImage: "arrow.uturn.backward")
                 }

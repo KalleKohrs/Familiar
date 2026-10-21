@@ -26,6 +26,19 @@ struct TaskEditorView: View {
     @State private var errorMessage: String?
     @State private var triedToSave = false
     @State private var confirmDiscard = false
+    @State private var confirmScope = false
+    @State private var invalidSaveAttempts = 0
+    @FocusState private var focusedField: Field?
+
+    private enum Field: Hashable {
+        case title
+        case description
+    }
+
+    /// Sprungziele für „Noch offen“.
+    private enum Anchor: Hashable {
+        case title, family, repeating, assignees, mode, images
+    }
 
     init(mode: Mode, defaultFamilyID: UUID? = nil) {
         self.mode = mode
@@ -43,6 +56,18 @@ struct TaskEditorView: View {
         return nil
     }
 
+    /// Wiederholung lässt sich beim Anlegen festlegen und bei Vorkommen (mit sichtbarer Serie) ändern.
+    private var showsRepeat: Bool {
+        guard let task = editingTask else { return true }
+        return task.isOccurrence && task.series != nil
+    }
+
+    private var editsSeriesOccurrence: Bool { showsRepeat && editingTask != nil }
+
+    private var ruleChanged: Bool {
+        draft.recurrence?.normalized != original.recurrence?.normalized
+    }
+
     private var members: [FamilyMember] {
         guard let familyID = draft.familyID else { return [] }
         return session.membership(familyID)?.sortedMembers ?? []
@@ -50,6 +75,7 @@ struct TaskEditorView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             Form {
                 // Hinweise oben, damit sie auch auf kleinen Displays ohne Scrollen sichtbar sind.
                 if let errorMessage {
@@ -61,17 +87,27 @@ struct TaskEditorView: View {
                         .listRowBackground(FamiliarColor.card)
                         .accessibilityIdentifier("editor.missing")
                 }
-                titleSection
+                titleSection.id(Anchor.title)
                 if editingTask == nil && session.families.count > 1 {
-                    familySection
+                    familySection.id(Anchor.family)
+                }
+                if showsRepeat {
+                    repeatSection.id(Anchor.repeating)
                 }
                 startSection
-                assigneesSection
-                modeSection
-                imagesSection
+                assigneesSection.id(Anchor.assignees)
+                modeSection.id(Anchor.mode)
+                imagesSection.id(Anchor.images)
+            }
+            .onChange(of: invalidSaveAttempts) { _, _ in
+                // Zur ersten fehlenden Angabe springen, damit nichts „einfach wartet“.
+                guard let anchor = firstIssueAnchor else { return }
+                withAnimation(FamiliarMotion.standard) { proxy.scrollTo(anchor, anchor: .center) }
+            }
             }
             .scrollContentBackground(.hidden)
-            .scrollDismissesKeyboard(.interactively)
+            // Tastatur verschwindet, sobald gescrollt wird.
+            .scrollDismissesKeyboard(.immediately)
             .familiarScreenBackground()
             .tint(FamiliarColor.accent)
             .navigationTitle(editingTask == nil ? "Neue Aufgabe" : "Aufgabe bearbeiten")
@@ -81,6 +117,10 @@ struct TaskEditorView: View {
                     Button("Abbrechen") {
                         if draft != original { confirmDiscard = true } else { dismiss() }
                     }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Tastatur ausblenden", systemImage: "keyboard.chevron.compact.down") { focusedField = nil }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(editingTask == nil ? "Hinzufügen" : "Fertig", action: save)
@@ -98,6 +138,24 @@ struct TaskEditorView: View {
             .confirmationDialog("Änderungen verwerfen?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Verwerfen", role: .destructive) { dismiss() }
             }
+            .sheet(isPresented: $confirmScope) {
+                FamiliarChoiceSheet(
+                    systemImage: "repeat",
+                    title: "Änderung speichern für …",
+                    message: ruleChanged
+                        ? "Die neue Wiederholung gilt ab diesem Termin. Erledigte Termine bleiben unverändert; spätere offene werden neu geplant."
+                        : "Erledigte und schon angefangene Termine bleiben unverändert."
+                ) {
+                    if !ruleChanged {
+                        Button("Nur diesen Termin") { confirmScope = false; performSave(scope: .thisOccurrence) }
+                            .buttonStyle(.familiarSecondary)
+                            .accessibilityIdentifier("scope.single")
+                    }
+                    Button("Diesen und alle zukünftigen") { confirmScope = false; performSave(scope: .thisAndFuture) }
+                        .buttonStyle(.familiarPrimary)
+                        .accessibilityIdentifier("scope.future")
+                }
+            }
             .onChange(of: pickerItems) { _, items in
                 guard !items.isEmpty else { return }
                 Task { await addPhotos(items) }
@@ -107,10 +165,19 @@ struct TaskEditorView: View {
                     .ignoresSafeArea()
             }
             .sensoryFeedback(.selection, trigger: draft.completionMode)
+            .sensoryFeedback(.error, trigger: invalidSaveAttempts)
+            .onChange(of: draft.recurrence) { _, _ in focusedField = nil }
+            .onChange(of: draft.hasDate) { _, _ in focusedField = nil }
             .announcesChanges(of: errorMessage)
             .onAppear {
                 if draft.familyID == nil { draft.familyID = session.families.first?.id }
                 original.familyID = draft.familyID
+            }
+            .task {
+                // Neue Aufgabe: gleich mit dem Titel beginnen.
+                guard editingTask == nil else { return }
+                try? await Task.sleep(for: .milliseconds(450))
+                focusedField = .title
             }
         }
     }
@@ -119,14 +186,20 @@ struct TaskEditorView: View {
 
     private var titleSection: some View {
         Section {
-            TextField("Titel", text: $draft.title, axis: .vertical)
+            TextField("Titel", text: $draft.title)
                 .font(FamiliarFont.cardTitle)
-                .lineLimit(1...3)
                 .submitLabel(.next)
+                .focused($focusedField, equals: .title)
+                .onSubmit { focusedField = .description }
                 .accessibilityIdentifier("editor.title")
             TextField("Beschreibung (optional)", text: $draft.description, axis: .vertical)
                 .lineLimit(2...8)
+                .focused($focusedField, equals: .description)
                 .accessibilityIdentifier("editor.description")
+        } footer: {
+            if showsIssue(.titleMissing) {
+                issueText("Bitte gib einen Titel ein.")
+            }
         }
         .listRowBackground(FamiliarColor.card)
     }
@@ -148,11 +221,15 @@ struct TaskEditorView: View {
 
     private var startSection: some View {
         Section {
-            Toggle("Datum", isOn: $draft.hasDate.animation())
-                .accessibilityIdentifier("editor.hasDate")
-            if draft.hasDate {
-                DatePicker("Tag", selection: dateBinding, displayedComponents: .date)
+            if draft.recurrence == nil {
+                Toggle("Datum", isOn: $draft.hasDate.animation())
+                    .accessibilityIdentifier("editor.hasDate")
+            }
+            if draft.usesDate {
+                DatePicker(draft.recurrence != nil && editingTask == nil ? "Ab" : "Tag",
+                           selection: dateBinding, displayedComponents: .date)
                     .environment(\.timeZone, timeZone)
+                    .accessibilityIdentifier("editor.date")
                 Toggle("Uhrzeit", isOn: $draft.hasTime.animation())
                 if draft.hasTime {
                     DatePicker("Uhrzeit", selection: timeBinding, displayedComponents: .hourAndMinute)
@@ -162,9 +239,135 @@ struct TaskEditorView: View {
         } header: {
             Text("Start")
         } footer: {
-            Text("Optional. Ohne Datum steht die Aufgabe ganz oben in der Liste.")
+            if draft.recurrence == nil {
+                Text("Optional. Ohne Datum steht die Aufgabe ganz oben in der Liste.")
+            } else if editingTask != nil {
+                Text("Datum dieses Vorkommens.")
+            } else {
+                Text("Die Aufgabe wiederholt sich ab diesem Tag.")
+            }
         }
         .listRowBackground(FamiliarColor.card)
+    }
+
+    private var repeatSection: some View {
+        Section {
+            Picker("Wiederholen", selection: frequencyBinding.animation()) {
+                if editingTask == nil {
+                    Text("Nie").tag(RecurrenceFrequency?.none)
+                }
+                Text("Täglich").tag(RecurrenceFrequency?.some(.daily))
+                Text("An Wochentagen").tag(RecurrenceFrequency?.some(.weekly))
+                Text("An Monatstagen").tag(RecurrenceFrequency?.some(.monthly))
+            }
+            .accessibilityIdentifier("editor.repeat")
+            if draft.recurrence?.frequency == .weekly {
+                weekdayPicker
+            }
+            if draft.recurrence?.frequency == .monthly {
+                monthDayPicker
+            }
+        } header: {
+            Text("Wiederholung")
+        } footer: {
+            if showsIssue(.recurrenceIncomplete) {
+                issueText("Bitte wähle mindestens einen Tag.")
+            } else if let footer = repeatFooter {
+                Text(footer)
+            }
+        }
+        .listRowBackground(FamiliarColor.card)
+    }
+
+    private var weekdayPicker: some View {
+        FlowRow(spacing: FamiliarSpacing.xs) {
+            ForEach(RecurrenceFormatting.weekdayOrder, id: \.self) { day in
+                let isSelected = draft.recurrence?.weekdays.contains(day) == true
+                dayButton(RecurrenceFormatting.shortWeekday(day), isSelected: isSelected) {
+                    toggle(day, in: \.weekdays)
+                }
+                .accessibilityLabel(RecurrenceFormatting.weekday(day))
+                .accessibilityIdentifier("editor.weekday.\(day)")
+            }
+        }
+        .padding(.vertical, FamiliarSpacing.xxs)
+    }
+
+    private var monthDayPicker: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: FamiliarSpacing.xxs), count: 7),
+                  spacing: FamiliarSpacing.xxs) {
+            ForEach(1...31, id: \.self) { day in
+                let isSelected = draft.recurrence?.monthDays.contains(day) == true
+                dayButton("\(day)", isSelected: isSelected) {
+                    toggle(day, in: \.monthDays)
+                }
+                .accessibilityLabel("\(day).")
+                .accessibilityIdentifier("editor.monthDay.\(day)")
+            }
+        }
+        .padding(.vertical, FamiliarSpacing.xxs)
+    }
+
+    private func dayButton(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .foregroundStyle(isSelected ? FamiliarColor.onAccent : FamiliarColor.textPrimary)
+                .frame(minWidth: 40, maxWidth: 52, minHeight: 40)
+                .background(Circle().fill(isSelected ? FamiliarColor.accent : FamiliarColor.elevated))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private func toggle(_ day: Int, in keyPath: WritableKeyPath<RecurrenceRule, [Int]>) {
+        guard var rule = draft.recurrence else { return }
+        if let index = rule[keyPath: keyPath].firstIndex(of: day) {
+            rule[keyPath: keyPath].remove(at: index)
+        } else {
+            rule[keyPath: keyPath].append(day)
+        }
+        draft.recurrence = rule
+    }
+
+    /// Wochen- und Monatsregeln starten mit dem Wochentag bzw. Tag des gewählten Datums.
+    private var frequencyBinding: Binding<RecurrenceFrequency?> {
+        Binding {
+            draft.recurrence?.frequency
+        } set: { frequency in
+            guard let frequency else {
+                draft.recurrence = nil
+                return
+            }
+            guard frequency != draft.recurrence?.frequency else { return }
+            switch frequency {
+            case .daily: draft.recurrence = .daily
+            case .weekly: draft.recurrence = .weekly([draft.date.isoWeekday])
+            case .monthly: draft.recurrence = .monthly([draft.date.day])
+            }
+        }
+    }
+
+    private var repeatFooter: String? {
+        guard let rule = draft.recurrence else { return nil }
+        if editingTask != nil {
+            return ruleChanged
+                ? String(localized: "Die neue Wiederholung gilt für dieses und alle späteren Vorkommen.")
+                : nil
+        }
+        var parts: [String] = []
+        let today = LocalDate(.now, timeZone: timeZone)
+        if rule.isComplete, let first = rule.normalized.firstDate(onOrAfter: max(draft.date, today)) {
+            let date = first.date(at: nil, in: timeZone).formatted(.dateTime.weekday(.wide).day().month(.wide))
+            parts.append(String(localized: "Erstes Mal: \(date)."))
+        }
+        if rule.frequency == .monthly && rule.monthDays.contains(where: { $0 > 28 }) {
+            parts.append(String(localized: "Gibt es den Tag in einem Monat nicht, gilt der letzte Tag des Monats."))
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " ")
     }
 
     private var assigneesSection: some View {
@@ -172,6 +375,7 @@ struct TaskEditorView: View {
             ForEach(members) { member in
                 let isSelected = draft.assigneeIDs.contains(member.userID)
                 Button {
+                    focusedField = nil
                     draft.toggleAssignee(member.userID)
                 } label: {
                     HStack(spacing: FamiliarSpacing.s) {
@@ -194,51 +398,99 @@ struct TaskEditorView: View {
         } header: {
             Text("Zugewiesen")
         } footer: {
-            Text("Mindestens eine Person. Wer die Aufgabe anlegt, ist nicht automatisch zugewiesen.")
+            if showsIssue(.assigneesMissing) {
+                issueText("Bitte weise mindestens eine Person zu.")
+            } else {
+                Text("Mindestens eine Person. Wer die Aufgabe anlegt, ist nicht automatisch zugewiesen.")
+            }
         }
         .listRowBackground(FamiliarColor.card)
     }
 
+    /// Zwei kompakte Kacheln nebeneinander (wie die Aktionskacheln der Design-Referenz);
+    /// die Erklärung steht nur einmal darunter – für die gewählte Art.
     private var modeSection: some View {
         Section {
-            ForEach([CompletionMode.anyOne, .each], id: \.self) { mode in
-                let isSelected = draft.completionMode == mode
-                Button {
-                    if let task = editingTask, task.completionMode != mode, task.assignees.contains(where: \.isDone) {
-                        errorMessage = String(localized: "Die Erledigungsart lässt sich nicht mehr ändern, weil schon jemand abgehakt hat.")
-                        return
-                    }
-                    draft.completionMode = mode
-                } label: {
-                    HStack(alignment: .top, spacing: FamiliarSpacing.s) {
-                        Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                            .font(.title3)
-                            .foregroundStyle(isSelected ? FamiliarColor.accent : FamiliarColor.textTertiary)
-                        VStack(alignment: .leading, spacing: FamiliarSpacing.xxs) {
-                            Text(TaskFormatting.modeTitle(mode))
-                                .font(FamiliarFont.body.weight(.semibold))
-                                .foregroundStyle(FamiliarColor.textPrimary)
-                            Text(TaskFormatting.modeExplanation(mode))
-                                .font(FamiliarFont.secondary)
-                                .foregroundStyle(FamiliarColor.textSecondary)
-                        }
-                    }
-                    .padding(.vertical, FamiliarSpacing.xxs)
-                    .contentShape(Rectangle())
+            HStack(spacing: FamiliarSpacing.xs) {
+                ForEach([CompletionMode.anyOne, .each], id: \.self) { mode in
+                    modeTile(mode)
                 }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-                .accessibilityIdentifier("editor.mode.\(mode.rawValue)")
             }
+            .listRowInsets(EdgeInsets(top: FamiliarSpacing.xs, leading: FamiliarSpacing.xs,
+                                      bottom: FamiliarSpacing.xs, trailing: FamiliarSpacing.xs))
         } header: {
             Text("Erledigung")
         } footer: {
-            if editingTask == nil {
+            if showsIssue(.completionModeMissing) {
+                issueText("Bitte wähle, wie die Aufgabe erledigt wird.")
+            } else if let mode = draft.completionMode {
+                Text(TaskFormatting.modeExplanation(mode))
+            } else {
                 Text("Bitte bewusst wählen.")
             }
         }
-        .listRowBackground(FamiliarColor.card)
+        .listRowBackground(showsIssue(.completionModeMissing) ? FamiliarColor.danger.opacity(0.12) : FamiliarColor.card)
+    }
+
+    private func modeTile(_ mode: CompletionMode) -> some View {
+        let isSelected = draft.completionMode == mode
+        let shape = RoundedRectangle(cornerRadius: FamiliarRadius.chip + 4, style: .continuous)
+        return Button {
+            focusedField = nil
+            if let task = editingTask, task.completionMode != mode, task.assignees.contains(where: \.isDone) {
+                errorMessage = String(localized: "Die Erledigungsart lässt sich nicht mehr ändern, weil schon jemand abgehakt hat.")
+                return
+            }
+            draft.completionMode = mode
+        } label: {
+            VStack(alignment: .leading, spacing: FamiliarSpacing.xs) {
+                Image(systemName: TaskFormatting.modeSymbol(mode))
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(isSelected ? FamiliarColor.accent : FamiliarColor.textSecondary)
+                Text(TaskFormatting.modeShortTitle(mode))
+                    .font(FamiliarFont.secondary.weight(.semibold))
+                    .foregroundStyle(FamiliarColor.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
+            .padding(FamiliarSpacing.s)
+            .background(shape.fill(isSelected ? FamiliarColor.accent.opacity(0.14) : FamiliarColor.cardGlass))
+            .overlay(shape.strokeBorder(isSelected ? FamiliarColor.accent : FamiliarColor.hairline,
+                                        lineWidth: isSelected ? 1.5 : 1))
+            .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .familiarAnimation(FamiliarMotion.snappy, value: isSelected)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(TaskFormatting.modeTitle(mode))
+        .accessibilityHint(TaskFormatting.modeExplanation(mode))
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier("editor.mode.\(mode.rawValue)")
+    }
+
+    // MARK: Fehlende Angaben
+
+    private func showsIssue(_ issue: TaskDraft.Issue) -> Bool {
+        triedToSave && draft.issues.contains(issue)
+    }
+
+    private func issueText(_ text: LocalizedStringKey) -> some View {
+        Label(text, systemImage: "exclamationmark.circle.fill")
+            .foregroundStyle(FamiliarColor.danger)
+            .font(FamiliarFont.meta.weight(.semibold))
+    }
+
+    private var firstIssueAnchor: Anchor? {
+        guard let issue = draft.issues.first else { return nil }
+        return switch issue {
+        case .familyMissing: .family
+        case .titleMissing, .titleTooLong, .descriptionTooLong: .title
+        case .recurrenceIncomplete: .repeating
+        case .assigneesMissing: .assignees
+        case .completionModeMissing: .mode
+        case .tooManyImages: .images
+        }
     }
 
     private var imagesSection: some View {
@@ -351,6 +603,7 @@ struct TaskEditorView: View {
             case .assigneesMissing: String(localized: "mindestens eine Person")
             case .completionModeMissing: String(localized: "Erledigungsart")
             case .tooManyImages: String(localized: "höchstens 10 Bilder")
+            case .recurrenceIncomplete: String(localized: "mindestens ein Tag für die Wiederholung")
             }
         }
         return String(localized: "Noch offen: \(parts.formatted(.list(type: .and)))")
@@ -377,7 +630,19 @@ struct TaskEditorView: View {
     private func save() {
         triedToSave = true
         errorMessage = nil
-        guard draft.isValid else { return }
+        focusedField = nil
+        guard draft.isValid else {
+            invalidSaveAttempts += 1
+            return
+        }
+        if editsSeriesOccurrence {
+            confirmScope = true
+        } else {
+            performSave(scope: .thisOccurrence)
+        }
+    }
+
+    private func performSave(scope: TaskStore.EditScope) {
         isSaving = true
         Task {
             defer {
@@ -390,7 +655,7 @@ struct TaskEditorView: View {
                         images.insert(image, familyID: familyID)
                     }
                 }
-                _ = try await store.save(draft, editing: editingTask) { current, total in
+                try await store.save(draft, editing: editingTask, scope: scope) { current, total in
                     progressText = String(localized: "Bild \(current) von \(total) wird hochgeladen …")
                 }
                 dismiss()

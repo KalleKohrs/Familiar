@@ -59,6 +59,13 @@ struct ProfileSheet: View {
                         FamiliarInlineError(errorMessage)
                     }
 
+                    #if DEBUG
+                    NavigationLink("Design-System ansehen") {
+                        DesignGalleryView()
+                    }
+                    .buttonStyle(.familiarSecondary)
+                    #endif
+
                     VStack(spacing: FamiliarSpacing.s) {
                         Button("Abmelden") { signOut(everywhere: false) }
                             .buttonStyle(.familiarSecondary)

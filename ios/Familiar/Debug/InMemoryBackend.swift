@@ -33,6 +33,17 @@ actor InMemoryBackend {
     private var listeners: [UUID: AsyncStream<AuthState>.Continuation] = [:]
     private var tasks: [UUID: TaskItem] = [:]
     private var imageFiles: [String: URL] = [:]
+    private var seriesRecords: [UUID: SeriesRecord] = [:]
+    private var deletions: [UUID: SeriesDeletion] = [:]
+
+    /// Serie mit Vorlage für neue Vorkommen und Wasserstandsmarke (wie `task_series`).
+    private struct SeriesRecord {
+        var info: TaskSeries
+        var input: TaskInput
+        var createdBy: UUID
+        var generatedUntil: LocalDate?
+        var resumeFrom: LocalDate?
+    }
 
     init(scenario: Scenario) {
         let anna = UUID()
@@ -260,6 +271,153 @@ extension InMemoryBackend: TaskRepository {
         return HistoryRules.entries(tasks.values.filter { !$0.isOpen && membership($0.familyID, for: me) != nil })
     }
 
+    // MARK: Serien (vereinfacht nach Migration 0009)
+
+    private func today(_ timezone: String) -> LocalDate {
+        LocalDate(.now, timeZone: TimeZone(identifier: timezone) ?? .current)
+    }
+
+    /// Vorkommen bis heute plus das nächste künftige; nie vor der Wasserstandsmarke.
+    private func generate(_ seriesID: UUID) {
+        guard var record = seriesRecords[seriesID], record.info.deletedAt == nil, let rule = record.input.recurrence,
+              let start = record.info.startDate else { return }
+        let today = today(record.input.timezone)
+        let from = [start, record.resumeFrom, record.generatedUntil?.adding(days: 1)].compactMap { $0 }.max() ?? start
+        var dates = from <= today ? rule.dates(from: from, through: today) : []
+        if record.generatedUntil.map({ $0 <= today }) ?? true,
+           let next = rule.firstDate(onOrAfter: max(from, today.adding(days: 1))) {
+            dates.append(next)
+        }
+        for date in dates where !tasks.values.contains(where: { $0.seriesID == seriesID && $0.occurrenceDate == date }) {
+            var input = record.input
+            input.startDate = date
+            let task = TaskItem(id: UUID(), familyID: input.familyID, createdBy: record.createdBy, title: input.title,
+                                description: input.description, startDate: date, startTime: input.startTime,
+                                timezone: input.timezone, startsAt: startsAt(input), completionMode: input.completionMode,
+                                assignees: input.assigneeIDs.map { TaskAssignee(userID: $0) }, images: images(for: input),
+                                seriesID: seriesID, occurrenceDate: date, series: record.info)
+            tasks[task.id] = task
+        }
+        if let last = dates.last {
+            record.generatedUntil = max(record.generatedUntil ?? last, last)
+            seriesRecords[seriesID] = record
+        }
+    }
+
+    func createSeries(_ input: TaskInput) async throws(FamiliarError) {
+        let me = try requireUser()
+        guard membership(input.familyID, for: me) != nil else {
+            throw .app(key: .familyNotFound, message: "Familie nicht gefunden oder du bist kein Mitglied.")
+        }
+        guard let rule = input.recurrence?.normalized, rule.isComplete, let start = input.startDate else {
+            throw .app(key: .invalidRecurrence, message: "Bitte wähle für die Wiederholung mindestens einen Wochentag bzw. Monatstag.")
+        }
+        let today = today(input.timezone)
+        var normalizedInput = input
+        normalizedInput.recurrence = rule
+        let info = TaskSeries(id: UUID(), familyID: input.familyID, title: input.title, rule: rule, startDate: start)
+        seriesRecords[info.id] = SeriesRecord(info: info, input: normalizedInput, createdBy: me,
+                                              generatedUntil: start < today ? today.adding(days: -1) : nil)
+        generate(info.id)
+    }
+
+    func updateSeries(fromTaskID taskID: UUID, expectedVersion: Int, _ input: TaskInput) async throws(FamiliarError) -> TaskItem {
+        let task = try visibleTask(taskID)
+        guard let seriesID = task.seriesID, var record = seriesRecords[seriesID],
+              let occurrenceDate = task.occurrenceDate else {
+            throw .app(key: .notAnOccurrence, message: "Diese Aufgabe gehört zu keiner Serie.")
+        }
+        guard let rule = input.recurrence?.normalized, rule.isComplete else {
+            throw .app(key: .invalidRecurrence, message: "Bitte wähle für die Wiederholung mindestens einen Wochentag bzw. Monatstag.")
+        }
+        let ruleChanged = rule != record.info.rule
+        let today = today(input.timezone)
+        record.info.title = input.title
+        record.info.rule = rule
+        record.input = input
+        record.input.recurrence = rule
+        seriesRecords[seriesID] = record
+
+        var updated = try await updateTask(id: taskID, expectedVersion: expectedVersion, input)
+        updated.series = record.info
+        updated.isDetached = task.isDetached // „Dieses und zukünftige“ koppelt nicht ab
+        tasks[taskID] = updated
+        let later = tasks.values.filter {
+            $0.seriesID == seriesID && ($0.occurrenceDate ?? occurrenceDate) > occurrenceDate && $0.isOpen
+                && !$0.isDetached && !$0.assignees.contains(where: \.isDone)
+        }
+        for var other in later {
+            if ruleChanged, let date = other.occurrenceDate, date > today {
+                tasks[other.id] = nil
+            } else {
+                var otherInput = input
+                otherInput.startDate = other.startDate
+                other.title = input.title
+                other.description = input.description
+                other.startTime = input.startTime
+                other.startsAt = startsAt(otherInput)
+                other.completionMode = input.completionMode
+                other.assignees = input.assigneeIDs.map { TaskAssignee(userID: $0) }
+                other.images = images(for: input)
+                other.series = record.info
+                other.version += 1
+                tasks[other.id] = other
+            }
+        }
+        if ruleChanged {
+            let remaining = tasks.values.filter { $0.seriesID == seriesID }.compactMap(\.occurrenceDate).max()
+            seriesRecords[seriesID]?.generatedUntil = [occurrenceDate, today, remaining].compactMap { $0 }.max()
+        }
+        generate(seriesID)
+        return tasks[taskID] ?? updated
+    }
+
+    func deleteSeries(fromTaskID taskID: UUID) async throws(FamiliarError) -> UUID {
+        let me = try requireUser()
+        let task = try visibleTask(taskID)
+        guard let seriesID = task.seriesID, var record = seriesRecords[seriesID] else {
+            throw .app(key: .notAnOccurrence, message: "Diese Aufgabe gehört zu keiner Serie.")
+        }
+        let deletion = SeriesDeletion(id: UUID(), seriesID: seriesID, familyID: task.familyID, deletedBy: me,
+                                      deletedAt: .now, series: record.info)
+        deletions[deletion.id] = deletion
+        record.info.deletedAt = deletion.deletedAt
+        seriesRecords[seriesID] = record
+        for var other in tasks.values where other.seriesID == seriesID && other.isOpen {
+            other.deletedAt = deletion.deletedAt
+            other.deletedBy = me
+            other.deletedBySeriesOp = deletion.id
+            other.version += 1
+            tasks[other.id] = other
+        }
+        return deletion.id
+    }
+
+    func restoreSeries(deletionID: UUID) async throws(FamiliarError) {
+        guard var deletion = deletions[deletionID], var record = seriesRecords[deletion.seriesID] else {
+            throw .app(key: .seriesDeletionNotFound, message: "Dieser Verlaufseintrag existiert nicht mehr.")
+        }
+        guard deletion.restoredAt == nil else { return }
+        for var other in tasks.values where other.deletedBySeriesOp == deletionID {
+            other.deletedAt = nil
+            other.deletedBy = nil
+            other.deletedBySeriesOp = nil
+            other.version += 1
+            tasks[other.id] = other
+        }
+        record.info.deletedAt = nil
+        record.resumeFrom = today(record.input.timezone)
+        seriesRecords[deletion.seriesID] = record
+        deletion.restoredAt = .now
+        deletions[deletionID] = deletion
+        generate(deletion.seriesID)
+    }
+
+    func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {
+        let me = try requireUser()
+        return deletions.values.filter { $0.restoredAt == nil && membership($0.familyID, for: me) != nil }
+    }
+
     func upload(_ image: PreparedImage, familyID: UUID) async throws(FamiliarError) {
         let base = "\(familyID.uuidString.lowercased())/\(image.id.uuidString.lowercased())"
         for (suffix, data) in [(".jpg", image.jpegData), ("_thumb.jpg", image.thumbnailData)] {
@@ -310,6 +468,7 @@ extension InMemoryBackend: TaskRepository {
         task.images = images(for: TaskInput(familyID: task.familyID, title: "", description: nil, startDate: nil,
                                             startTime: nil, timezone: input.timezone, completionMode: input.completionMode,
                                             assigneeIDs: [], images: input.images))
+        task.isDetached = task.isDetached || task.isOccurrence
         task.version += 1
         tasks[id] = task
         return task
@@ -361,6 +520,10 @@ extension InMemoryBackend: TaskRepository {
 
     func restore(taskID: UUID) async throws(FamiliarError) {
         var task = try visibleTask(taskID)
+        guard task.deletedBySeriesOp == nil else {
+            throw .app(key: .restoreSeriesInstead,
+                       message: "Dieses Vorkommen wurde mit der ganzen Serie gelöscht. Stelle die Serie im Verlauf wieder her.")
+        }
         task.deletedAt = nil
         task.deletedBy = nil
         task.version += 1

@@ -1,4 +1,4 @@
-# Datenmodell (Stand Phase 4 „Verlauf“)
+# Datenmodell (Stand Phase 5 „Wiederholungen“)
 
 Dieses Dokument beschreibt die Tabellen, Funktionen und RPCs aus den Migrationen
 `supabase/migrations/0001`–`0008`. Rechte und Policies im Detail: [rls-matrix.md](rls-matrix.md).
@@ -16,6 +16,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0006_avatars_storage` | 2026-10-20 | Supabase-MCP `apply_migration` (Phase 2) |
 | `0007_tasks` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (MCP-Bestätigung abgelehnt). Der Eintrag `20261020205741` in `schema_migrations` wurde vorher versehentlich mit dem Inhalt `select 1;` angelegt (ohne Wirkung); das Korrigieren des gespeicherten Texts wurde ebenfalls automatisch abgelehnt. Maßgeblich ist die Datei (SHA-256 `47e10558a612314b…`). |
 | `0008_history_purge` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Auch hier wurde der Eintrag `20261021044920` vorher versehentlich mit einer wirkungslosen Platzhalter-Abfrage angelegt; maßgeblich ist die Datei (SHA-256 `3d7a39442fb049e3…`). |
+| `0009_recurrence` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`-Anweisungen; vorher kein Platzhalter-Eintrag). Inhalt per SHA-256 `86cf70d71478f91b…` gegen die Zwischenablage geprüft; Tests `supabase/tests/0006_recurrence.sql`: 42/42 grün. |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -194,6 +195,27 @@ Tests: `supabase/tests/0003_tasks.sql` (49 Prüfungen) und `0004_tasks_papierkor
   3. Die RPC löscht Aufgaben, die seit mehr als 30 Tagen erledigt oder gelöscht sind, und Bildzeilen ohne Verknüpfung (älter als 1 Tag), und liefert alle Dateien in `task-images` ohne Bildzeile (älter als 1 Tag). Die Function löscht diese über die Storage-API.
 - `private.app_settings`: `functions_base_url` je Umgebung (Dev: `https://ldeouecoaqyfvubhrjei.supabase.co/functions/v1`).
 - Tests: `supabase/tests/0005_history_purge.sql` (7/7); End-to-End am 2026-10-21: HTTP 200, Token eingelöst.
+
+## Wiederholungen (0009)
+
+Regeln und Begründungen: [ADR 0008](decisions/0008-recurrence.md).
+
+| Tabelle | Inhalt |
+|---|---|
+| `public.task_series` | Regel (`freq` daily/weekly/monthly, `weekdays` ISO 1–7, `month_days` 1–31, Check-Constraint), Vorlage (Titel, Beschreibung, Erledigungsart, Startdatum, Uhrzeit, Zeitzone), `generated_until` (Wasserstandsmarke), `resume_from`, `deleted_at/by`, `version` |
+| `public.series_assignees` | Zuweisungen der Vorlage |
+| `public.series_image_links` | Bilder der Vorlage (gleiche `images`-Zeilen wie die Vorkommen) |
+| `public.series_deletions` | ein Verlaufseintrag pro Serien-Löschung (`restored_at/by`) |
+| `public.tasks` (geändert) | `series_id` → `task_series` `on delete set null`; `deleted_by_series_op` → `series_deletions`; Check `series_id is null or occurrence_date is not null` |
+
+Lesen per RLS (`can_view_series`), Schreiben nur über die RPCs `create_recurring_task`, `update_series_from`,
+`delete_series`, `restore_series_deletion`; `update_task` koppelt Vorkommen ab, `restore_task` lehnt mit der Serie
+gelöschte Vorkommen ab. Projektion für den Kalender: `project_series_occurrences(from, to)`. Erzeugung:
+`private.generate_series_occurrences` (pro Serie) und Cron-Job `familiar-generate-occurrences` (`*/5 * * * *`).
+Realtime: Änderungen an `task_series` (außer reinem Fortschreiben der Wasserstandsmarke) senden ebenfalls
+`task_changed` (Inhalt `series_id`, `family_id`). Neue Fehlerschlüssel: `invalid_recurrence`,
+`recurrence_requires_date`, `not_an_occurrence`, `series_not_found`, `series_deleted`, `restore_series_instead`,
+`series_deletion_not_found`, `invalid_range`.
 
 ## RLS-Hilfsfunktionen (0003, Schema `private`)
 

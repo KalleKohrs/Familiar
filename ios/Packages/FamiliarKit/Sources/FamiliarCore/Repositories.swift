@@ -40,6 +40,15 @@ public protocol TaskRepository: Sendable {
     func uncomplete(taskID: UUID, scope: CompletionScope) async throws(FamiliarError)
     func delete(taskID: UUID) async throws(FamiliarError)
     func restore(taskID: UUID) async throws(FamiliarError)
+    /// Neue Serie (`input.recurrence` gesetzt); erzeugt sofort die ersten Vorkommen.
+    func createSeries(_ input: TaskInput) async throws(FamiliarError)
+    /// „Dieses und zukünftige“ ab dem Vorkommen `taskID` (`input.recurrence` gesetzt).
+    func updateSeries(fromTaskID taskID: UUID, expectedVersion: Int, _ input: TaskInput) async throws(FamiliarError) -> TaskItem
+    /// „Gesamte Serie“ löschen; liefert die ID des Verlaufseintrags (für Rückgängig).
+    func deleteSeries(fromTaskID taskID: UUID) async throws(FamiliarError) -> UUID
+    func restoreSeries(deletionID: UUID) async throws(FamiliarError)
+    /// Serien-Löschungen der letzten 30 Tage, die noch nicht wiederhergestellt sind.
+    func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion]
     /// Kurzlebige URL für ein Aufgabenbild oder eine Miniatur.
     func imageURL(path: String) async throws(FamiliarError) -> URL
     /// Hinweise „Aufgabe geändert“ (Realtime); der Inhalt wird danach neu geladen.
