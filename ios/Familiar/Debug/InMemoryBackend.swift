@@ -13,6 +13,8 @@ actor InMemoryBackend {
     enum Scenario: String {
         case signedOut
         case ready
+        /// Vorführdaten für App-Store-Bilder: zwei Familien, neutrale Namen, abwechslungsreiche Aufgaben.
+        case showcase
 
         static func fromLaunchArguments(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> Scenario {
             guard let index = arguments.firstIndex(of: "-FamiliarInMemoryScenario"),
@@ -55,6 +57,73 @@ actor InMemoryBackend {
         members[example.id] = [FamilyMember(familyID: example.id, userID: anna, role: .admin, profile: profiles[anna])]
         invites[Self.joinableCode] = FamilyInvite(id: UUID(), familyID: example.id, code: Self.joinableCode,
                                                   expiresAt: .now.addingTimeInterval(7 * 24 * 3600))
+
+        if scenario == .showcase {
+            let berlin = TimeZone(identifier: "Europe/Berlin") ?? .current
+            let today = LocalDate(.now, timeZone: berlin)
+            let me = UUID(), jonas = UUID(), mia = UUID(), paul = UUID(), ruth = UUID()
+            user = (me, "lena@example.test")
+            var showcaseProfiles: [UUID: Profile] = [:]
+            for (id, name) in [(me, "Lena"), (jonas, "Jonas"), (mia, "Mia"), (paul, "Paul"), (ruth, "Ruth")] {
+                showcaseProfiles[id] = Profile(id: id, displayName: name)
+            }
+            profiles.merge(showcaseProfiles) { _, new in new }
+            let berger = Family(id: UUID(), name: "Familie Berger", colorHex: "#5EC2F2", createdBy: me)
+            let grandparents = Family(id: UUID(), name: "Oma & Opa", colorHex: "#F7C548", createdBy: ruth)
+            families[berger.id] = berger
+            families[grandparents.id] = grandparents
+            var bergerMembers: [FamilyMember] = []
+            for id in [me, jonas, mia, paul] {
+                bergerMembers.append(FamilyMember(familyID: berger.id, userID: id,
+                                                  role: id == me || id == jonas ? .admin : .member,
+                                                  profile: showcaseProfiles[id]))
+            }
+            var grandparentMembers: [FamilyMember] = []
+            for id in [ruth, me, jonas] {
+                grandparentMembers.append(FamilyMember(familyID: grandparents.id, userID: id,
+                                                       role: id == ruth ? .admin : .member, profile: showcaseProfiles[id]))
+            }
+            members[berger.id] = bergerMembers
+            members[grandparents.id] = grandparentMembers
+            func at(_ days: Int, _ hour: Int, _ minute: Int = 0) -> (LocalDate, LocalTime, Date) {
+                let date = today.adding(days: days), time = LocalTime(hour: hour, minute: minute)
+                return (date, time, date.date(at: time, in: berlin))
+            }
+            let dentist = at(1, 15, 30), football = at(2, 17), lawn = at(3, 10)
+            let items = [
+                TaskItem(id: UUID(), familyID: berger.id, createdBy: me, title: "Zimmer aufräumen",
+                         description: "Jede Person ihr eigenes Zimmer.", startDate: today, completionMode: .each,
+                         assignees: [TaskAssignee(userID: mia, completedAt: .now), TaskAssignee(userID: paul)]),
+                TaskItem(id: UUID(), familyID: grandparents.id, createdBy: ruth, title: "Geschenk für Opa besorgen",
+                         description: "Er wünscht sich ein Vogelhaus.", completionMode: .anyOne,
+                         createdAt: .now.addingTimeInterval(-3600),
+                         assignees: [TaskAssignee(userID: me), TaskAssignee(userID: jonas)]),
+                TaskItem(id: UUID(), familyID: berger.id, createdBy: jonas, title: "Müll rausbringen", startDate: today,
+                         completionMode: .anyOne, assignees: [TaskAssignee(userID: paul)]),
+                TaskItem(id: UUID(), familyID: berger.id, createdBy: me, title: "Zahnarzt Paul", startDate: dentist.0,
+                         startTime: dentist.1, startsAt: dentist.2, completionMode: .anyOne,
+                         assignees: [TaskAssignee(userID: me)]),
+                TaskItem(id: UUID(), familyID: berger.id, createdBy: me, title: "Mia vom Fußball abholen",
+                         startDate: football.0, startTime: football.1, startsAt: football.2, completionMode: .anyOne,
+                         assignees: [TaskAssignee(userID: jonas)]),
+                TaskItem(id: UUID(), familyID: grandparents.id, createdBy: ruth, title: "Rasen mähen",
+                         startDate: lawn.0, startTime: lawn.1, startsAt: lawn.2, completionMode: .anyOne,
+                         assignees: [TaskAssignee(userID: jonas)]),
+                TaskItem(id: UUID(), familyID: berger.id, createdBy: jonas, title: "Einkaufen",
+                         description: "Milch, Brot, Äpfel", completionMode: .anyOne,
+                         completedAt: .now.addingTimeInterval(-7200), completedBy: me, completionSource: .assignee,
+                         createdAt: .now.addingTimeInterval(-86400), assignees: [TaskAssignee(userID: me)]),
+            ]
+            for item in items { tasks[item.id] = item }
+            let lunchRule = RecurrenceRule.weekly([1, 2, 3, 4, 5])
+            let lunch = TaskInput(familyID: berger.id, title: "Pausenbrote machen", description: nil,
+                                  startDate: today.adding(days: 1), startTime: LocalTime(hour: 7, minute: 15),
+                                  timezone: "Europe/Berlin", completionMode: .anyOne, assigneeIDs: [jonas], images: [],
+                                  recurrence: lunchRule)
+            let lunchInfo = TaskSeries(id: UUID(), familyID: berger.id, title: "Pausenbrote machen", rule: lunchRule,
+                                       startDate: lunch.startDate)
+            seriesRecords[lunchInfo.id] = SeriesRecord(info: lunchInfo, input: lunch, createdBy: me)
+        }
 
         if scenario == .ready {
             let me = UUID()
