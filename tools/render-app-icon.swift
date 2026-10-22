@@ -2,9 +2,9 @@
 // swiftc -O tools/render-app-icon.swift -o /tmp/render && /tmp/render ios/Familiar/Resources/Assets.xcassets/AppIcon.appiconset
 //
 // Motiv: Haus mit Haken („zu Hause erledigt“), ruhig – eine Fläche, ein Hauch Verlauf, ein weicher Schatten.
-// Standard: helles Haus auf Bernstein-Orange, oranger Haken. Dunkel: oranges Haus, dunkler Haken.
-// Varianten nach Apple-Doku „Configuring your app icon“: Standard undurchsichtig, Dunkel mit durchsichtigem
-// Hintergrund (das System legt seinen eigenen darunter), Getönt als Graustufenbild.
+// Standard: helles Haus auf Bernstein-Orange, oranger Haken. Dunkel: oranges Haus, dunkler Haken auf Aubergine
+// (eigener farbiger Grund statt durchsichtig – laut HIG geben farbige Hintergründe im Dunkeln den besten Kontrast).
+// Getönt als Graustufenbild auf durchsichtigem Grund (Apple-Doku „Configuring your app icon“).
 import AppKit
 import CoreGraphics
 
@@ -81,6 +81,7 @@ func draw(_ v: Variant, in c: CGContext) {
         tickColors = orange
         shadow = hex(0x2A0A10, 0.22)
     case .dark:
+        linear(c, [hex(0x2C1D25), hex(0x1E1519)], P(512, 0), P(512, side))
         houseColors = orange
         tickColors = [hex(0x2B141A), hex(0x22100F)]
         shadow = gray(0, 0.5)
@@ -97,8 +98,8 @@ func draw(_ v: Variant, in c: CGContext) {
 
 let dir = URL(fileURLWithPath: CommandLine.arguments[1])
 for v in Variant.allCases {
-    // Standard ohne Alphakanal (App Store verlangt ein undurchsichtiges Icon), Dunkel/Getönt mit Transparenz.
-    let alpha: CGImageAlphaInfo = v == .standard ? .noneSkipLast : .premultipliedLast
+    // Standard und Dunkel ohne Alphakanal (undurchsichtig), Getönt mit Transparenz.
+    let alpha: CGImageAlphaInfo = v == .tinted ? .premultipliedLast : .noneSkipLast
     let c = CGContext(data: nil, width: Int(side), height: Int(side), bitsPerComponent: 8, bytesPerRow: 0, space: srgb,
                       bitmapInfo: alpha.rawValue)!
     c.translateBy(x: 0, y: side); c.scaleBy(x: 1, y: -1) // Koordinaten von oben links
