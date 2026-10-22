@@ -41,6 +41,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 | **Supabase Inc.** | Datenbank, Anmeldung, Dateispeicher, Server-Funktionen | Server in der EU (Frankfurt am Main); Unternehmen in den USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
 | **Netlify, Inc.** | Hosting der Website familiar-app.de und Empfang des Kontaktformulars | USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
 | **Resend, Inc.** | Versand der Anmelde-Codes per E-Mail | USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
+| **Backblaze, Inc.** | Speicherort der nächtlichen Datensicherung; erhält nur Daten, die vorher bei Supabase verschlüsselt wurden und die Backblaze nicht lesen kann | Server in der EU (Amsterdam); Unternehmen in den USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
 | **Apple Inc.** (Apple Push Notification service) | Zustellung von Mitteilungen und Live-Anzeigen; erhält Geräte-Token und Mitteilungsinhalt (z. B. Aufgabentitel) | USA bzw. Apple Distribution International (Irland) |
 | **Microsoft** | Nur bei verbundenem Outlook: Abruf deiner Termine | nach den Bedingungen deines Microsoft-Kontos |
 | **Google** – nur bei „Mit Google anmelden“ | Anmeldung (Google Ireland Limited) | Irland, ggf. USA – EU-US Data Privacy Framework bzw. EU-Standardvertragsklauseln |
@@ -52,6 +53,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 - **Erledigte und gelöschte Aufgaben:** 30 Tage im Verlauf (zum Wiederherstellen), danach automatisch endgültig gelöscht – einschließlich Bildern.
 - **Mitteilungs-Aufträge, beendete Live-Anzeigen, abgemeldete Geräte:** 30 Tage, danach automatisch gelöscht.
 - **Outlook-Termine:** nur ein Fenster von 7 Tagen zurück bis 120 Tage voraus; ältere fallen beim Abgleich weg; beim Trennen sofort gelöscht.
+- **Datensicherung:** jede Nacht eine verschlüsselte Kopie; jeder Stand wird nach 30 Tagen automatisch gelöscht. Was du löschst, verschwindet so spätestens nach etwa 31 Tagen auch aus der Sicherung.
 - **Server-Protokolle:** bis zu 1 Tag (Aufbewahrung durch Supabase); Website-Protokolle nach den Vorgaben von Netlify.
 - **Kontaktanfragen:** bis die Anfrage erledigt ist, danach löschen wir sie (spätestens nach 6 Monaten), sofern keine gesetzliche Aufbewahrungspflicht besteht.
 
@@ -67,7 +69,7 @@ Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren, z. B. bei der
 
 ## 8. Sicherheit
 
-Verbindungen sind verschlüsselt (TLS). Zugriffsrechte werden in der Datenbank für jede Abfrage geprüft (Row Level Security). Bilder liegen in nicht öffentlichen Speichern und werden nur über kurzlebige, signierte Links angezeigt.
+Verbindungen sind verschlüsselt (TLS). Zugriffsrechte werden in der Datenbank für jede Abfrage geprüft (Row Level Security). Bilder liegen in nicht öffentlichen Speichern und werden nur über kurzlebige, signierte Links angezeigt. Die nächtliche Datensicherung wird verschlüsselt (AES-256), bevor sie Supabase verlässt; den Schlüssel zum Öffnen hat nur der Verantwortliche.
 
 ## 9. Kinder
 
