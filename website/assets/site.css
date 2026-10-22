@@ -99,10 +99,10 @@ p { text-wrap: pretty; }
 
 /* Bild der App vor einer Kachel in Familienfarbe – wie im Markenzeichen. */
 .shot { position: relative; margin: 0 auto; width: min(100%, 340px); padding: 28px 20px 0 8px; }
-.shot::before { content: ""; position: absolute; z-index: 0; top: 0; right: -6px; width: 82%; aspect-ratio: 1;
+.shot::before { content: ""; position: absolute; z-index: 0; top: 0; right: -14px; width: 92%; aspect-ratio: 1;
   border-radius: 28%; background: var(--sky); transform: rotate(8deg); }
 .shot .device { position: relative; z-index: 1; margin: 0; background: #0B0709; border-radius: 46px;
-  padding: 9px; box-shadow: 0 0 0 1px var(--edge), 0 24px 60px rgba(0, 0, 0, 0.45); }
+  padding: 9px; box-shadow: 0 0 0 1px var(--edge), 0 32px 80px rgba(0, 0, 0, 0.55); }
 .shot .device img { border-radius: 38px; width: 100%; }
 .shot figcaption { position: relative; z-index: 1; margin-top: 16px; text-align: center; color: var(--secondary); font-size: 13px; }
 
@@ -236,11 +236,14 @@ td:first-child { min-width: 9em; }
 }
 @media (min-width: 960px) {
   /* Text und App-Bild passen gemeinsam in die erste Bildschirmhöhe (Kopfzeile ≈ 80 px). */
-  .hero { grid-template-columns: 1.2fr 0.8fr; align-items: center; gap: 48px; padding: 24px 0 48px;
+  .hero { grid-template-columns: 1.15fr 0.85fr; align-items: center; gap: 48px; padding: 0;
     min-height: calc(100vh - 80px); min-height: calc(100svh - 80px); }
-  .hero h1 { font-size: clamp(56px, 6vw, 74px); }
+  .hero h1 { font-size: clamp(50px, 4.8vw, 68px); }
   .hero h1 .line { white-space: nowrap; }
-  .shot { width: clamp(240px, calc((100vh - 240px) / 2.2), 360px); width: clamp(240px, calc((100svh - 240px) / 2.2), 360px); margin-right: 12px; }
+  /* So groß, wie die Fensterhöhe erlaubt (Bild ≈ 2,17 × Breite, dazu Kachel und Bildunterschrift). */
+  .shot { width: clamp(280px, calc((100vh - 160px) / 2.17), 420px); width: clamp(280px, calc((100svh - 160px) / 2.17), 420px);
+    margin-right: 20px; }
+  .shot figcaption { margin-top: 10px; }
   .statement { padding: 96px 0; }
   .topic { grid-template-columns: 5fr 7fr; gap: 48px; padding: 64px 0; }
   .topic ul, .topic .body { padding-top: 6px; }
