@@ -6,7 +6,7 @@ Umsetzung: `ios/Packages/FamiliarKit/Sources/FamiliarDesign`. Alle Screens verwe
 
 ## Farben
 
-V1 ist ausschließlich dunkel (`UIUserInterfaceStyle = Dark`). Jede Farbe hat eine Variante für **Kontrast erhöhen**, die das System automatisch wählt.
+Dunkel und hell (seit 2026-10-22). Standard: folgt der iPhone-Einstellung; im Profil „Darstellung: System · Hell · Dunkel“ (nur dieses Gerät, `Appearance`, gesetzt per `overrideUserInterfaceStyle` am Fenster, damit auch offene Blätter sofort wechseln). Jede Farbe hat je Erscheinungsbild eine Variante für **Kontrast erhöhen**, die das System automatisch wählt. Die Tabelle zeigt die dunklen Werte; helle Werte, `accentFill` und Begründungen: [design/light-mode.md](design/light-mode.md).
 
 | Token | Standard | Kontrast erhöht | Verwendung |
 |---|---|---|---|
@@ -61,7 +61,8 @@ Alle Stile basieren auf Dynamic-Type-Textstilen und skalieren mit der Systemschr
 Referenzbilder: [`design/reference-overview.webp`](design/reference-overview.webp), [`design/reference-feed.webp`](design/reference-feed.webp).
 Leitbild aus der Design-Referenz vom 2026-10-20: dunkles Aubergine-Graphit, weiches Ambient-Licht, leicht durchscheinende Cards mit Lichtkante, (ursprünglich ein leuchtender Orange-Orb als Markenelement – am 2026-10-21 durch das flache Kachel-Zeichen ersetzt), schwebende runde Glas-Buttons mit orangem Plus.
 
-- **Ambient-Hintergrund** (`FamiliarAmbientBackground`, über `familiarScreenBackground()`): `canvas` plus zwei statische Radialverläufe – warm oben (`glowWarm`, 16 %), Pflaume unten links (`glowPlum`, 28 %). Keine Animation, kein Blur; bei „Kontrast erhöhen“ oder „Transparenz reduzieren“ auf 40 % reduziert.
+- **Ambient-Hintergrund** (`FamiliarAmbientBackground`, über `familiarScreenBackground()`): `canvas` plus zwei statische Radialverläufe – warm oben (`glowWarm`, dunkel 16 %, hell 42 %), Pflaume bzw. Rosé unten links (`glowPlum`, dunkel 28 %, hell 45 %). Keine Animation, kein Blur; bei „Kontrast erhöhen“ oder „Transparenz reduzieren“ auf 40 % reduziert.
+- **Oberer Scroll-Rand:** weich (`scrollEdgeEffectStyle(.soft)`) – Inhalte verschwimmen unter den schwebenden Knöpfen, ohne sichtbare Kante (der harte Stil zeichnete eine Trennlinie).
 - **Markenzeichen** (`FamiliarMark`): flache orange Kachel mit Haken vor einer zweiten Kachel in Familienfarbe („geteilte Aufgaben“); ohne Verläufe, Leuchten oder 3D. Anmeldung, Onboarding, Ladebildschirm, App-Icon (`tools/render-app-icon.swift`). Leerzustände zeigen nur ein Symbol auf ruhigem Grund.
 - **Liquid Glass** nur für schwebende Bedienelemente: die eigene Navigationsleiste `FloatingTabBar` (Glas-Pille mit drei Bereichen und daneben ein orange getönter Glas-Button „Neue Aufgabe“, `glassEffect(.regular.tint(accent).interactive())`, siehe [ADR 0006](decisions/0006-custom-glass-tab-bar.md)), System-Toolbars und ggf. weitere schwebende Buttons (`glassEffect`, `GlassEffectContainer`). Aktiver Bereich: Symbol und Text in `accent` auf heller Kapsel (`textPrimary` · 10 %).
 - **Cards** sind leicht durchscheinend (`cardGlass`) mit Verlaufs-Lichtkante (`lightEdge` → `hairline`) – ohne Blur, damit Listen flüssig scrollen. Bei „Transparenz reduzieren“ automatisch opak (`card`).

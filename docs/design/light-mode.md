@@ -1,6 +1,6 @@
 # Heller Modus – Konzept (2026-10-22, Entwurf)
 
-Status: **Vorschlag, Entwurf 2** (nach Rückmeldung „zu flach, mehr Glow, minimal wärmeres Weiß, Leiste wie im Dunkeln“), wartet auf Freigabe. Ergänzt [design-system.md](../design-system.md) („V1 ist ausschließlich dunkel“).
+Status: **umgesetzt 2026-10-22** (Entwurf 2 nach Rückmeldung „zu flach, mehr Glow, minimal wärmeres Weiß, Leiste wie im Dunkeln“).
 
 ## Ziel
 
@@ -19,20 +19,20 @@ Kontrastwerte berechnet (WCAG) für den ungünstigsten Fall: Glas-Karte über de
 | Token | Dunkel (bisher) | Hell | Hell, Kontrast erhöht | Kontrast hell |
 |---|---|---|---|---|
 | `canvas` | `#1E1519` | `#F5ECE1` (warmes Papier) | `#FAF4EC` | – |
-| `elevated` | `#2A2024` | `#ECE3D9` | `#E4D9CD` | – |
+| `elevated` | `#2A2024` | `#ECE1D5` | `#E4D9CD` | – |
 | `card` | `#2C2427` | `#FFFAF4` | `#FFFFFF` | – |
-| `cardPressed` | `#352B2F` | `#F3ECE4` | `#EBE2D8` | – |
+| `cardPressed` | `#352B2F` | `#F3EADF` | `#EBE2D8` | – |
 | `cardGlass` | Weiß · 6 % | `#FFFAF4` · 78 → 58 % (Verlauf von oben) | · 92 % | – |
 | `cardGlassPressed` | Weiß · 10 % | `#FFFAF4` · 45 % | · 70 % | – |
-| `sunken` | `#160F12` | `#EEE6DD` | `#E6DCD1` | – |
+| `sunken` | `#160F12` | `#EEE4D9` | `#E6DCD1` | – |
 | `textPrimary` | `#F6EEE6` | `#2B1F25` (Aubergine-Tinte) | `#140C10` | 15,6 : 1 |
 | `textSecondary` | `#BFB2A5` | `#675850` | `#4A3D36` | 6,7 : 1 |
-| `textTertiary` | `#8F8378` | `#8A7B71` (nur groß/dekorativ) | `#6B5D55` | 4,0 : 1 |
+| `textTertiary` | `#8F8378` | `#857669` (nur groß/dekorativ) | `#6B5D55` | 3,9 : 1 |
 | `accent` (Fläche: Plus, Hauptknopf, „heute“-Kreis) | `#FF8C42` | `#F27A2B` | `#E86E1F` | Schrift darauf 6,8 : 1 |
 | **neu** `accentInk` (orange Schrift, Symbole, Links) | = `accent` | `#A84A0A` | `#943F06` | 5,1 : 1 auf Glas-Karte, 4,3 : 1 im stärksten Schein |
 | `onAccent` | `#1B1006` | `#1B1006` | `#000000` | 6,8 : 1 |
-| `success` | `#7DD69B` | `#1F7A43` | `#186336` | 4,6 : 1 |
-| `warning` | `#F5C451` | `#8C5A00` | `#734900` | 5,0 : 1 |
+| `success` | `#7DD69B` | `#1B7340` | `#165E34` | 5,2 : 1 |
+| `warning` | `#F5C451` | `#855500` | `#6E4600` | 5,6 : 1 |
 | `danger` | `#FF6B5B` | `#C23A2C` | `#A62D21` | 4,7 : 1 |
 | `hairline` | `#FFF3E6` · 8 % | `#2B1F25` · 10 % | · 25 % | – |
 | `lightEdge` | `#FFF3E6` · 14 % | Weiß · 90 % (Glanzkante oben) + warmer Schatten (`#783C1E` · 10 %, 6 pt nach unten, 18 pt weich) | – | – |
@@ -60,7 +60,7 @@ Die acht Voreinstellungen sind auf Hell zu blass (Sonne 1,6 : 1, Salbei 1,8 : 1)
 - App-Icon: bleibt; optional später die iOS-Varianten „dunkel“ und „getönt“.
 - Markenzeichen `FamiliarMark`: orange Kachel `#FF8C42` bleibt (Marke), zweite Kachel wie bisher.
 
-## Umsetzung (nach Freigabe)
+## Umsetzung (erledigt)
 
 1. `FamiliarColor`: jede Farbe bekommt eine helle Variante (dieselbe Mechanik wie „Kontrast erhöhen“), neues Token `accentInk`; Stellen mit orangem Text darauf umstellen.
 2. Feste Dunkelmodus-Sperre entfernen (`preferredColorScheme(.dark)` an drei Stellen, `UIUserInterfaceStyle`), Auswahl im Profil.
@@ -68,3 +68,5 @@ Die acht Voreinstellungen sind auf Hell zu blass (Sonne 1,6 : 1, Salbei 1,8 : 1)
 4. Familienfarben-Anzeige (`FamilyColorResolver`).
 5. Widgets und Live Activity.
 6. Prüfung: alle Bildschirme hell/dunkel × normal/Kontrast erhöht/Transparenz reduziert, UI-Tests in beiden Modi, Design-Galerie mit Umschalter; App-Store-Bilder zusätzlich hell.
+
+Ergänzungen bei der Umsetzung: neue Tokens `cardGlassLow` (unteres Ende des Glas-Verlaufs), `cardShadow`, `selection` (Kapsel des aktiven Tabs); Schalter im Editor in `accentFill`; Anmelde-Knöpfe: Apple im Hellen schwarz, Google mit grauem Rand (#747775); `LaunchBackground` und `AccentColor` mit heller und dunkler Variante; Familienfarben über `RGBColor.forLightBackground` (OKLab-Helligkeit ≤ 0,68, getestet).

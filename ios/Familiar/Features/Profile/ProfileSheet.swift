@@ -12,6 +12,7 @@ struct ProfileSheet: View {
     @Environment(NotificationStore.self) private var notifications
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(Appearance.storageKey) private var appearance = Appearance.system
     @State private var name = ""
     @State private var isSaving = false
     @State private var isSigningOut = false
@@ -93,6 +94,17 @@ struct ProfileSheet: View {
                         }
                         .buttonStyle(.familiarCard)
                         .accessibilityIdentifier("profile.outlook")
+                    }
+
+                    VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                        FamiliarSectionHeader("Darstellung")
+                        Picker("Darstellung", selection: $appearance) {
+                            ForEach(Appearance.allCases) { option in
+                                Text(option.title).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .accessibilityIdentifier("profile.appearance")
                     }
 
                     if notifications.isAvailable {

@@ -82,12 +82,12 @@ struct FloatingTabBar: View {
         }
     }
 
-    /// Dunkle Kapsel hinter dem aktiven Bereich (wie die System-Leiste im dunklen Erscheinungsbild,
-    /// z. B. App Store); gleitet mit, bei „Bewegung reduzieren“ nur Überblendung.
+    /// Kapsel hinter dem aktiven Bereich (wie die System-Leiste, z. B. App Store: im Dunkeln dunkel,
+    /// im Hellen zart abgedunkelt); gleitet mit, bei „Bewegung reduzieren“ nur Überblendung.
     @ViewBuilder
     private var selectionIndicator: some View {
         let capsule = Capsule()
-            .fill(Color.black.opacity(0.32))
+            .fill(FamiliarColor.selection)
             .overlay(Capsule().strokeBorder(FamiliarColor.hairline, lineWidth: 0.5))
         if reduceMotion {
             capsule.transition(.opacity)
@@ -105,7 +105,7 @@ struct FloatingTabBar: View {
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.tint(FamiliarColor.accent).interactive(), in: .circle)
+        .glassEffect(.regular.tint(FamiliarColor.accentFill).interactive(), in: .circle)
         .accessibilityLabel("Neue Aufgabe")
         .accessibilityIdentifier("createTask")
         .accessibilityShowsLargeContentViewer {

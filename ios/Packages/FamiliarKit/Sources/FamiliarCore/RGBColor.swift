@@ -39,4 +39,16 @@ public struct RGBColor: Hashable, Sendable {
     public var clamped: RGBColor {
         RGBColor(red: min(max(red, 0), 1), green: min(max(green, 0), 1), blue: min(max(blue, 0), 1))
     }
+
+    /// Höchste OKLab-Helligkeit für Familienfarben auf hellem Hintergrund.
+    public static let maximumLightnessOnLight = 0.68
+
+    /// Anzeige auf hellem Hintergrund: zu helle Farben (z. B. Sonne, Salbei) werden im OKLab-Raum
+    /// abgedunkelt, Farbton und Buntheit bleiben. Die gespeicherte Farbe ändert sich nicht.
+    public var forLightBackground: RGBColor {
+        var lab = OKLab(self)
+        guard lab.lightness > Self.maximumLightnessOnLight else { return self }
+        lab.lightness = Self.maximumLightnessOnLight
+        return lab.rgb.clamped
+    }
 }

@@ -196,7 +196,7 @@ struct CalendarHomeView: View {
                     .frame(width: 32, height: 32)
                     .background {
                         if isToday {
-                            Circle().fill(FamiliarColor.accent)
+                            Circle().fill(FamiliarColor.accentFill)
                         } else if isSelected {
                             Circle().fill(FamiliarColor.cardGlassPressed)
                                 .overlay(Circle().strokeBorder(FamiliarColor.accent.opacity(0.7), lineWidth: 1.5))

@@ -13,7 +13,9 @@ public struct FamilyBadge: View {
 
     public var body: some View {
         HStack(spacing: 6) {
-            Circle().fill(color).frame(width: 8, height: 8)
+            Circle().fill(color)
+                .overlay(Circle().strokeBorder(FamiliarColor.hairline, lineWidth: 0.5))
+                .frame(width: 8, height: 8)
             Text(name)
                 .font(FamiliarFont.caption)
                 .foregroundStyle(FamiliarColor.textSecondary)

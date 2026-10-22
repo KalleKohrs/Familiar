@@ -27,7 +27,7 @@ public struct FamiliarMark: View {
                 .offset(x: -gap, y: gap)
                 .blendMode(.destinationOut)
             shape
-                .fill(FamiliarColor.accent)
+                .fill(FamiliarColor.accentFill)
                 .frame(width: tile, height: tile)
                 .overlay {
                     Image(systemName: "checkmark")

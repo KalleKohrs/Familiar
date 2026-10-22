@@ -57,6 +57,7 @@ public struct DesignGalleryView: View {
                 swatch("textSecondary", FamiliarColor.textSecondary)
                 swatch("textTertiary", FamiliarColor.textTertiary)
                 swatch("accent", FamiliarColor.accent)
+                swatch("accentFill", FamiliarColor.accentFill)
                 swatch("success", FamiliarColor.success)
                 swatch("warning", FamiliarColor.warning)
                 swatch("danger", FamiliarColor.danger)

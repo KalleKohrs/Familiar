@@ -116,7 +116,7 @@ private struct CompleteButton: View {
                 .font(.body.weight(.bold))
                 .foregroundStyle(FamiliarColor.onAccent)
                 .frame(width: 44, height: 44)
-                .background(Circle().fill(FamiliarColor.accent))
+                .background(Circle().fill(FamiliarColor.accentFill))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Erledigt")

@@ -7,6 +7,7 @@ import SwiftUI
 /// Anmeldung per E-Mail-Code, mit Apple oder mit Google (Plan, Abschnitt 6).
 struct SignInView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(\.colorScheme) private var colorScheme
     @State private var email = ""
     @State private var isSending = false
     @State private var errorMessage: String?
@@ -76,7 +77,8 @@ struct SignInView: View {
                         } onCompletion: { result in
                             handleApple(result)
                         }
-                        .signInWithAppleButtonStyle(.white)
+                        // Apple: auf hellem Grund schwarz, auf dunklem weiß.
+                        .signInWithAppleButtonStyle(colorScheme == .light ? .black : .white)
                         .frame(height: 50)
                         .clipShape(Capsule())
                         .disabled(isSigningInWithApple)

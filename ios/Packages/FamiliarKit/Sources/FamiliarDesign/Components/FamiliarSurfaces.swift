@@ -12,9 +12,9 @@ extension View {
     /// randlos bis in die Safe Areas.
     public func familiarScreenBackground() -> some View {
         background { FamiliarAmbientBackground().ignoresSafeArea() }
-            // Scrollende Inhalte verschwinden oben deutlich unter den schwebenden Knöpfen, statt
-            // lesbar darunter durchzulaufen (gilt für alle Scroll-Ansichten des Bildschirms).
-            .scrollEdgeEffectStyle(.hard, for: .top)
+            // Scrollende Inhalte blenden oben weich unter den schwebenden Knöpfen aus – ohne
+            // sichtbare Kante (der harte Stil zeichnete eine Trennlinie; gilt für alle Scroll-Ansichten).
+            .scrollEdgeEffectStyle(.soft, for: .top)
     }
 
     /// Dezenter, statischer Perlmutt-Reflex als Rand – nur für hervorgehobene Elemente.
@@ -23,10 +23,12 @@ extension View {
     }
 }
 
-/// Statischer Hintergrund mit zwei weichen Lichtquellen: warm oben, Pflaume unten links.
+/// Statischer Hintergrund mit zwei weichen Lichtquellen: warm oben, Pflaume (hell: Rosé) unten links.
 /// Keine Animation und kein Blur – reine Verläufe, daher auch auf älteren Geräten günstig.
-/// Bei „Kontrast erhöhen“ und „Transparenz reduzieren“ deutlich zurückgenommen.
+/// Im Hellen kräftiger, damit das Papier nicht flach wirkt. Bei „Kontrast erhöhen“ und
+/// „Transparenz reduzieren“ deutlich zurückgenommen.
 public struct FamiliarAmbientBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -34,19 +36,20 @@ public struct FamiliarAmbientBackground: View {
 
     public var body: some View {
         let strength = (contrast == .increased || reduceTransparency) ? 0.4 : 1.0
+        let light = colorScheme == .light
         ZStack {
             FamiliarColor.canvas
             RadialGradient(
-                colors: [FamiliarColor.glowWarm.opacity(0.16 * strength), .clear],
-                center: UnitPoint(x: 0.5, y: -0.05),
+                colors: [FamiliarColor.glowWarm.opacity((light ? 0.42 : 0.16) * strength), .clear],
+                center: light ? UnitPoint(x: 0.7, y: -0.05) : UnitPoint(x: 0.5, y: -0.05),
                 startRadius: 0,
-                endRadius: 460
+                endRadius: light ? 520 : 460
             )
             RadialGradient(
-                colors: [FamiliarColor.glowPlum.opacity(0.28 * strength), .clear],
-                center: UnitPoint(x: -0.1, y: 1.0),
+                colors: [FamiliarColor.glowPlum.opacity((light ? 0.45 : 0.28) * strength), .clear],
+                center: UnitPoint(x: -0.1, y: light ? 1.05 : 1.0),
                 startRadius: 0,
-                endRadius: 520
+                endRadius: light ? 560 : 520
             )
         }
         .accessibilityHidden(true)
@@ -84,18 +87,20 @@ private struct FamiliarCardModifier: ViewModifier {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(shape.fill(fill))
+            .background(shape.fill(fill).shadow(color: FamiliarColor.cardShadow, radius: 9, y: 6))
             .overlay(shape.strokeBorder(FamiliarGradient.edge, lineWidth: 1))
             .contentShape(shape)
     }
 
-    private var fill: Color {
-        switch (reduceTransparency, isPressed) {
-        case (true, false): FamiliarColor.card
-        case (true, true): FamiliarColor.cardPressed
-        case (false, false): FamiliarColor.cardGlass
-        case (false, true): FamiliarColor.cardGlassPressed
+    /// Glas-Verlauf von oben nach unten (im Dunkeln gleichmäßig, im Hellen unten durchscheinender).
+    private var fill: LinearGradient {
+        let colors: [Color] = switch (reduceTransparency, isPressed) {
+        case (true, false): [FamiliarColor.card]
+        case (true, true): [FamiliarColor.cardPressed]
+        case (false, false): [FamiliarColor.cardGlass, FamiliarColor.cardGlassLow]
+        case (false, true): [FamiliarColor.cardGlassPressed]
         }
+        return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
     }
 }
 

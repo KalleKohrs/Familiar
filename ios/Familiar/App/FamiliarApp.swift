@@ -14,6 +14,7 @@ struct FamiliarApp: App {
     @State private var taskImages: TaskImageStore
     @State private var outlook: OutlookStore
     @State private var notifications: NotificationStore
+    @AppStorage(Appearance.storageKey) private var appearance = Appearance.system
 
     init() {
         FamiliarTypeface.register()
@@ -48,8 +49,8 @@ struct FamiliarApp: App {
                 .environment(taskImages)
                 .environment(outlook)
                 .environment(notifications)
-                .preferredColorScheme(.dark)
                 .tint(FamiliarColor.accent)
+                .onChange(of: appearance, initial: true) { appearance.apply() }
                 .task {
                     appDelegate.notifications = notifications
                     session.start()

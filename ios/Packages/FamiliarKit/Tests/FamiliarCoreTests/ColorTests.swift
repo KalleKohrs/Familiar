@@ -11,6 +11,19 @@ struct RGBColorTests {
         #expect(withHash.hexString == "#FFA43A")
     }
 
+    @Test(arguments: [0xF7C548, 0x8FD19E, 0x5EC2F2, 0xFF7F66] as [UInt32])
+    func darkensLightColorsForLightBackground(_ hex: UInt32) {
+        let color = RGBColor(hex: hex)
+        let shown = OKLab(color.forLightBackground)
+        #expect(shown.lightness <= RGBColor.maximumLightnessOnLight + 0.01)
+        #expect(abs(shown.hue - OKLab(color).hue) < 0.08)
+    }
+
+    @Test func keepsDarkColorsForLightBackground() {
+        let petrolDark = RGBColor(hex: 0x1D5C55)
+        #expect(petrolDark.forLightBackground == petrolDark)
+    }
+
     @Test(arguments: ["", "#FFF", "#GGGGGG", "#1234567", "rot"])
     func rejectsInvalidHex(_ input: String) {
         #expect(RGBColor(hex: input) == nil)

@@ -44,7 +44,7 @@ public struct FamiliarButtonStyle: ButtonStyle {
 
     private var background: Color {
         switch kind {
-        case .primary: FamiliarColor.accent
+        case .primary: FamiliarColor.accentFill
         case .secondary, .destructive: FamiliarColor.card
         }
     }
@@ -64,7 +64,7 @@ public struct CompletionCheckButton: View {
     /// Wächst mit der Schriftgröße mit (begrenzt).
     @ScaledMetric(relativeTo: .body) private var size: CGFloat = 40
 
-    public init(isDone: Bool, tint: Color = FamiliarColor.accent, action: @escaping () -> Void) {
+    public init(isDone: Bool, tint: Color = FamiliarColor.accentFill, action: @escaping () -> Void) {
         self.isDone = isDone
         self.tint = tint
         self.action = action

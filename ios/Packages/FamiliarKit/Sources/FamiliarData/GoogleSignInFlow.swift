@@ -45,7 +45,9 @@ public enum GoogleSignInFlow {
 
 /// Anmelde-Knopf in Form und Höhe des Apple-Knopfs: weiße Kapsel mit dem offiziellen „G“ aus dem
 /// GoogleSignIn-Paket (Googles Branding-Richtlinien erlauben die Kapselform mit diesem Logo).
+/// Auf hellem Grund mit grauem Rand (Googles „Light“-Variante, Rand #747775).
 public struct GoogleSignInButtonView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let action: () -> Void
 
     public init(action: @escaping () -> Void) {
@@ -67,6 +69,11 @@ public struct GoogleSignInButtonView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 50)
             .background(Capsule().fill(.white))
+            .overlay {
+                if colorScheme == .light {
+                    Capsule().strokeBorder(Color(red: 0x74 / 255, green: 0x77 / 255, blue: 0x75 / 255), lineWidth: 1)
+                }
+            }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

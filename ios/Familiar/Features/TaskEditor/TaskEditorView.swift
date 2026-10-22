@@ -232,6 +232,8 @@ struct TaskEditorView: View {
             if draft.recurrence == nil {
                 Toggle("Datum", isOn: $draft.hasDate.animation(FamiliarMotion.animation(reduceMotion: reduceMotion)))
                     .accessibilityIdentifier("editor.hasDate")
+                    // Schalter sind Flächen: kräftiges Orange statt der dunkleren Schriftfarbe.
+                    .tint(FamiliarColor.accentFill)
             }
             if draft.usesDate {
                 DatePicker(draft.recurrence != nil && editingTask == nil ? "Ab" : "Tag",
@@ -239,6 +241,7 @@ struct TaskEditorView: View {
                     .environment(\.timeZone, timeZone)
                     .accessibilityIdentifier("editor.date")
                 Toggle("Uhrzeit", isOn: $draft.hasTime.animation(FamiliarMotion.animation(reduceMotion: reduceMotion)))
+                    .tint(FamiliarColor.accentFill)
                 if draft.hasTime {
                     DatePicker("Uhrzeit", selection: timeBinding, displayedComponents: .hourAndMinute)
                         .environment(\.timeZone, timeZone)
@@ -324,7 +327,7 @@ struct TaskEditorView: View {
                 .lineLimit(1)
                 .foregroundStyle(isSelected ? FamiliarColor.onAccent : FamiliarColor.textPrimary)
                 .frame(minWidth: 40, maxWidth: 52, minHeight: 40)
-                .background(Circle().fill(isSelected ? FamiliarColor.accent : FamiliarColor.elevated))
+                .background(Circle().fill(isSelected ? FamiliarColor.accentFill : FamiliarColor.elevated))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
