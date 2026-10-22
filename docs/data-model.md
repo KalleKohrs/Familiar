@@ -24,6 +24,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0014_push_claim_starts_at` | 2026-10-21 | Supabase-MCP `apply_migration` |
 | `0015_notification_cleanup` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`); trägt sich selbst in `schema_migrations` ein. Täglich 03:45 UTC: Aufträge, beendete Live Activities und abgemeldete Geräte nach 30 Tagen, Cron-Tokens nach 1 Tag. |
 | `0016_oauth_states_user_index` | 2026-10-22 | Supabase-MCP `apply_migration` (Advisor: Index für Fremdschlüssel) |
+| `0017_backup` | 2026-10-22 | Supabase-MCP `apply_migration` (bewusst ohne Löschbefehle). Datensicherung, siehe unten und [ADR 0009](decisions/0009-backups.md). |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -246,6 +247,20 @@ Realtime: Änderungen an `task_series` (außer reinem Fortschreiben der Wasserst
 | RPCs (nur service_role) | `push_claim_jobs(token)` liefert Inhalt, ContentState-Felder (`starts_at_unix` nur mit Uhrzeit, `is_open`, `can_complete`, Initialen), Geräte und Activities; `push_report_results(results)`. |
 
 Spike S2 (2026-10-21): Die Edge Function erreicht APNs per `fetch` über HTTP/2 – die Sandbox antwortet ohne Schlüssel mit `403 {"reason":"MissingProviderToken"}`. Kein externer Sender nötig.
+
+## Datensicherung (0017)
+
+Begründung, Grenzen und Wiederherstellung: [ADR 0009](decisions/0009-backups.md); Einrichtung: [setup/backup.md](setup/backup.md).
+
+| Objekt | Zweck |
+|---|---|
+| Cron `familiar-backup` (02:30 UTC) | `private.start_backup()` → Einmal-Token → Edge Function `backup` (Modus `run`). |
+| Cron `familiar-backup-check` (08:00 UTC) | `private.check_backup()`: keine erfolgreiche Sicherung seit 30 h → `backup` im Modus `alert` (Warn-E-Mail über Resend). |
+| `public.backup_export()` | STABLE, nur `service_role`: alle Tabellen in `public` (außer Geräte, Mitteilungs-Aufträge, Live Activities, Outlook) plus `auth.users`, `auth.identities`, `supabase_migrations.schema_migrations` als ein JSON-Dokument aus einem Snapshot. |
+| `public.backup_image_plan(limit)` / `backup_image_saved` / `backup_image_hidden` | Inkrementelle Bildsicherung über `private.backup_objects` (Bucket, Name, ETag, `hidden_at`). |
+| `public.backup_begin` / `backup_finish` | Token einlösen bzw. Ergebnis nach `private.backup_runs`; `backup_finish(..., p_continue => true)` startet die nächste Etappe (max. 20). |
+| `private.start_restore(mode, date, confirm, cursor, run_id)` | Nur von Hand: Edge Function `backup-restore` (`probe` / `restore` / `images`), Bericht in `private.restore_runs`. |
+| Selbsttest | `select private.start_backup('selftest');` – Antwort in `net._http_response`: Verschlüsselung hin und zurück, Secrets, B2-Rechte. |
 
 ## RLS-Hilfsfunktionen (0003, Schema `private`)
 

@@ -1,6 +1,6 @@
 # ADR 0009: Nächtliche Datensicherung ohne Kosten
 
-- **Status:** vorgeschlagen (2026-10-22), wartet auf Zustimmung und das Backblaze-Konto des Nutzers. Ersetzt den Entwurf vom 2026-10-21 (GitHub Actions), siehe „Verworfen“.
+- **Status:** angenommen (2026-10-22), gebaut (Migration `0017_backup`, Edge Functions `backup` und `backup-restore`); der erste echte Lauf wartet auf das Backblaze-Konto des Nutzers. Ersetzt den Entwurf vom 2026-10-21 (GitHub Actions), siehe „Verworfen“.
 - **Kontext:** Familiar läuft auch in Produktion im Supabase-Free-Tarif (Entscheidung 2026-10-21: nur kostenlose Dienste). Free enthält keine automatischen Sicherungen (Supabase-Doku „Database Backups“: tägliche Backups und PITR erst ab Pro). Gesichert werden müssen die Datenbank (Familien, Aufgaben, Zuweisungen, Profile, Anmelde-Konten) und die Bilder aus den privaten Buckets `task-images` und `avatars`. Die Sicherung muss außerhalb von Supabase liegen, damit sie einen Projektverlust übersteht. Sie darf die Familiendaten weder dem Speicheranbieter noch einem weiteren Dienst offenlegen.
 
 ## Rahmen (offizielle Doku, Stand 2026-10-22)
@@ -52,12 +52,11 @@
 7. **Schutz vor Löschwellen:** Zeigt Supabase plötzlich weniger als die Hälfte der bisher gesicherten Bilder oder gar keine Familien, verbirgt die Function nichts. Sie bricht ab und meldet einen Fehler. Ein Unfall wird so nicht in die Sicherung übernommen.
 8. **Benachrichtigung:** Schlägt die Sicherung fehl oder fehlt seit 48 Stunden eine erfolgreiche Sicherung, schickt Familiar über die **Resend-API** (Resend wird schon für Anmelde-Codes genutzt, also kein neuer Dienst) eine E-Mail an info@familiar-app.de. Den Stand jeder Nacht (Zeit, Größe, Anzahl Bilder, Fehler) schreibt die Function in `private.backup_runs`.
 9. **Secrets** (nur im Supabase-Dashboard, nie im Chat):
-   - `B2_KEY_ID` und `B2_APPLICATION_KEY` (Write Only)
-   - `B2_BUCKET_NAME` (die Bucket-ID liefert die B2-Anmeldung selbst, weil der Schlüssel auf diesen einen Bucket beschränkt ist)
-   - `BACKUP_PUBLIC_KEY` (öffentlich, darf auch im Repository liegen)
+   - `B2_KEY_ID` und `B2_APPLICATION_KEY` (Write Only, auf den einen Bucket beschränkt; Bucket-ID und -Name liefert die B2-Anmeldung selbst)
+   - `BACKUP_PUBLIC_KEY` (öffentlich, liegt auch als `supabase/backup-public.pem` im Repository)
    - `RESEND_API_KEY` (nur Senden)
 
-   Zum Wiederherstellen kommen vorübergehend `BACKUP_PRIVATE_KEY` und ein Lese-Schlüssel für B2 hinzu.
+   Zum Wiederherstellen kommen vorübergehend `BACKUP_PRIVATE_KEY`, `B2_READ_KEY_ID` und `B2_READ_APPLICATION_KEY` hinzu.
 
 ## Grenzen
 
@@ -72,16 +71,30 @@
 
 ## Wiederherstellung
 
-Ich führe die Wiederherstellung mit dem Inhaber durch. Es braucht dafür keine Programme auf dem Mac, alles läuft im Supabase-Dashboard und in einer Edge Function.
+Ich führe die Wiederherstellung mit dem Inhaber durch. Auf dem Mac braucht es dafür keine Programme: Alles läuft im Supabase-Dashboard und in der Edge Function `backup-restore`. Das Ergebnis steht jeweils in `private.restore_runs`.
 
-1. Neues Supabase-Projekt (EU Frankfurt) anlegen oder das bestehende nutzen.
-2. Bei Backblaze einen **Lese-Schlüssel** („Read Only“, nur dieser Bucket) anlegen. Im neuen Projekt diese Secrets setzen: `BACKUP_PRIVATE_KEY` (aus dem Passwort-Manager), `B2_READ_KEY_ID`, `B2_READ_APPLICATION_KEY`, `B2_BUCKET_NAME`.
-3. Edge Function `backup-restore` deployen und mit dem gewünschten Datum aufrufen. Sie
-   - lädt `db/<datum>.fam`, prüft und entschlüsselt die Datei,
-   - spielt in einem leeren Projekt zuerst die gesicherten Migrationen ein, sonst die aus dem Repository,
-   - lädt dann alle Tabellen in **einer** Transaktion (`session_replication_role = replica`, damit die Reihenfolge der Fremdschlüssel keine Rolle spielt),
-   - stellt danach die Bilder in Etappen in die Buckets zurück.
-4. Danach die übrigen Edge Functions deployen und ihre Secrets setzen (Liste in `docs/setup/`). URL und Schlüssel in der App bleiben gleich, wenn dasselbe Projekt genutzt wird. Bei einem neuen Projekt braucht es ein App-Update mit der neuen Projekt-URL.
-5. `BACKUP_PRIVATE_KEY` und den Lese-Schlüssel wieder löschen.
+1. **Ziel vorbereiten:**
+   - **Leeres Projekt** (Projekt verloren): neues Supabase-Projekt in der EU (Frankfurt) anlegen. Migrationen aus dem Repository einspielen, Edge Functions deployen, `functions_base_url` anpassen, wie bei jedem neuen Projekt.
+   - **Bestehendes Projekt** (Daten kaputt): Es wird überschrieben, siehe Schritt 3.
+2. **Secrets setzen** (nur für die Dauer der Wiederherstellung):
+   - Bei Backblaze einen **Lese-Schlüssel** anlegen („Read Only“, nur dieser Bucket).
+   - Im Zielprojekt eintragen: `BACKUP_PRIVATE_KEY` (aus dem Passwort-Manager), `B2_READ_KEY_ID`, `B2_READ_APPLICATION_KEY`.
+3. **Im SQL-Editor starten:**
+   - `select private.start_restore('probe', 'JJJJ-MM-TT');` ist eine **Probe**. Sie spielt alles in einer Transaktion ein, zählt jede Tabelle, macht alles rückgängig (ROLLBACK) und vergleicht Stichproben-Bilder mit den Originalen. Dabei ändert sich nichts.
+   - `select private.start_restore('restore', 'JJJJ-MM-TT');` stellt in einem **leeren** Projekt wieder her.
+   - Ein **nicht leeres** Projekt wird nur mit `'ÜBERSCHREIBEN'` als drittem Argument überschrieben. Dann werden zuerst alle Konten und alle Tabellen in `public` geleert.
+   - Die Datenbank wird in **einer** Transaktion mit `session_replication_role = replica` eingespielt, sodass die Reihenfolge der Fremdschlüssel und die App-Trigger keine Rolle spielen. Danach werden die Sequenzen nachgezogen.
+   - Anschließend schreibt die Function alle Bilder in Etappen zurück.
+4. **Danach:**
+   - Bei einem neuen Projekt braucht es ein App-Update mit der neuen Projekt-URL.
+   - Outlook muss neu verbunden werden.
+   - `BACKUP_PRIVATE_KEY` und den Lese-Schlüssel wieder löschen.
 
-**Probe-Wiederherstellung:** einmal nach dem Bau und dann jährlich. Dabei wird die Sicherung des Dev-Projekts in ein leeres Supabase-Projekt eingespielt, solange der zweite Projekt-Platz noch frei ist, also vor dem Anlegen des Produktionsprojekts. Danach werden Zeilenzahlen und Bilder verglichen. Jede Nacht prüft B2 jede hochgeladene Datei gegen die mitgeschickte SHA-1-Prüfsumme. Jede Datei trägt außerdem das GCM-Prüfzeichen, sodass eine beschädigte Sicherung beim Wiederherstellen sofort erkannt wird.
+Das Schema kommt aus dem Repository (`supabase/migrations/`, Quellcode-Sicherung auf GitHub, siehe Launch-Liste). Jede Sicherung enthält zusätzlich `supabase_migrations.schema_migrations` mit dem SQL aller Migrationen, als Rückfallebene, falls das Repository verloren geht.
+
+## Tests (Stand 2026-10-22, Dev-Projekt)
+
+- Migration `0017_backup` eingespielt. `backup_export` liefert alle 15 Tabellen in einem Snapshot (90 KB, davon das meiste Migrations-SQL). `backup_image_plan` erkennt das vorhandene Profilbild.
+- Selbsttest in der echten Edge-Runtime (`select private.start_backup('selftest')`): Ver- und Entschlüsselung inklusive gzip stimmen überein, eine veränderte Datei wird abgelehnt.
+- `backup-restore`: Token, direkte Datenbankverbindung und Bericht funktionieren. Ohne Schlüssel bricht die Function sauber mit Meldung ab.
+- **Offen, sobald das Backblaze-Konto steht:** erster echter Lauf (Upload, Lebenszyklus, Write-Only-Rechte), dann die Probe-Wiederherstellung (`probe`) im Dev-Projekt mit dem echten privaten Schlüssel. Die vollständige Wiederherstellung in ein leeres Projekt (`restore`) wird einmal vor dem Start geübt, direkt nach dem Anlegen des Produktionsprojekts und bevor dort echte Daten liegen.
