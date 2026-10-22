@@ -14,6 +14,12 @@ struct HistoryHomeView: View {
         NavigationStack(path: $path) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                    // Überschrift im Inhalt in der Markenschrift wie „Aufgaben“ und „Kalender“.
+                    Text("Verlauf")
+                        .font(FamiliarFont.display)
+                        .foregroundStyle(FamiliarColor.textPrimary)
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.bottom, FamiliarSpacing.xs)
                     content
                 }
                 .padding(.horizontal, FamiliarSpacing.m)
@@ -22,6 +28,8 @@ struct HistoryHomeView: View {
             .refreshable { await store.reloadHistory() }
             .familiarScreenBackground()
             .navigationTitle("Verlauf")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(removing: .title)
             .navigationDestination(for: UUID.self) { taskID in
                 TaskDetailView(taskID: taskID)
                     .navigationTransition(.zoom(sourceID: taskID, in: transition))
