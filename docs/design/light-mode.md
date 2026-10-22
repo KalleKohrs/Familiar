@@ -1,6 +1,6 @@
 # Heller Modus – Konzept (2026-10-22, Entwurf)
 
-Status: **Vorschlag**, wartet auf Freigabe. Ergänzt [design-system.md](../design-system.md) („V1 ist ausschließlich dunkel“).
+Status: **Vorschlag, Entwurf 2** (nach Rückmeldung „zu flach, mehr Glow, minimal wärmeres Weiß, Leiste wie im Dunkeln“), wartet auf Freigabe. Ergänzt [design-system.md](../design-system.md) („V1 ist ausschließlich dunkel“).
 
 ## Ziel
 
@@ -14,34 +14,36 @@ Familiar bekommt neben dem dunklen „Fluid Ambient“ eine helle Variante: **wa
 
 ## Palette
 
-Kontrastwerte berechnet (WCAG), Karte = `#FFFDFB`, Hintergrund = `#F6F0E9`.
+Kontrastwerte berechnet (WCAG) für den ungünstigsten Fall: Glas-Karte über dem stärksten Orange-Schein (ergibt etwa `#FCEEE2`).
 
 | Token | Dunkel (bisher) | Hell | Hell, Kontrast erhöht | Kontrast hell |
 |---|---|---|---|---|
-| `canvas` | `#1E1519` | `#F6F0E9` (warmes Papier) | `#FBF8F4` | – |
+| `canvas` | `#1E1519` | `#F5ECE1` (warmes Papier) | `#FAF4EC` | – |
 | `elevated` | `#2A2024` | `#ECE3D9` | `#E4D9CD` | – |
-| `card` | `#2C2427` | `#FFFDFB` | `#FFFFFF` | – |
+| `card` | `#2C2427` | `#FFFAF4` | `#FFFFFF` | – |
 | `cardPressed` | `#352B2F` | `#F3ECE4` | `#EBE2D8` | – |
-| `cardGlass` | Weiß · 6 % | Weiß · 72 % | · 92 % | – |
-| `cardGlassPressed` | Weiß · 10 % | Weiß · 50 % | · 70 % | – |
+| `cardGlass` | Weiß · 6 % | `#FFFAF4` · 78 → 58 % (Verlauf von oben) | · 92 % | – |
+| `cardGlassPressed` | Weiß · 10 % | `#FFFAF4` · 45 % | · 70 % | – |
 | `sunken` | `#160F12` | `#EEE6DD` | `#E6DCD1` | – |
 | `textPrimary` | `#F6EEE6` | `#2B1F25` (Aubergine-Tinte) | `#140C10` | 15,6 : 1 |
 | `textSecondary` | `#BFB2A5` | `#675850` | `#4A3D36` | 6,7 : 1 |
 | `textTertiary` | `#8F8378` | `#8A7B71` (nur groß/dekorativ) | `#6B5D55` | 4,0 : 1 |
 | `accent` (Fläche: Plus, Hauptknopf, „heute“-Kreis) | `#FF8C42` | `#F27A2B` | `#E86E1F` | Schrift darauf 6,8 : 1 |
-| **neu** `accentInk` (orange Schrift, Symbole, Links) | = `accent` | `#B04E0C` | `#A04608` | 5,3 : 1 |
+| **neu** `accentInk` (orange Schrift, Symbole, Links) | = `accent` | `#A84A0A` | `#943F06` | 5,1 : 1 auf Glas-Karte, 4,3 : 1 im stärksten Schein |
 | `onAccent` | `#1B1006` | `#1B1006` | `#000000` | 6,8 : 1 |
-| `success` | `#7DD69B` | `#24834A` | `#1B6E3C` | 4,7 : 1 |
-| `warning` | `#F5C451` | `#9A6400` | `#7F5200` | 4,9 : 1 |
-| `danger` | `#FF6B5B` | `#C23A2C` | `#A62D21` | 5,3 : 1 |
+| `success` | `#7DD69B` | `#1F7A43` | `#186336` | 4,6 : 1 |
+| `warning` | `#F5C451` | `#8C5A00` | `#734900` | 5,0 : 1 |
+| `danger` | `#FF6B5B` | `#C23A2C` | `#A62D21` | 4,7 : 1 |
 | `hairline` | `#FFF3E6` · 8 % | `#2B1F25` · 10 % | · 25 % | – |
-| `lightEdge` | `#FFF3E6` · 14 % | Weiß · 90 % + weicher Schatten | – | – |
-| `glowWarm` | `#FF7A3D` · 16 % | `#FF9A5C` · 12 % | aus | – |
-| `glowPlum` | `#7A3B5C` · 28 % | `#E8A3B8` · 16 % (Rosé) | aus | – |
+| `lightEdge` | `#FFF3E6` · 14 % | Weiß · 90 % (Glanzkante oben) + warmer Schatten (`#783C1E` · 10 %, 6 pt nach unten, 18 pt weich) | – | – |
+| `glowWarm` | `#FF7A3D` · 16 % | `#FF9655` · 42 % (oben rechts) | 40 % davon | – |
+| `glowPlum` | `#7A3B5C` · 28 % | `#E896B2` · 45 % (Rosé, unten links) | 40 % davon | – |
 
 **Warum zwei Orange-Töne:** Das Marken-Orange ist auf Hell als Schrift zu schwach (2,4 : 1). Flächen (Plus, „Für alle erledigt“) behalten ein kräftiges Orange mit dunkler Schrift; orange **Schrift** („Heute“, „Bearbeiten“, aktiver Tab) bekommt das dunklere Bernstein `accentInk`. Im Dunkelmodus sind beide gleich – dort ändert sich nichts.
 
-**Karten auf Hell:** Ohne Lichtkante wirken weiße Karten auf Papier flach. Statt der hellen Kante: feine Linie (`hairline`) plus sehr weicher Schatten (Aubergine · 6 %, 2 pt nach unten, 8 pt weich). Bei „Transparenz reduzieren“ opak (`card`).
+**Karten auf Hell:** durchscheinendes warmes Glas, damit der Schein durchkommt; oben eine weiße Glanzkante, darunter ein warmer, weicher Schatten. Bei „Transparenz reduzieren“ opak (`card`).
+
+**Leiste unten:** wie im Dunkeln – Liquid-Glass-Pille (`glassEffect`) mit heller Kapsel für den aktiven Bereich und orange getönter Glas-Plus-Knopf mit Glanz und warmem Schein. Liquid Glass passt sich automatisch an; Tönung und Schatten werden für Hell eingestellt.
 
 ## Familienfarben
 
