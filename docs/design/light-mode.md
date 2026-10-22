@@ -57,7 +57,7 @@ Die acht Voreinstellungen sind auf Hell zu blass (Sonne 1,6 : 1, Salbei 1,8 : 1)
 
 - Liquid Glass (Tab-Leiste, schwebende Knöpfe) stellt sich selbst auf Hell um.
 - Schrift (Bricolage Grotesque / SF Pro), Abstände, Radien, Bewegung, Haptik.
-- App-Icon: bleibt; optional später die iOS-Varianten „dunkel“ und „getönt“.
+- App-Icon: seit 2026-10-22 plastische Fassung mit eigenen Varianten „dunkel“ und „getönt“, siehe [design-system.md](../design-system.md) (Abschnitt Markenzeichen).
 - Markenzeichen `FamiliarMark`: orange Kachel `#FF8C42` bleibt (Marke), zweite Kachel wie bisher.
 
 ## Umsetzung (erledigt)
