@@ -16,6 +16,7 @@ Grundsatz (2026-10-21): Familiar wird von Anfang an so gebaut, wie es zum App-St
 | 8 | **Firmen-IT**: Familiar für deinen Outlook-Kalender freigeben | Nur für dich persönlich; Vorlage: [setup/outlook-it-freigabe.md](setup/outlook-it-freigabe.md). Entfällt für andere nach Punkt 3 | – | Mail schreiben |
 | 9 | **Zugang für Apples App-Prüfung** | Prüfer können keinen E-Mail-Code empfangen. Fertig gebaut (Edge Function `review-sign-in`): du legst in Supabase die Secrets `REVIEW_EMAIL` (eigene Adresse nur für die Prüfung) und `REVIEW_CODE` (10 Ziffern, nur für Apple) an und trägst beides in App Store Connect unter „Anmeldedaten für die Prüfung“ ein. Nach der Freigabe kann `REVIEW_CODE` gelöscht werden | – | 10 min |
 | 10 | **Datensicherung** (GitHub, kostenlos): Code-Sicherung + nächtliche verschlüsselte Datenbank- und Bildersicherung | Supabase Free hat keine Backups; Code liegt bisher nur auf einem Mac | kostenlos | 30 min, Anleitung [setup/backup.md](setup/backup.md) |
+| 11 | **Website auf „im App Store“ umstellen** (am Tag der Veröffentlichung) | Alle „Laden im App Store“-Knöpfe der Website führen über `familiar-app.de/app`; bis zum Start zeigt diese Adresse „Bald im App Store“. Zum Start in `website/_redirects` die letzte Zeile einkommentieren (`#` weg), `idXXXXXXXXXX` durch die Apple-ID der App ersetzen (App Store Connect › App-Informationen › Apple-ID) und den Ordner `website` erneut bei Netlify hochladen | – | 5 min |
 
 ## Was ich bis dahin selbstständig weiterbaue
 
