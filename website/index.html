@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Familiar – Aufgaben teilen, ruhig planen</title>
   <meta name="description" content="Wer macht was – und bis wann? Familiar bringt die Aufgaben deiner Familie an einen ruhigen Ort, erinnert rechtzeitig und lässt dich direkt vom Sperrbildschirm abhaken.">
-  <meta name="theme-color" content="#1E1519">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#1E1519" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F5ECE1" media="(prefers-color-scheme: light)">
   <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/site.css">
@@ -32,11 +34,15 @@
         </ul>
       </div>
 
-      <!-- Echte Bildschirmaufnahme der App (Vorführdaten, docs/app-store/screenshots/1-aufgaben.png).
+      <!-- Echte Bildschirmaufnahmen der App mit Vorführdaten: dunkel aus docs/app-store/screenshots/1-aufgaben.png,
+           hell aus dem Simulator (-FamiliarInMemoryScenario showcase, Darstellung Hell).
            Weitere Bilder aus docs/app-store/screenshots können hier nach demselben Muster folgen. -->
       <figure class="shot">
         <div class="device">
-          <img src="/assets/app-aufgaben.jpg" width="660" height="1434" alt="Die Aufgabenliste in Familiar: unter „Heute“ stehen „Müll rausbringen“, „Zimmer aufräumen“ (1 von 2 erledigt) und „Geschenk für Opa besorgen“, unter „Morgen“ „Pausenbrote machen“ um 7:15 Uhr, werktags. Jede Aufgabe zeigt ihre Familie mit Farbpunkt und die zugewiesenen Personen.">
+          <picture>
+            <source srcset="/assets/app-aufgaben-hell.jpg" media="(prefers-color-scheme: light)">
+            <img src="/assets/app-aufgaben.jpg" width="660" height="1434" alt="Die Aufgabenliste in Familiar: unter „Heute“ stehen „Müll rausbringen“, „Zimmer aufräumen“ (1 von 2 erledigt) und „Geschenk für Opa besorgen“, unter „Morgen“ „Pausenbrote machen“ um 7:15 Uhr, werktags. Jede Aufgabe zeigt ihre Familie mit Farbpunkt und die zugewiesenen Personen.">
+          </picture>
         </div>
         <figcaption>Die Aufgabenliste – mit Beispieldaten.</figcaption>
       </figure>
@@ -97,7 +103,7 @@
           <li>E-Mail-Code</li><li>Apple</li><li>Google</li>
         </ul>
       </section>
-      <section class="panel light" aria-labelledby="privat">
+      <section class="panel invert" aria-labelledby="privat">
         <h2 id="privat">Privat</h2>
         <p>Keine Werbung, kein Tracking. Deine Daten liegen auf Servern in der EU und werden nur für Familiar genutzt. Mehr in der <a href="/datenschutz/">Datenschutzerklärung</a>.</p>
       </section>

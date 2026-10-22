@@ -1,6 +1,7 @@
-/* familiar-app.de – Farben und Schrift wie in der App (docs/design-system.md): dunkles
-   Aubergine-Graphit, Bernstein-Orange nur für Hauptaktionen, Familienfarben als ruhige Flächen.
-   Formensprache aus dem Markenzeichen: flache, abgerundete Kacheln – keine Verläufe, kein Leuchten.
+/* familiar-app.de – Farben und Schrift wie in der App (docs/design-system.md, docs/design/light-mode.md):
+   folgt der Systemeinstellung. Dunkel: Aubergine-Graphit, flach. Hell: warmes Papier mit kräftigem
+   Ambient-Schein und Glas-Flächen wie in der App. Bernstein-Orange nur für Hauptaktionen,
+   Familienfarben als ruhige Flächen, Formensprache aus dem Markenzeichen (abgerundete Kacheln).
    Keine externen Ressourcen. Schrift: Bricolage Grotesque (SIL Open Font License,
    assets/fonts/BricolageGrotesque-OFL.txt), selbst gehostet, auf lateinische Zeichen reduziert. */
 @font-face {
@@ -16,27 +17,74 @@
   --text: #F6EEE6; --secondary: #BFB2A5; --tertiary: #8F8378;
   --hairline: rgba(255, 243, 230, 0.08); --edge: rgba(255, 243, 230, 0.14);
   --accent: #FF8C42; --on-accent: #1B1006; --success: #7DD69B;
+  /* Orange als Schrift (Links, Fokus) und in großen Überschriften – im Dunkeln gleich dem Akzent. */
+  --ink: var(--accent); --headline-accent: var(--accent);
   --coral: #FF7F66; --sun: #F7C548; --sage: #8FD19E; --sky: #5EC2F2; --lavender: #B39DFF;
+  --dot-ring: transparent;
+  --hover: rgba(255, 243, 230, 0.06); --hover-strong: rgba(255, 243, 230, 0.08); --button-hover: #FF9A58;
+  /* Flächen: im Dunkeln opak und flach, im Hellen Glas mit Glanzkante und warmem Schatten. */
+  --glass: var(--card); --glass-edge: var(--edge); --glass-shadow: none;
+  --table-bg: rgba(44, 36, 39, 0.5); --th-bg: rgba(255, 243, 230, 0.03);
+  --device-shadow: 0 32px 80px rgba(0, 0, 0, 0.55);
+  --invert-bg: #F6EEE6; --invert-text: #1E1519; --invert-secondary: #4A3D42; --invert-link: #A9470C;
+  --ambient: none;
+  color-scheme: dark;
   --display: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   --body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
   --wide: 1120px; --gutter: 20px;
 }
-@media (prefers-contrast: more) {
+@media (prefers-color-scheme: dark) and (prefers-contrast: more) {
   :root {
     --canvas: #150F12; --elevated: #241A1E; --card: #2A2125; --sunken: #0F0A0C;
     --text: #FFFFFF; --secondary: #DDD2C7; --tertiary: #B8ACA0;
     --hairline: rgba(255, 243, 230, 0.22); --edge: rgba(255, 243, 230, 0.30); --accent: #FFA266;
   }
 }
+/* Hell: Werte aus docs/design/light-mode.md. Kontraste (WCAG, auch im stärksten Schein):
+   Text 12 : 1, Text 2 5,2 : 1, orange Schrift 4,4 : 1, große orange Überschrift 3,5 : 1,
+   dunkle Schrift auf Orange 6,8 : 1. Familienfarben abgedunkelt (OKLab-Helligkeit ≤ 0,68). */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --canvas: #F5ECE1; --elevated: #ECE1D5; --card: #FFFAF4; --sunken: #EEE4D9;
+    --text: #2B1F25; --secondary: #675850; --tertiary: #857669;
+    --hairline: rgba(43, 31, 37, 0.10); --edge: rgba(43, 31, 37, 0.14);
+    --accent: #F27A2B; --ink: #A84A0A; --headline-accent: #C2560F; --success: #1B7340;
+    --coral: #EA6D54; --sun: #C09000; --sage: #69AA79; --sky: #3DA4D3; --lavender: #9C86E6;
+    --dot-ring: rgba(43, 31, 37, 0.18);
+    --hover: rgba(43, 31, 37, 0.06); --hover-strong: rgba(43, 31, 37, 0.08); --button-hover: #F58A44;
+    --glass: linear-gradient(rgba(255, 250, 244, 0.78), rgba(255, 250, 244, 0.58));
+    --glass-edge: rgba(255, 255, 255, 0.9);
+    --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 6px 18px rgba(120, 60, 30, 0.10);
+    --table-bg: var(--glass); --th-bg: rgba(43, 31, 37, 0.03);
+    --device-shadow: 0 30px 70px rgba(120, 60, 30, 0.28);
+    --invert-bg: #2B1F25; --invert-text: #F6EEE6; --invert-secondary: #D4C6B9; --invert-link: #FFA266;
+    --ambient: radial-gradient(70% 55% at 100% 0%, rgba(255, 150, 85, 0.42), transparent 70%),
+      radial-gradient(65% 55% at 0% 100%, rgba(232, 150, 178, 0.45), transparent 70%);
+  }
+}
+@media (prefers-color-scheme: light) and (prefers-contrast: more) {
+  :root {
+    --canvas: #FAF4EC; --elevated: #E4D9CD; --card: #FFFFFF; --sunken: #E6DCD1;
+    --text: #140C10; --secondary: #4A3D36; --tertiary: #6B5D55;
+    --hairline: rgba(43, 31, 37, 0.25); --edge: rgba(43, 31, 37, 0.30);
+    --accent: #E86E1F; --ink: #943F06; --headline-accent: #943F06;
+    --glass: rgba(255, 250, 244, 0.92);
+    --ambient: radial-gradient(70% 55% at 100% 0%, rgba(255, 150, 85, 0.17), transparent 70%),
+      radial-gradient(65% 55% at 0% 100%, rgba(232, 150, 178, 0.18), transparent 70%);
+  }
+}
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-padding-top: 24px; }
 body { margin: 0; background: var(--canvas); color: var(--text); font: 17px/1.6 var(--body); }
+/* Ambient-Schein (nur hell): fest im Fenster wie in der App. */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--ambient); }
 img { max-width: 100%; height: auto; display: block; }
-a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a { color: var(--ink); text-underline-offset: 3px; text-decoration-thickness: 1px; }
 a:hover { text-decoration-thickness: 2px; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
 h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -0.015em; text-wrap: balance; }
 p { text-wrap: pretty; }
 .skip { position: absolute; left: -999px; }
@@ -53,8 +101,8 @@ p { text-wrap: pretty; }
 .site-header nav { display: flex; gap: 4px; }
 .site-header nav a { color: var(--secondary); text-decoration: none; font-size: 15px; padding: 10px 12px;
   border-radius: 12px; min-height: 44px; display: inline-flex; align-items: center; }
-.site-header nav a:hover { color: var(--text); background: rgba(255, 243, 230, 0.06); }
-.site-header nav a[aria-current="page"] { color: var(--text); background: rgba(255, 243, 230, 0.08); }
+.site-header nav a:hover { color: var(--text); background: var(--hover); }
+.site-header nav a[aria-current="page"] { color: var(--text); background: var(--hover-strong); }
 
 /* Fußzeile */
 .site-footer { margin-top: 96px; border-top: 1px solid var(--hairline); background: var(--sunken); }
@@ -73,9 +121,9 @@ p { text-wrap: pretty; }
   background: var(--accent); color: var(--on-accent); text-decoration: none;
   font: 650 17px/1 var(--display); border: 0; border-radius: 999px; padding: 0 26px; cursor: pointer;
 }
-.button:hover { text-decoration: none; background: #FF9A58; }
+.button:hover { text-decoration: none; background: var(--button-hover); }
 .button.quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--edge); }
-.button.quiet:hover { background: rgba(255, 243, 230, 0.06); }
+.button.quiet:hover { background: var(--hover); }
 
 /* Kleine Kachel wie im Markenzeichen: Haken auf Farbfläche. */
 .tick { flex: none; width: 22px; height: 22px; border-radius: 7px; background: var(--tile, var(--accent));
@@ -90,7 +138,7 @@ p { text-wrap: pretty; }
 .status::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
 .hero h1 { font-size: clamp(44px, 12.5vw, 88px); line-height: 0.98; letter-spacing: -0.035em; font-weight: 750;
   margin: 0 0 24px; }
-.hero h1 span { display: block; color: var(--accent); }
+.hero h1 span { display: block; color: var(--headline-accent); }
 .hero h1 .line { color: inherit; }
 .lead { color: var(--secondary); font-size: 19px; line-height: 1.55; max-width: 30em; margin: 0 0 32px; }
 /* Offizielles Apple-Abzeichen (unverändert, Mindesthöhe 40 px, Freiraum ¼ der Höhe). */
@@ -106,7 +154,8 @@ p { text-wrap: pretty; }
 .shot::before { content: ""; position: absolute; z-index: 0; top: 0; right: -14px; width: 92%; aspect-ratio: 1;
   border-radius: 28%; background: var(--sky); transform: rotate(8deg); }
 .shot .device { position: relative; z-index: 1; margin: 0; background: #0B0709; border-radius: 46px;
-  padding: 9px; box-shadow: 0 0 0 1px var(--edge), 0 32px 80px rgba(0, 0, 0, 0.55); }
+  padding: 9px; box-shadow: 0 0 0 1px var(--edge), var(--device-shadow); }
+.shot .device picture { display: block; }
 .shot .device img { border-radius: 38px; width: 100%; }
 .shot figcaption { position: relative; z-index: 1; margin-top: 16px; text-align: center; color: var(--secondary); font-size: 13px; }
 
@@ -130,16 +179,19 @@ p { text-wrap: pretty; }
 .topic .families { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 18px; padding: 0; list-style: none; }
 .topic .families li { border: 0; padding: 9px 16px 9px 12px; border-radius: 12px; background: var(--elevated);
   display: inline-flex; align-items: center; gap: 10px; font: 600 16px/1 var(--display); }
-.topic .families li::before { content: ""; width: 12px; height: 12px; border-radius: 4px; background: var(--c); }
+.topic .families li::before { content: ""; width: 12px; height: 12px; border-radius: 4px; background: var(--c);
+  box-shadow: 0 0 0 1px var(--dot-ring); }
 
 /* Zwei Versprechen nebeneinander */
 .pair { display: grid; gap: 16px; padding: 24px 0 0; }
-.panel { border-radius: 28px; padding: 32px 26px; background: var(--card); border: 1px solid var(--hairline); }
+.panel { border-radius: 28px; padding: 32px 26px; background: var(--glass); border: 1px solid var(--hairline);
+  border-top-color: var(--glass-edge); box-shadow: var(--glass-shadow); }
 .panel h2 { font-size: 28px; line-height: 1.1; margin: 0 0 12px; }
 .panel p { color: var(--secondary); margin: 0; }
-.panel.light { background: var(--text); color: var(--canvas); border: 0; }
-.panel.light p { color: #4A3D42; }
-.panel.light a { color: #A9470C; }
+/* Gegenfläche: im Dunkeln hell, im Hellen dunkel. */
+.panel.invert { background: var(--invert-bg); color: var(--invert-text); border: 0; }
+.panel.invert p { color: var(--invert-secondary); }
+.panel.invert a { color: var(--invert-link); }
 .methods { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
 .methods li { border-radius: 12px; padding: 10px 14px; background: var(--elevated); font: 600 15px/1 var(--display); }
 
@@ -152,7 +204,8 @@ p { text-wrap: pretty; }
 
 /* ---------- Textseiten ---------- */
 .doc { max-width: var(--wide); margin: 0 auto; padding: 16px var(--gutter) 0; display: grid; gap: 24px; }
-.toc { border-radius: 20px; background: var(--card); border: 1px solid var(--hairline); }
+.toc { border-radius: 20px; background: var(--glass); border: 1px solid var(--hairline); border-top-color: var(--glass-edge);
+  box-shadow: var(--glass-shadow); }
 .toc summary { cursor: pointer; padding: 14px 18px; min-height: 48px; font: 650 16px/1.3 var(--display); list-style: none;
   display: flex; justify-content: space-between; align-items: center; }
 .toc summary::-webkit-details-marker { display: none; }
@@ -161,7 +214,7 @@ p { text-wrap: pretty; }
 .toc[open] summary::after { transform: rotate(-135deg); margin-top: 4px; }
 .toc ol { list-style: none; margin: 0; padding: 0 8px 10px; }
 .toc a { display: block; color: var(--secondary); text-decoration: none; padding: 9px 10px; border-radius: 10px; font-size: 15px; line-height: 1.35; }
-.toc a:hover { color: var(--text); background: rgba(255, 243, 230, 0.06); }
+.toc a:hover { color: var(--text); background: var(--hover); }
 
 .prose { min-width: 0; max-width: 700px; }
 .prose h1 { font-size: clamp(36px, 9vw, 56px); line-height: 1.02; letter-spacing: -0.03em; margin: 8px 0 28px; }
@@ -176,11 +229,12 @@ p { text-wrap: pretty; }
 code { font-family: var(--mono); background: var(--sunken); border: 1px solid var(--hairline); padding: 1px 6px;
   border-radius: 6px; font-size: 0.86em; overflow-wrap: anywhere; }
 mark { background: rgba(247, 197, 72, 0.25); color: var(--text); border-radius: 4px; padding: 0 3px; }
-.table { overflow-x: auto; margin: 20px 0; border: 1px solid var(--hairline); border-radius: 18px; background: rgba(44, 36, 39, 0.5); }
+.table { overflow-x: auto; margin: 20px 0; border: 1px solid var(--hairline); border-radius: 18px; background: var(--table-bg);
+  border-top-color: var(--glass-edge); box-shadow: var(--glass-shadow); }
 table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.5; }
 th, td { text-align: left; vertical-align: top; padding: 14px 16px; border-bottom: 1px solid var(--hairline); }
 tr:last-child td { border-bottom: 0; }
-th { color: var(--secondary); font: 650 14px/1.3 var(--display); background: rgba(255, 243, 230, 0.03); }
+th { color: var(--secondary); font: 650 14px/1.3 var(--display); background: var(--th-bg); }
 td:first-child { min-width: 9em; }
 @media (max-width: 560px) {
   /* Zweispaltige Tabellen (Begriff | Erklärung) als Liste untereinander. */
@@ -194,7 +248,7 @@ td:first-child { min-width: 9em; }
 
 /* ---------- Einladung, Danke ---------- */
 .center { max-width: 560px; margin: 0 auto; padding: 16px var(--gutter) 0; }
-.card { background: var(--card); border: 1px solid var(--hairline); border-top-color: var(--edge);
+.card { background: var(--glass); border: 1px solid var(--hairline); border-top-color: var(--glass-edge); box-shadow: var(--glass-shadow);
   border-radius: 32px; padding: 36px 24px 32px; text-align: center; }
 .card .mark { width: 88px; height: 88px; margin: 0 auto 24px; }
 .card h1 { font-size: clamp(34px, 9vw, 44px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 12px; }
@@ -214,7 +268,8 @@ td:first-child { min-width: 9em; }
 .contact-page .intro p { color: var(--secondary); }
 .contact-page .intro h1 { margin-bottom: 20px; }
 .mail { display: inline-flex; margin-top: 4px; font: 650 18px/1.3 var(--display); }
-.contact { display: grid; gap: 18px; background: var(--card); border: 1px solid var(--hairline); border-top-color: var(--edge);
+.contact { display: grid; gap: 18px; background: var(--glass); border: 1px solid var(--hairline); border-top-color: var(--glass-edge);
+  box-shadow: var(--glass-shadow);
   border-radius: 28px; padding: 24px 20px; }
 .contact label { display: grid; gap: 8px; color: var(--text); font: 600 15px/1.3 var(--display); }
 .contact input, .contact textarea {
@@ -222,7 +277,7 @@ td:first-child { min-width: 9em; }
   border: 1px solid var(--edge); border-radius: 16px; padding: 14px 16px; min-height: 52px;
 }
 .contact textarea { resize: vertical; }
-.contact input:focus-visible, .contact textarea:focus-visible { outline-offset: 1px; border-color: var(--accent); border-radius: 16px; }
+.contact input:focus-visible, .contact textarea:focus-visible { outline-offset: 1px; border-color: var(--ink); border-radius: 16px; }
 .contact .hint { color: var(--secondary); font-size: 14px; margin: 0; }
 .contact .button { justify-self: stretch; }
 .hidden { display: none; }
@@ -254,7 +309,7 @@ td:first-child { min-width: 9em; }
   .topic li { font-size: 18px; }
   .doc { grid-template-columns: 240px minmax(0, 1fr); gap: 72px; padding-top: 40px; align-items: start; }
   .doc.single { grid-template-columns: minmax(0, 1fr); max-width: 700px; }
-  .toc { position: sticky; top: 24px; background: transparent; border: 0; }
+  .toc { position: sticky; top: 24px; background: transparent; border: 0; box-shadow: none; }
   .toc summary { pointer-events: none; padding: 8px 10px; color: var(--secondary); font-size: 14px; }
   .toc summary::after { display: none; }
   .toc ol { padding: 0; border-left: 1px solid var(--hairline); }

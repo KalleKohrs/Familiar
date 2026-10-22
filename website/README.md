@@ -12,4 +12,6 @@ Statische Website für Familiar. Wird bei einem statischen Hoster veröffentlich
 
 Schrift: Bricolage Grotesque (SIL Open Font License, `assets/fonts/`), selbst gehostet als WOFF2, reduziert auf lateinische Zeichen (erzeugt mit `fontTools.subset` aus der Schriftdatei der App) – keine externen Ressourcen, kein Tracking.
 
-App-Bild auf der Startseite: `assets/app-aufgaben.jpg`, verkleinert aus `docs/app-store/screenshots/1-aufgaben.png` (Vorführdaten).
+Hell/Dunkel: folgt der Systemeinstellung (`prefers-color-scheme`), Werte aus `docs/design/light-mode.md`.
+
+App-Bild auf der Startseite: dunkel `assets/app-aufgaben.jpg` (verkleinert aus `docs/app-store/screenshots/1-aufgaben.png`), hell `assets/app-aufgaben-hell.jpg` (Simulator, `-FamiliarInMemoryBackend -FamiliarInMemoryScenario showcase`, Darstellung Hell, Statusleiste 9:41) – beide mit Vorführdaten.
