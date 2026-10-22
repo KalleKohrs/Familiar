@@ -25,13 +25,14 @@ Familiar ist der Planer für alles, was in einer Familie zu tun ist – vom Mül
 AUFGABEN, DIE ANKOMMEN
 • Aufgaben anlegen, Personen zuweisen, Fotos anhängen
 • Erledigungsart wählen: eine Person für alle oder jede Person einzeln
-• Wiederholungen täglich, wöchentlich oder monatlich
+• Wiederholungen täglich, wöchentlich oder monatlich – auf Wunsch reihum: Müll diese Woche Paul, nächste Woche Mia
 • Rückgängig und Verlauf: Erledigtes und Gelöschtes 30 Tage wiederherstellen
 
 ZUR RICHTIGEN ZEIT
 • Mitteilung, wenn dir etwas zugewiesen wird und wenn es losgeht
 • Live-Anzeige auf dem Sperrbildschirm und in der Dynamic Island – mit Abhaken ohne die App zu öffnen
-• Erinnerungen, solange etwas offen ist
+• Erinnerungen, solange etwas offen ist – und „Erinnern“ per Tipp, nachts erst morgens
+• Widgets für Homescreen und Sperrbildschirm, Siri: „Müll rausbringen in Familiar erledigen“
 
 MEHRERE FAMILIEN, EINE LISTE
 • Familie, WG, Großeltern: Familiar zeigt alle Aufgaben in einer Liste, jede Familie in ihrer Farbe
@@ -50,7 +51,7 @@ Keine Werbung, kein Tracking. Deine Daten liegen auf Servern in der EU und werde
 
 ## Schlüsselwörter (100)
 
-familie,aufgaben,todo,haushalt,planer,erinnerung,kalender,putzplan,wg,eltern,kinder,teilen,liste
+familie,aufgaben,todo,haushalt,planer,erinnerung,kalender,putzplan,wg,eltern,kinder,reihum,widget
 
 ## Neuigkeiten (Version 1.0)
 

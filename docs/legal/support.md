@@ -16,6 +16,13 @@
 
 **Ich bekomme keine Mitteilungen.** Prüfe in den iOS-Einstellungen › Familiar › Mitteilungen, ob sie erlaubt sind. Live-Anzeigen auf dem Sperrbildschirm lassen sich dort unter „Live-Aktivitäten“ an- und abschalten.
 
+## Reihum, Erinnern, Widgets und Siri
+
+- **Reihum:** Bei einer wiederkehrenden Aufgabe mit mindestens zwei Personen „Reihum“ einschalten – dann ist pro Termin (oder pro Woche) genau eine Person dran. Die Reihenfolge änderst du mit den Pfeilen; einen einzelnen Termin tauschst du, indem du nur diesen Termin bearbeitest.
+- **Erinnern:** In den Details einer offenen Aufgabe neben der Person auf „Erinnern“ tippen. Höchstens einmal pro Stunde; zwischen 21 und 7 Uhr kommt die Erinnerung erst morgens um 7.
+- **Widgets:** Homescreen bzw. Sperrbildschirm gedrückt halten → „Widget hinzufügen“ → Familiar. Im Widget kannst du einstellen, ob nur deine oder alle Aufgaben und welche Familie angezeigt werden.
+- **Siri:** z. B. „Müll rausbringen in Familiar erledigen“, „Neue Aufgabe in Familiar“, „Was steht heute in Familiar an?“.
+
 ## Outlook
 
 **„Genehmigung erforderlich“ beim Verbinden.** Dein Unternehmen muss Familiar einmal freigeben. Tippe in Familiar unter Profil › Outlook auf „Freigabe bei meiner IT anfragen“ – die Nachricht enthält alles, was deine IT braucht ([Infos für IT-Abteilungen](/outlook-it/)).

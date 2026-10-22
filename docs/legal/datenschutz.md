@@ -24,13 +24,16 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 | **„Mit Google anmelden“** (freiwillig): Google-Kennung, E-Mail-Adresse, Name und Profilbild-Adresse aus deinem Google-Konto | Anmeldung | Art. 6 Abs. 1 lit. b DSGVO |
 | **Anzeigename, Profilbild** (freiwillig) | Damit deine Familie sieht, wer Aufgaben übernimmt | Art. 6 Abs. 1 lit. b DSGVO |
 | **Familien** (Name, Farbe, Mitglieder, Rollen, Einladungscodes) | Gemeinsame Planung | Art. 6 Abs. 1 lit. b DSGVO |
-| **Aufgaben** (Titel, Beschreibung, Datum/Uhrzeit, Wiederholung, Zuweisungen, Erledigt-Status, Bilder) | Kernfunktion | Art. 6 Abs. 1 lit. b DSGVO |
+| **Aufgaben** (Titel, Beschreibung, Datum/Uhrzeit, Wiederholung inkl. „Reihum“-Reihenfolge, Zuweisungen, Erledigt-Status, Bilder) | Kernfunktion | Art. 6 Abs. 1 lit. b DSGVO |
+| **Erinnerungen („Erinnern“)**: wer wen an welche Aufgabe erinnert hat, mit Zeitpunkt | Zustellung der Erinnerung; Schutz vor zu vielen Erinnerungen (höchstens eine pro Stunde) | Art. 6 Abs. 1 lit. b DSGVO |
 | **Geräte-Kennung für Mitteilungen** (APNs-Token, App-Version, Zeitzone) | Mitteilungen und Live-Anzeigen auf dem Sperrbildschirm | Art. 6 Abs. 1 lit. b DSGVO; die Mitteilungen selbst nur mit deiner Einwilligung in iOS |
 | **Outlook-Termine** (nur wenn du Outlook verbindest: Titel, Zeit, Ort, Organisator, Absage-Status der gewählten Kalender) | Anzeige im Familiar-Kalender – **nur für dich**, nicht für deine Familie | Art. 6 Abs. 1 lit. a DSGVO (Einwilligung durch Verbinden) |
 | **Server-Protokolle** (IP-Adresse, Zeitpunkt, Anfrage) – App-Server und Website | Betrieb und Sicherheit | Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren Betrieb) |
 | **Kontaktformular** auf familiar-app.de (Name, E-Mail-Adresse, Nachricht) | Beantwortung deiner Anfrage | Art. 6 Abs. 1 lit. b bzw. f DSGVO |
 
 **Wer sieht was:** Aufgaben, Bilder und Status sehen die Mitglieder der jeweiligen Familie; ist eine Familie auf „nur Zugewiesene“ gestellt, sehen nur zugewiesene Personen und die Erstellerin bzw. der Ersteller die Aufgabe. Deine Outlook-Termine sieht niemand außer dir.
+
+**Widgets und Siri:** Für die Widgets „Heute“ legt die App eine kleine Liste der heutigen Aufgaben (Titel, Uhrzeit, Familie, Initialen) **nur auf deinem Gerät** ab; sie verlässt das Gerät nicht und wird beim Abmelden gelöscht. Auf dem Sperrbildschirm blendet iOS die Titel aus, wenn du dort keinen Zugriff im gesperrten Zustand erlaubst. Wenn du Siri oder Kurzbefehle nutzt (z. B. „Müll rausbringen in Familiar erledigen“), verarbeitet Apple deine Spracheingabe nach den Siri-Bedingungen; Familiar erhält davon nur die erkannte Aufgabe bzw. den Titel.
 
 **Outlook:** Familiar erhält von Microsoft nur das Recht, deine Kalender zu **lesen** (`Calendars.ReadBasic` – ohne Termin-Text und Anhänge). Familiar schreibt nie in deinen Kalender. Das Zugriffs-Token liegt verschlüsselt auf dem Server. Du kannst die Verbindung jederzeit in der App trennen; dann werden Token und gespeicherte Termine gelöscht.
 
@@ -52,6 +55,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 - **Konto, Familien, offene Aufgaben:** bis du sie löschst bzw. dein Konto löschst.
 - **Erledigte und gelöschte Aufgaben:** 30 Tage im Verlauf (zum Wiederherstellen), danach automatisch endgültig gelöscht – einschließlich Bildern.
 - **Mitteilungs-Aufträge, beendete Live-Anzeigen, abgemeldete Geräte:** 30 Tage, danach automatisch gelöscht.
+- **Erinnerungen („Erinnern“):** der Vermerk, wer wen erinnert hat, nach 1 Tag; der Mitteilungs-Auftrag wie oben nach 30 Tagen.
 - **Outlook-Termine:** nur ein Fenster von 7 Tagen zurück bis 120 Tage voraus; ältere fallen beim Abgleich weg; beim Trennen sofort gelöscht.
 - **Datensicherung:** jede Nacht eine verschlüsselte Kopie; jeder Stand wird nach 30 Tagen automatisch gelöscht. Was du löschst, verschwindet so spätestens nach etwa 31 Tagen auch aus der Sicherung.
 - **Server-Protokolle:** bis zu 1 Tag (Aufbewahrung durch Supabase); Website-Protokolle nach den Vorgaben von Netlify.
