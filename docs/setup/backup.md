@@ -43,12 +43,23 @@ Stand 2026-10-22. Die Entscheidung und ihre Begründung stehen in [ADR 0009](../
 
 So bleiben 30 Tagesstände der Datenbank. Gelöschte oder ersetzte Bilder verschwinden nach 30 Tagen.
 
+## Schritt 3b – Löschschutz (Object Lock)
+
+Der Schlüssel, den Supabase bekommt, dürfte bei Backblaze auch Dateien löschen. Damit ein gestohlener Schlüssel die Sicherungen trotzdem nicht zerstören kann, sperrst du jede Datei für 30 Tage:
+
+1. **Buckets** → bei deinem Bucket auf **Object Lock: Disabled** klicken.
+2. **Enable Object Lock on this bucket** auswählen. Das lässt sich später nicht mehr ausschalten, und das ist so gewollt.
+3. Eine **Default Retention** (Standard-Aufbewahrung) von **30** Tagen einstellen. Wird ein Modus angeboten, **Governance** wählen. Gibt es nur „Compliance“, ist das auch in Ordnung.
+4. Speichern.
+
+Ab dann kann 30 Tage lang niemand eine Sicherungsdatei löschen oder verändern, auch du nicht. Danach räumen die Regeln aus Schritt 3 automatisch auf.
+
 ## Schritt 4 – Schreib-Schlüssel für Supabase
 
 1. Links **Application Keys** → **Add a New Application Key**.
 2. **Name of Key:** `familiar-sicherung-schreiben`.
 3. **Allow Access to Bucket(s):** deinen Bucket aus Schritt 2 wählen (nicht „All“).
-4. **Type of Access:** **Write Only**. Damit kann Supabase Sicherungen ablegen, aber nichts lesen und nichts endgültig löschen.
+4. **Type of Access:** **Write Only**. Damit kann Supabase Sicherungen ablegen, aber nichts lesen. Vor dem Löschen schützt Schritt 3b.
 5. Die übrigen Felder leer lassen → **Create New Key**.
 6. Backblaze zeigt jetzt `keyID` und `applicationKey`. **Der `applicationKey` erscheint nur dieses eine Mal.** Lass die Seite offen und mach direkt mit Schritt 5 weiter.
 

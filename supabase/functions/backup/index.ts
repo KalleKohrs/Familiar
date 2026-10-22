@@ -48,8 +48,9 @@ async function sendAlert(subject: string, text: string): Promise<void> {
 }
 
 function b2Login(): Promise<b2.B2> {
-  const keyId = Deno.env.get("B2_KEY_ID");
-  const appKey = Deno.env.get("B2_APPLICATION_KEY");
+  // Beim Einfügen ins Dashboard rutschen leicht Leerzeichen oder Zeilenumbrüche mit.
+  const keyId = Deno.env.get("B2_KEY_ID")?.trim();
+  const appKey = Deno.env.get("B2_APPLICATION_KEY")?.trim();
   if (!keyId || !appKey) throw new Error("B2_KEY_ID oder B2_APPLICATION_KEY fehlt.");
   return b2.authorize(keyId, appKey);
 }
@@ -253,6 +254,11 @@ async function selftest(): Promise<Record<string, unknown>> {
   const pem = Deno.env.get("BACKUP_PUBLIC_KEY");
   result.public_key = pem ? await importPublicKey(pem).then(() => "ok", (e) => `ungültig: ${e.message}`) : "fehlt";
   result.resend_key = Deno.env.get("RESEND_API_KEY") ? "vorhanden" : "fehlt";
+  // Nur Längen, nie die Werte (üblich: keyID 25, applicationKey 31 Zeichen).
+  result.b2_lengths = {
+    key_id: Deno.env.get("B2_KEY_ID")?.trim().length ?? 0,
+    application_key: Deno.env.get("B2_APPLICATION_KEY")?.trim().length ?? 0,
+  };
   try {
     const login = await b2Login();
     result.b2 = { bucket: login.bucketName, capabilities: login.capabilities };

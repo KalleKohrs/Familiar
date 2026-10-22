@@ -75,8 +75,9 @@ async function work(
   const runId = body.run_id;
   try {
     const pem = Deno.env.get("BACKUP_PRIVATE_KEY");
-    const keyId = Deno.env.get("B2_READ_KEY_ID");
-    const appKey = Deno.env.get("B2_READ_APPLICATION_KEY");
+    // Beim Einfügen ins Dashboard rutschen leicht Leerzeichen oder Zeilenumbrüche mit.
+    const keyId = Deno.env.get("B2_READ_KEY_ID")?.trim();
+    const appKey = Deno.env.get("B2_READ_APPLICATION_KEY")?.trim();
     if (!pem || !keyId || !appKey) {
       throw new Error("BACKUP_PRIVATE_KEY, B2_READ_KEY_ID oder B2_READ_APPLICATION_KEY fehlt.");
     }
