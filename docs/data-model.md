@@ -23,6 +23,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0013_notification_dedupe` | 2026-10-21 | Supabase-MCP `apply_migration` |
 | `0014_push_claim_starts_at` | 2026-10-21 | Supabase-MCP `apply_migration` |
 | `0015_notification_cleanup` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`); trägt sich selbst in `schema_migrations` ein. Täglich 03:45 UTC: Aufträge, beendete Live Activities und abgemeldete Geräte nach 30 Tagen, Cron-Tokens nach 1 Tag. |
+| `0016_oauth_states_user_index` | 2026-10-22 | Supabase-MCP `apply_migration` (Advisor: Index für Fremdschlüssel) |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
