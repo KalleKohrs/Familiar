@@ -1,7 +1,7 @@
 /* familiar-app.de – Farben und Schrift wie in der App (docs/design-system.md, docs/design/light-mode.md):
    folgt der Systemeinstellung. Dunkel: Aubergine-Graphit, flach. Hell: warmes Papier mit kräftigem
    Ambient-Schein und Glas-Flächen wie in der App. Bernstein-Orange nur für Hauptaktionen,
-   Familienfarben als ruhige Flächen, Formensprache aus dem Markenzeichen (abgerundete Kacheln).
+   Familienfarben als ruhige Flächen, Formensprache: abgerundete Kacheln, Markenzeichen Haus mit Haken (assets/mark.svg).
    Keine externen Ressourcen. Schrift: Bricolage Grotesque (SIL Open Font License,
    assets/fonts/BricolageGrotesque-OFL.txt), selbst gehostet, auf lateinische Zeichen reduziert. */
 @font-face {
@@ -125,7 +125,7 @@ p { text-wrap: pretty; }
 .button.quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--edge); }
 .button.quiet:hover { background: var(--hover); }
 
-/* Kleine Kachel wie im Markenzeichen: Haken auf Farbfläche. */
+/* Kleine Kachel: Haken auf Farbfläche. */
 .tick { flex: none; width: 22px; height: 22px; border-radius: 7px; background: var(--tile, var(--accent));
   display: inline-grid; place-items: center; }
 .tick::after { content: ""; width: 5px; height: 10px; margin-top: -3px; border: solid var(--on-accent);
@@ -149,7 +149,7 @@ p { text-wrap: pretty; }
   font: 600 15px/1.3 var(--display); color: var(--text); }
 .promises li { display: inline-flex; align-items: center; gap: 10px; }
 
-/* Bild der App vor einer Kachel in Familienfarbe – wie im Markenzeichen. */
+/* Bild der App vor einer Kachel in Familienfarbe. */
 .shot { position: relative; margin: 0 auto; width: min(100%, 340px); padding: 28px 20px 0 8px; }
 .shot::before { content: ""; position: absolute; z-index: 0; top: 0; right: -14px; width: 92%; aspect-ratio: 1;
   border-radius: 28%; background: var(--sky); transform: rotate(8deg); }
