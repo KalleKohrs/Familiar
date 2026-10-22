@@ -64,7 +64,7 @@ So bleiben 30 Tagesstände der Datenbank. Gelöschte oder ersetzte Bilder versch
 
 3. Erst danach die Backblaze-Seite schließen.
 
-Für das Produktionsprojekt legst du in Schritt 4 einen zweiten Schlüssel an (`familiar-sicherung-prod`) und, wenn du magst, einen eigenen Bucket. Dev- und Produktionsdaten bleiben so getrennt.
+**Später, nicht jetzt:** Erst wenn das Produktionsprojekt existiert (Launch-Liste Punkt 2), wiederholst du die Schritte 2–5 dafür: einen **eigenen Bucket** (z. B. `familiar-sicherung-prod-` plus Ziffern) mit denselben Löschregeln, einen eigenen Schreib-Schlüssel `familiar-sicherung-prod` nur für diesen Bucket und die Secrets im Produktionsprojekt. Der eigene Bucket ist nötig, weil beide Projekte sonst Dateien mit gleichem Namen (z. B. `db/2026-11-01.fam`) in denselben Ordner schreiben würden.
 
 ## Schritt 6 – Warn-E-Mail (Resend)
 
@@ -74,11 +74,22 @@ Für das Produktionsprojekt legst du in Schritt 4 einen zweiten Schlüssel an (`
 
 ## Schritt 7 – Sicherungsschlüssel aufbewahren
 
-Das Schlüsselpaar habe ich schon erzeugt. Der **öffentliche** Teil ist nicht geheim, er liegt in `supabase/backup-public.pem`. Den **privaten** Teil lege ich dir in die Zwischenablage, ohne ihn selbst anzuzeigen.
+Worum es geht: Die Sicherungen sind abgeschlossen wie ein Tresor. Den **Schlüssel** zum Öffnen habe ich schon erzeugt. Er ist ein langer Text (etwa 50 Zeilen Buchstabensalat) und liegt im Moment nur vorübergehend auf deinem Mac. Du bewahrst ihn an **zwei** sicheren Orten auf, dann lösche ich ihn vom Mac.
 
-1. Leg im Passwort-Manager einen Eintrag **„Familiar Sicherungsschlüssel“** an, z. B. in der App **Passwörter** als neue sichere Notiz. Füge dort den Inhalt der Zwischenablage ein (⌘V).
-2. **Zweite Kopie:** Füge den Schlüssel zusätzlich in eine Textdatei auf einem USB-Stick ein, den du an einem sicheren Ort aufbewahrst. Alternativ druckst du ihn aus.
-3. Sag mir Bescheid. Ich lege dir dann den **öffentlichen** Schlüssel in die Zwischenablage. Den trägst du wie in Schritt 5 als Secret `BACKUP_PUBLIC_KEY` ein. Danach lösche ich den privaten Schlüssel vom Mac.
+1. Sag mir „Schlüssel bitte“. Ich kopiere ihn dir in die Zwischenablage (wie nach ⌘C). Du siehst ihn dabei nicht, und ich auch nicht.
+2. **Erster Ort – Passwort-Manager:**
+   - Öffne die App **Passwörter**, oder deinen anderen Passwort-Manager.
+   - Leg einen neuen Eintrag an (**+**).
+   - Titel bzw. Website: `Familiar Sicherungsschlüssel`.
+   - Benutzername und Passwort: leer lassen. Verlangt die App ein Passwort, gib `siehe Notiz` ein.
+   - Klick ins Feld **Notizen** und füge mit **⌘V** ein. Dann **Sichern**.
+3. **Zweiter Ort – USB-Stick oder Ausdruck:**
+   - Öffne **TextEdit** und wähle **Format › In reinen Text umwandeln**.
+   - Füge mit **⌘V** ein.
+   - Speichere die Datei als `familiar-sicherungsschluessel.txt` auf einem USB-Stick, den du sicher verwahrst. Alternativ druckst du sie aus (**⌘P**) und schließt das Blatt weg.
+   - Danach das TextEdit-Fenster schließen.
+4. Sag mir „gesichert“. Ich prüfe, ob die Zwischenablage-Kopie vollständig war, und leere die Zwischenablage.
+5. Danach kopiere ich dir den **öffentlichen** Schlüssel in die Zwischenablage. Der ist nicht geheim, er dient nur zum Abschließen. Trag ihn wie in Schritt 5 als Secret `BACKUP_PUBLIC_KEY` ein. Anschließend lösche ich den privaten Schlüssel vom Mac.
 
 **Ohne den privaten Schlüssel kann niemand die Sicherungen öffnen, auch du und ich nicht.** Geht er verloren, sind alle bisherigen Sicherungen wertlos. Dann erzeugen wir einen neuen, und ab der nächsten Nacht gibt es wieder brauchbare Sicherungen.
 
