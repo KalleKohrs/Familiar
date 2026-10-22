@@ -145,3 +145,9 @@ Recherche zu typischen Merkmalen KI-generierter („vibe-coded“) Apps: Standar
 - **Gruppenlabels** in normaler Schreibweise („Heute 2“) statt Versalien mit Sperrung.
 - **Akzentfarbe** nur für das Plus, Hauptaktionen und „heute“; Schalter für Rechte in Grün.
 - Offene Punkte für den nächsten Design-Durchgang: Ambient-Schein zurücknehmen (Orb ersetzt am 2026-10-21), Karten nur für einzeln bedienbare Einträge (nicht um Leerzustände und Hinweise).
+
+## Reihum, Erinnern, Widgets (2026-10-22, ADR 0010)
+
+- **Editor – „Wer ist dran?“:** erscheint nur bei Serien mit mindestens zwei Personen. Ein Schalter „Reihum“ (orange Fläche `accentFill`); eingeschaltet: Reihenfolge mit Pfeil-Knöpfen (je 44 pt, VoiceOver „Mia nach oben“), optional „Jeder Termin / Jede Woche“ (nur wenn es mehrere Termine pro Woche gibt) und **eine** Vorschauzeile im Abschnittsfuß („Als Nächstes: 22.10. Mia · 29.10. Otto · …“). Die Erledigungsart entfällt dann – der Editor wird nicht länger.
+- **Details:** Etikett „Reihum · nächstes Mal: Name“; unter jeder offenen Person (nicht man selbst) ein sekundärer Knopf „Erinnern“, danach eine Stunde „Erinnert“ (deaktiviert). Rückmeldungen erscheinen im Hinweis unten – jetzt auch in den Details.
+- **Widgets „Heute“:** Hintergrund `FamiliarAmbientBackground` (folgt hell/dunkel), Systemschrift, Familienfarbe als Punkt, Abhak-Kreis rechts; Titel `privacySensitive`. Sperrbildschirm in Systemdarstellung (`widgetAccentable`).
