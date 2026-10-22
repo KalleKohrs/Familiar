@@ -236,12 +236,12 @@ td:first-child { min-width: 9em; }
 }
 @media (min-width: 960px) {
   /* Text und App-Bild passen gemeinsam in die erste Bildschirmhöhe (Kopfzeile ≈ 80 px). */
-  .hero { grid-template-columns: 1.15fr 0.85fr; align-items: center; gap: 48px; padding: 0;
+  .hero { grid-template-columns: 1.15fr 0.85fr; align-items: center; gap: 48px; padding: 0 0 32px;
     min-height: calc(100vh - 80px); min-height: calc(100svh - 80px); }
   .hero h1 { font-size: clamp(50px, 4.8vw, 68px); }
   .hero h1 .line { white-space: nowrap; }
-  /* So groß, wie die Fensterhöhe erlaubt (Bild ≈ 2,17 × Breite, dazu Kachel und Bildunterschrift). */
-  .shot { width: clamp(280px, calc((100vh - 160px) / 2.17), 420px); width: clamp(280px, calc((100svh - 160px) / 2.17), 420px);
+  /* So groß, wie die Fensterhöhe erlaubt (Gesamthöhe ≈ 2,1 × Breite). */
+  .shot { width: clamp(280px, calc((100vh - 152px) / 2.1), 440px); width: clamp(280px, calc((100svh - 152px) / 2.1), 440px);
     margin-right: 20px; }
   .shot figcaption { margin-top: 10px; }
   .statement { padding: 96px 0; }
