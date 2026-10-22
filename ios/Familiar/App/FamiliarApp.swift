@@ -39,6 +39,14 @@ struct FamiliarApp: App {
                 }
             }
         }
+        // Siri und Kurzbefehle (ADR 0010) nutzen dieselben Datenquellen.
+        IntentEnvironment.dependencies = dependencies
+        IntentEnvironment.didChange = {
+            await tasks.reload()
+            if let userID = session.userID {
+                WidgetSync.update(openTasks: tasks.tasks, families: session.families, userID: userID)
+            }
+        }
         _session = State(initialValue: session)
         _avatars = State(initialValue: AvatarImageStore(profiles: dependencies.profiles))
         _tasks = State(initialValue: tasks)

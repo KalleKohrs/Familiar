@@ -33,6 +33,8 @@ struct TaskDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .familiarScreenBackground()
+        // Rückmeldungen (Erinnert, Fehler) auch hier sichtbar, nicht nur auf den Hauptbildschirmen.
+        .overlay(alignment: .bottom) { TaskBanner() }
         .navigationBarTitleDisplayMode(.inline)
         .task { if store.task(taskID) == nil { await load() } }
         .sheet(item: $editing) { task in

@@ -1,3 +1,4 @@
+import AppIntents
 import FamiliarCore
 import Foundation
 import WidgetKit
@@ -10,6 +11,8 @@ enum WidgetSync {
         let snapshot = WidgetSnapshot(openTasks: openTasks, families: families, userID: userID)
         if WidgetSnapshotStore.write(snapshot) {
             WidgetCenter.shared.reloadTimelines(ofKind: kind)
+            // Siri kennt die aktuellen Aufgabentitel für „… in Familiar erledigen“.
+            FamiliarShortcuts.updateAppShortcutParameters()
         }
     }
 

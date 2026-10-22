@@ -177,6 +177,58 @@ final class RecurrenceUITests: XCTestCase {
         XCTAssertTrue(occurrences.firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(occurrences.count, 2)
     }
+
+    /// Reihum (ADR 0010): täglich, Kalle und Anna wechseln sich ab; Anna lässt sich erinnern.
+    @MainActor
+    func testRotatingSeriesAlternatesAndAllowsNudge() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-FamiliarInMemoryBackend", "-FamiliarInMemoryScenario", "ready"]
+        app.launch()
+        XCTAssertTrue(app.buttons["createTask"].waitForExistence(timeout: 10))
+        app.buttons["createTask"].tap()
+
+        let title = app.textFields["editor.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        title.tap()
+        title.typeText("Tisch decken")
+
+        app.buttons["editor.repeat"].firstMatch.tap()
+        let daily = app.buttons["Täglich"].firstMatch
+        XCTAssertTrue(daily.waitForExistence(timeout: 5))
+        daily.tap()
+
+        app.buttons["editor.assignee.Kalle"].firstMatch.tap()
+        app.buttons["editor.assignee.Anna"].firstMatch.tap()
+        app.swipeUp()
+        let rotation = app.switches["editor.rotation"].firstMatch
+        XCTAssertTrue(rotation.waitForExistence(timeout: 5))
+        rotation.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        // Mit Reihum entfällt die Wahl der Erledigungsart; eine Zeile zeigt, wer als Nächstes dran ist.
+        XCTAssertTrue(app.staticTexts["editor.rotationPreview"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["editor.mode.any_one"].exists)
+        app.buttons["editor.save"].tap()
+
+        // Heute Kalle, morgen Anna.
+        let occurrences = app.buttons.matching(identifier: "task.open.Tisch decken")
+        XCTAssertTrue(occurrences.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(occurrences.count, 2)
+
+        // Der Termin von morgen liegt weiter unten (ggf. unter der Tab-Leiste).
+        app.swipeUp()
+        occurrences.element(boundBy: 1).tap()
+        XCTAssertTrue(app.buttons["task.edit"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["task.rotation"].firstMatch.exists)
+        let nudge = app.buttons["task.nudge.Anna"]
+        XCTAssertTrue(nudge.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["task.nudge.Kalle"].exists)
+        nudge.tap()
+        // Erfolg: Hinweis unten und der Knopf zeigt „Erinnert“ (eine Stunde lang gesperrt).
+        let done = app.buttons.matching(NSPredicate(format: "label == 'Anna wurde erinnert'")).firstMatch
+        XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Anna wird'")).firstMatch
+            .waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["task.nudge.Anna"].isEnabled)
+    }
 }
 
 /// Kalender: Tag wählen zeigt dessen Aufgaben; Monat wechseln.

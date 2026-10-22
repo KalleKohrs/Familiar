@@ -179,6 +179,10 @@ select tests.expect('W5 dritter und vierter Termin: Clara, dann wieder Mia',
      || ',' || (select display_name from public.profiles where id = private.rotation_assignee(s, tests.d(21)))
    from public.task_series s where s.id = tests.id('s')),
   '2,3,Clara,Mia');
+select tests.expect('W5b Neue Serie: nur Mia (heute dran) bekommt „zugewiesen“, nicht die Erstellerin',
+  (select string_agg(p.display_name, ',' order by p.display_name) from public.notification_jobs j
+     join public.profiles p on p.id = j.user_id join public.tasks t on t.id = j.task_id
+   where j.kind = 'assigned' and t.series_id = tests.id('s')), 'Mia');
 select tests.expect('W6 Reihum mit nur einer Person abgelehnt',
   tests.run_as(tests.u('clara'), format(
     $$select (public.create_recurring_task(%L, 'Allein', 'any_one', array[%L]::uuid[], 'daily', %L,
@@ -217,6 +221,19 @@ select tests.expect('W11 gewählter Termin bekommt die erste Person', tests.who(
 select tests.expect('W12 heutiger Termin bleibt unverändert', tests.who(tests.id('s'), 0), 'Mia');
 select tests.expect('W13 rotation_start = gewählter Termin',
   (select (rotation_start = tests.d(7))::text from public.task_series where id = tests.id('s')), 'true');
+
+select tests.expect('W13b Umstellen: neue Person des Termins (Clara = Erstellerin) bekommt nichts, Otto ist ausgetragen',
+  (select count(*)::text from public.notification_jobs j
+   where j.kind = 'assigned' and j.task_id = tests.id('t7')), '0');
+
+-- Tauschen eines einzelnen Termins (Mia übernimmt): Mia wird benachrichtigt.
+select tests.run_as(tests.u('clara'), format(
+  $$select (public.update_task(%L, (select version from public.tasks where id = %L), 'Müll rausbringen', 'any_one',
+            array[%L]::uuid[], p_start_date => %L)).id is not null$$,
+  tests.id('t7'), tests.id('t7'), tests.u('mia'), tests.d(7)));
+select tests.expect('W13c Tausch: Mia bekommt „zugewiesen“ für den getauschten Termin',
+  (select count(*)::text from public.notification_jobs j
+   where j.kind = 'assigned' and j.task_id = tests.id('t7') and j.user_id = tests.u('mia')), '1');
 
 -- Zurück zu „gemeinsam“: alle drei am Termin.
 select tests.expect('W14 Wechsel zu „gemeinsam“ weist allen zu',

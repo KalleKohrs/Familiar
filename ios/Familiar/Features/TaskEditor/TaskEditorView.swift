@@ -447,28 +447,16 @@ struct TaskEditorView: View {
                 ForEach(Array(draft.assigneeIDs.enumerated()), id: \.element) { index, userID in
                     rotationRow(index: index, userID: userID)
                 }
-                if !rotationPreview.isEmpty {
-                    VStack(alignment: .leading, spacing: FamiliarSpacing.xxs) {
-                        Text("Nächste Termine")
-                            .font(FamiliarFont.meta.weight(.semibold))
-                            .foregroundStyle(FamiliarColor.textSecondary)
-                        ForEach(rotationPreview, id: \.date) { entry in
-                            Text("\(previewDate(entry.date)) · \(name(of: entry.person))")
-                                .font(FamiliarFont.secondary)
-                                .foregroundStyle(FamiliarColor.textPrimary)
-                        }
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("editor.rotationPreview")
-                }
             }
         } header: {
             Text("Wer ist dran?")
         } footer: {
-            if draft.isRotating {
-                Text("Pro Termin ist genau eine Person dran, oben beginnt es. Einzelne Termine kannst du später tauschen, indem du nur diesen Termin bearbeitest.")
-            } else {
-                Text("Aus: Alle Zugewiesenen bekommen jeden Termin. An: Die Personen wechseln sich ab.")
+            if draft.isRotating, !rotationPreview.isEmpty {
+                // Eine Zeile Vorschau statt einer eigenen Liste – der Editor bleibt kurz.
+                Text("Als Nächstes: \(rotationPreview.map { "\(previewDate($0.date)) \(name(of: $0.person))" }.joined(separator: " · "))")
+                    .accessibilityIdentifier("editor.rotationPreview")
+            } else if !draft.isRotating {
+                Text("An: Die Personen wechseln sich bei jedem Termin ab.")
             }
         }
         .listRowBackground(FamiliarColor.card)
@@ -512,12 +500,12 @@ struct TaskEditorView: View {
         let start = editingTask?.occurrenceDate ?? draft.date
         let today = LocalDate(.now, timeZone: timeZone)
         return RotationRules.upcoming(rule: rule, unit: unit, start: start, order: draft.assigneeIDs,
-                                      from: max(start, today), count: 4)
+                                      from: max(start, today), count: 3)
     }
 
     private func previewDate(_ date: LocalDate) -> String {
         date.date(at: LocalTime(hour: 12, minute: 0), in: timeZone)
-            .formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+            .formatted(.dateTime.day().month(.twoDigits))
     }
 
     private func name(of userID: UUID) -> String {

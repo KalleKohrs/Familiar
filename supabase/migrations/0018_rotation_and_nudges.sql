@@ -7,6 +7,12 @@
 --   die Anzahl ganzer ISO-Wochen zwischen den Montagen. Gleiche Regel in Swift (RotationRules).
 -- Anstupsen: nudge_task legt einen Mitteilungsauftrag „nudge“ an; höchstens einmal pro Stunde je
 --   Aufgabe und Person, Ruhezeit 21–7 Uhr (Zeitzone der Aufgabe) → Zustellung um 7 Uhr.
+-- Mitteilungen bei Serien (wichtig für Reihum):
+--   * Automatisch erzeugte Vorkommen melden sich weiter nur über „Jetzt“/Erinnerungen – und die
+--     bekommt nur, wer an dem Termin zugewiesen (bei Reihum: dran) ist.
+--   * Neue Serie: wer beim ersten Termin dran bzw. zugewiesen ist, bekommt einmal „zugewiesen“.
+--   * Ändert jemand die Zuweisung eines Termins (Tauschen, neue Reihenfolge), bekommt die neue Person
+--     „zugewiesen“, und bei der bisherigen endet eine laufende Live Activity.
 --
 -- Enthält drop function (Signaturänderung der Serien-RPCs) → im Supabase-SQL-Editor ausführen.
 
@@ -215,6 +221,8 @@ begin
     return 0;
   end if;
 
+  -- Automatisch erzeugte Zuweisungen lösen keine „zugewiesen“-Mitteilung aus (notify_assignment).
+  perform set_config('familiar.generating', 'on', true);
   foreach v_date in array v_dates loop
     v_task_id := null;
     insert into public.tasks (family_id, series_id, occurrence_date, created_by, title, description,
@@ -239,6 +247,7 @@ begin
       v_count := v_count + 1;
     end if;
   end loop;
+  perform set_config('familiar.generating', 'off', true);
 
   update public.task_series s
      set generated_until = greatest(s.generated_until, v_dates[cardinality(v_dates)])
@@ -249,6 +258,85 @@ end;
 $$;
 
 revoke execute on function private.generate_series_occurrences(uuid) from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Mitteilungen bei Zuweisungen (Serien, Tauschen)
+-- ---------------------------------------------------------------------------
+
+-- Neue Serie: einmal „zugewiesen“ an die Personen des ersten offenen Termins (nicht an sich selbst).
+create function private.notify_new_series(p_series_id uuid, p_actor uuid, p_today date)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_first uuid;
+  v_user  uuid;
+begin
+  select t.id into v_first from public.tasks t
+  where t.series_id = p_series_id and t.occurrence_date >= p_today and t.deleted_at is null
+  order by t.occurrence_date
+  limit 1;
+  if v_first is null then
+    return;
+  end if;
+  for v_user in
+    select a.user_id from public.task_assignees a where a.task_id = v_first and a.user_id is distinct from p_actor
+  loop
+    perform private.enqueue_notification('assigned', v_first, v_user, p_actor,
+      'assigned:' || v_first || ':' || v_user || ':series');
+  end loop;
+end;
+$$;
+
+revoke execute on function private.notify_new_series(uuid, uuid, date) from public, anon, authenticated;
+
+-- Wie 0012, aber Serien-Vorkommen melden sich auch – außer bei der automatischen Erzeugung.
+-- So erfährt beim Tauschen oder Umstellen der Reihenfolge die neue Person davon.
+create or replace function private.notify_assignment()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if coalesce(current_setting('familiar.generating', true), 'off') = 'on' then
+    return null;
+  end if;
+  if new.user_id is distinct from new.assigned_by then
+    perform private.enqueue_notification('assigned', new.task_id, new.user_id, new.assigned_by,
+      'assigned:' || new.task_id || ':' || new.user_id || ':' || extract(epoch from new.assigned_at)::bigint);
+  end if;
+  return null;
+end;
+$$;
+
+revoke execute on function private.notify_assignment() from public, anon, authenticated;
+
+-- Zuweisung entfernt (z. B. Termin getauscht): laufende Live Activity dieser Person beenden.
+-- Nur bei noch offenen, existierenden Aufgaben – beim Löschen ganzer Aufgaben (Kaskade) nicht.
+create function private.notify_unassignment()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (select 1 from public.tasks t
+             where t.id = old.task_id and t.completed_at is null and t.deleted_at is null) then
+    perform private.enqueue_activity_end(old.task_id, old.user_id,
+      'unassigned:' || floor(extract(epoch from now()))::bigint);
+  end if;
+  return null;
+end;
+$$;
+
+revoke execute on function private.notify_unassignment() from public, anon, authenticated;
+
+create trigger task_assignees_notify_removal
+  after delete on public.task_assignees
+  for each row execute function private.notify_unassignment();
 
 -- ---------------------------------------------------------------------------
 -- Serien-RPCs mit Reihum-Angaben (neue Signatur)
@@ -313,6 +401,7 @@ begin
   perform private.set_series_assignees(v_series.id, v_assignees);
   perform private.set_series_images(v_series.id, p_family_id, p_images);
   perform private.generate_series_occurrences(v_series.id);
+  perform private.notify_new_series(v_series.id, v_uid, v_today);
 
   select * into v_series from public.task_series s where s.id = v_series.id;
   return v_series;

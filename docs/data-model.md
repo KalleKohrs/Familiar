@@ -25,6 +25,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0015_notification_cleanup` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`); trägt sich selbst in `schema_migrations` ein. Täglich 03:45 UTC: Aufträge, beendete Live Activities und abgemeldete Geräte nach 30 Tagen, Cron-Tokens nach 1 Tag. |
 | `0016_oauth_states_user_index` | 2026-10-22 | Supabase-MCP `apply_migration` (Advisor: Index für Fremdschlüssel) |
 | `0017_backup` | 2026-10-22 | Supabase-MCP `apply_migration` (bewusst ohne Löschbefehle). Datensicherung, siehe unten und [ADR 0009](decisions/0009-backups.md). |
+| `0018_rotation_and_nudges` | – | **noch einzuspielen, manuell im Supabase-SQL-Editor** (enthält `drop function`). Tests `supabase/tests/0010_rotation_nudges.sql`. |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -247,6 +248,22 @@ Realtime: Änderungen an `task_series` (außer reinem Fortschreiben der Wasserst
 | RPCs (nur service_role) | `push_claim_jobs(token)` liefert Inhalt, ContentState-Felder (`starts_at_unix` nur mit Uhrzeit, `is_open`, `can_complete`, Initialen), Geräte und Activities; `push_report_results(results)`. |
 
 Spike S2 (2026-10-21): Die Edge Function erreicht APNs per `fetch` über HTTP/2 – die Sandbox antwortet ohne Schlüssel mit `403 {"reason":"MissingProviderToken"}`. Kein externer Sender nötig.
+
+## Reihum und Anstupsen (0018)
+
+Entscheidung: [ADR 0010](decisions/0010-reihum-widgets-anstupsen-siri.md).
+
+| Objekt | Zweck |
+|---|---|
+| `task_series.assignment_mode` | `together` (alle Zugewiesenen, Standard) \| `rotate` (reihum, pro Termin eine Person) |
+| `task_series.rotation_unit`, `rotation_start` | Wechsel pro Termin (`occurrence`) oder pro Kalenderwoche (`week`); ab `rotation_start` wird gezählt (beim Ändern ab einem Termin: dieser Termin) |
+| `series_assignees.position` | Reihenfolge |
+| `private.rotation_index`, `rotation_assignee`, `occurrence_assignees` | Wer dran ist: `liste[k mod n]`, nur aktuelle Mitglieder; gleiche Regel in Swift (`RotationRules`) |
+| `create_recurring_task`, `update_series_from` | neue Parameter `p_assignment_mode`, `p_rotation_unit`; Reihum erzwingt `any_one` und ≥ 2 Personen (`rotation_needs_two`) |
+| `nudge_task(p_task_id, p_user_id)` | Anstupsen: nur offene, zugewiesene Personen, nicht sich selbst, 1 × pro Stunde (`private.task_nudges`), 21–7 Uhr Zustellung um 7 Uhr; Auftrag `nudge` |
+| Mitteilungen | automatisch erzeugte Vorkommen: keine „zugewiesen“-Mitteilung (`familiar.generating`); neue Serie: einmal an die Personen des ersten Termins; Tauschen/Umstellen: neue Person bekommt „zugewiesen“, bei der alten endet die Live Activity (`task_assignees_notify_removal`) |
+
+Neue Fehlerschlüssel: `invalid_rotation`, `rotation_needs_two`, `nudge_self`, `nudge_not_open`, `nudge_too_soon`.
 
 ## Datensicherung (0017)
 
