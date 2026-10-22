@@ -6,35 +6,49 @@
   <title>Hilfe – Familiar</title>
   <meta name="theme-color" content="#1E1519">
   <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
   <a class="skip" href="#inhalt">Zum Inhalt</a>
   <header class="site-header">
-    <a class="brand" href="/"><img src="/assets/mark.svg" alt="">Familiar</a>
-    <nav aria-label="Hauptnavigation"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
+    <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="32" height="32">Familiar</a>
+    <nav aria-label="Hauptnavigation"><a href="/support/" aria-current="page">Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
   </header>
-  <main id="inhalt" class="text">
+  <div class="doc">
+    <details class="toc" id="toc">
+      <summary>Auf dieser Seite</summary>
+      <nav aria-label="Auf dieser Seite"><ol><li><a href="#anmeldung">Anmeldung</a></li><li><a href="#familien-und-einladungen">Familien und Einladungen</a></li><li><a href="#mitteilungen">Mitteilungen</a></li><li><a href="#outlook">Outlook</a></li><li><a href="#konto-löschen">Konto löschen</a></li><li><a href="#kontakt">Kontakt</a></li></ol></nav>
+    </details>
+    <script>if (matchMedia("(min-width: 960px)").matches) document.getElementById("toc").open = true;</script>
+    <main id="inhalt" class="prose">
 <h1>Hilfe zu Familiar</h1>
-<h2>Anmeldung</h2>
+<h2 id="anmeldung">Anmeldung</h2>
 <p><strong>Ich bekomme keinen Code.</strong> Schau im Spam-Ordner nach. Ein neuer Code lässt sich nach 60 Sekunden anfordern; es gilt immer der zuletzt gesendete.</p>
 <p><strong>Ich habe kein Passwort.</strong> Familiar braucht keins: Du meldest dich mit einem Code per E-Mail oder mit Apple an.</p>
-<h2>Familien und Einladungen</h2>
+<h2 id="familien-und-einladungen">Familien und Einladungen</h2>
 <p><strong>Wie lade ich jemanden ein?</strong> Familie antippen › Einladen › „Einladung teilen“. Die Person öffnet den Link oder gibt den Code in der App unter „Mit Code beitreten“ ein. Ein Code gilt 7 Tage.</p>
 <p><strong>Wer darf was?</strong> Admins legen in den Familien-Einstellungen fest, ob Mitglieder einladen, die Familie bearbeiten, Mitglieder entfernen sowie Aufgaben anlegen, bearbeiten und löschen dürfen. Abhaken dürfen immer alle Zugewiesenen.</p>
-<h2>Mitteilungen</h2>
+<h2 id="mitteilungen">Mitteilungen</h2>
 <p><strong>Ich bekomme keine Mitteilungen.</strong> Prüfe in den iOS-Einstellungen › Familiar › Mitteilungen, ob sie erlaubt sind. Live-Anzeigen auf dem Sperrbildschirm lassen sich dort unter „Live-Aktivitäten“ an- und abschalten.</p>
-<h2>Outlook</h2>
+<h2 id="outlook">Outlook</h2>
 <p><strong>„Genehmigung erforderlich“ beim Verbinden.</strong> Dein Unternehmen muss Familiar einmal freigeben. Tippe in Familiar unter Profil › Outlook auf „Freigabe bei meiner IT anfragen“ – die Nachricht enthält alles, was deine IT braucht (<a href="/outlook-it/">Infos für IT-Abteilungen</a>).</p>
 <p><strong>Ein Termin fehlt.</strong> Familiar gleicht etwa alle 15 Minuten ab und zeigt Termine aus den Kalendern, die du unter Profil › Outlook ausgewählt hast.</p>
-<h2>Konto löschen</h2>
+<h2 id="konto-löschen">Konto löschen</h2>
 <p>Profil › Konto löschen. Was dabei gelöscht wird, steht in der <a href="/datenschutz/">Datenschutzerklärung</a>.</p>
-<h2>Kontakt</h2>
+<h2 id="kontakt">Kontakt</h2>
 <p><a href="mailto:info@familiar-app.de">info@familiar-app.de</a></p>
-  </main>
+    </main>
+  </div>
   <footer class="site-footer">
-    <span>© 2026 Familiar</span>
-    <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="28" height="28">Familiar</a>
+        <p class="tagline">Aufgaben teilen, ruhig planen.</p>
+      </div>
+      <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+      <small>© 2026 Familiar</small>
+    </div>
   </footer>
 </body>
 </html>

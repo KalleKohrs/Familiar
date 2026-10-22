@@ -6,30 +6,44 @@
   <title>Familiar für Outlook freigeben – Familiar</title>
   <meta name="theme-color" content="#1E1519">
   <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
   <a class="skip" href="#inhalt">Zum Inhalt</a>
   <header class="site-header">
-    <a class="brand" href="/"><img src="/assets/mark.svg" alt="">Familiar</a>
+    <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="32" height="32">Familiar</a>
     <nav aria-label="Hauptnavigation"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
   </header>
-  <main id="inhalt" class="text">
+  <div class="doc">
+    <details class="toc" id="toc">
+      <summary>Auf dieser Seite</summary>
+      <nav aria-label="Auf dieser Seite"><ol><li><a href="#was-familiar-liest">Was Familiar liest</a></li><li><a href="#freigabe-erteilen">Freigabe erteilen</a></li><li><a href="#kontakt">Kontakt</a></li></ol></nav>
+    </details>
+    <script>if (matchMedia("(min-width: 960px)").matches) document.getElementById("toc").open = true;</script>
+    <main id="inhalt" class="prose">
 <h1>Familiar für Outlook freigeben – Informationen für IT-Abteilungen</h1>
 <p>Eine Person aus Ihrem Unternehmen möchte in der Familien-App <strong>Familiar</strong> ihre <strong>eigenen</strong> Outlook-Termine anzeigen. Weil Familiar von einer Privatperson entwickelt wird und daher kein bei Microsoft verifizierter Herausgeber ist, verlangen viele Unternehmen eine einmalige Freigabe durch die IT. Diese Seite erklärt, was Familiar tut, damit Sie das prüfen können.</p>
-<h2>Was Familiar liest</h2>
-<div class="table"><table><tbody><tr><td><strong>Rechte (delegiert)</strong></td><td><code>Calendars.ReadBasic</code>, <code>offline_access</code>, <code>openid</code>, <code>email</code></td></tr><tr><td><strong>Bedeutung</strong></td><td>Nur die Kalender der jeweils angemeldeten Person. <code>Calendars.ReadBasic</code> ist das kleinste Kalender-Leserecht von Microsoft Graph: <strong>ohne</strong> Termin-Text (Body), Anhänge und Erweiterungen.</td></tr><tr><td><strong>Gespeichert</strong></td><td>Titel, Beginn und Ende, Ort, Organisator und Absage-Status von Terminen im Zeitraum 7 Tage zurück bis 120 Tage voraus – nur aus den Kalendern, die die Person auswählt.</td></tr><tr><td><strong>Sichtbar für</strong></td><td>Ausschließlich die Person selbst. Ihre Termine erscheinen <strong>nicht</strong> bei Familienmitgliedern.</td></tr><tr><td><strong>Schreibzugriff</strong></td><td>Keiner. Familiar ändert, erstellt oder löscht nichts in Outlook.</td></tr><tr><td><strong>Zugangsdaten</strong></td><td>Das Refresh-Token liegt verschlüsselt auf dem Server (Supabase Vault, EU-Region), nie auf dem Gerät. Die App authentifiziert sich bei Microsoft mit einem Zertifikat.</td></tr><tr><td><strong>Widerruf</strong></td><td>In Familiar unter Profil › Outlook › Trennen: Token und gespeicherte Termine werden gelöscht. Zusätzlich jederzeit über Ihre Unternehmensanwendungen in Microsoft Entra ID.</td></tr></tbody></table></div>
-<h2>Freigabe erteilen</h2>
+<h2 id="was-familiar-liest">Was Familiar liest</h2>
+<div class="table stack"><table><tbody><tr><td><strong>Rechte (delegiert)</strong></td><td><code>Calendars.ReadBasic</code>, <code>offline_access</code>, <code>openid</code>, <code>email</code></td></tr><tr><td><strong>Bedeutung</strong></td><td>Nur die Kalender der jeweils angemeldeten Person. <code>Calendars.ReadBasic</code> ist das kleinste Kalender-Leserecht von Microsoft Graph: <strong>ohne</strong> Termin-Text (Body), Anhänge und Erweiterungen.</td></tr><tr><td><strong>Gespeichert</strong></td><td>Titel, Beginn und Ende, Ort, Organisator und Absage-Status von Terminen im Zeitraum 7 Tage zurück bis 120 Tage voraus – nur aus den Kalendern, die die Person auswählt.</td></tr><tr><td><strong>Sichtbar für</strong></td><td>Ausschließlich die Person selbst. Ihre Termine erscheinen <strong>nicht</strong> bei Familienmitgliedern.</td></tr><tr><td><strong>Schreibzugriff</strong></td><td>Keiner. Familiar ändert, erstellt oder löscht nichts in Outlook.</td></tr><tr><td><strong>Zugangsdaten</strong></td><td>Das Refresh-Token liegt verschlüsselt auf dem Server (Supabase Vault, EU-Region), nie auf dem Gerät. Die App authentifiziert sich bei Microsoft mit einem Zertifikat.</td></tr><tr><td><strong>Widerruf</strong></td><td>In Familiar unter Profil › Outlook › Trennen: Token und gespeicherte Termine werden gelöscht. Zusätzlich jederzeit über Ihre Unternehmensanwendungen in Microsoft Entra ID.</td></tr></tbody></table></div>
+<h2 id="freigabe-erteilen">Freigabe erteilen</h2>
 <p><strong>Variante A – Freigabe-Link:</strong> Die anfragende Person hat Ihnen aus der App einen Link geschickt (<code>https://login.microsoftonline.com/organizations/adminconsent?client_id=…</code>). Öffnen Sie ihn mit einem Konto mit der Rolle *Cloud Application Administrator*, *Application Administrator* oder *Global Administrator*, prüfen Sie die angezeigten Rechte und bestätigen Sie.</p>
 <p><strong>Variante B – Entra Admin Center:</strong> Sobald jemand aus Ihrem Unternehmen versucht hat, Familiar zu verbinden, finden Sie die App unter <strong>Entra ID › Enterprise apps › All applications › Familiar</strong>. Dort unter <strong>Security › Permissions</strong> auf <strong>Grant admin consent</strong> klicken.</p>
 <p><strong>Zugriff einschränken (optional):</strong> In der Enterprise App unter <strong>Properties</strong> „Assignment required“ aktivieren und unter <strong>Users and groups</strong> nur die Personen zuweisen, die Familiar nutzen dürfen.</p>
 <p>Microsoft-Dokumentation: <a href="https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent">Grant tenant-wide admin consent</a> · <a href="https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/configure-admin-consent-workflow">Configure the admin consent workflow</a></p>
-<h2>Kontakt</h2>
+<h2 id="kontakt">Kontakt</h2>
 <p>Fragen zur Freigabe: <a href="mailto:info@familiar-app.de">info@familiar-app.de</a>. Weitere Informationen: <a href="/datenschutz/">Datenschutzerklärung</a>.</p>
-  </main>
+    </main>
+  </div>
   <footer class="site-footer">
-    <span>© 2026 Familiar</span>
-    <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="28" height="28">Familiar</a>
+        <p class="tagline">Aufgaben teilen, ruhig planen.</p>
+      </div>
+      <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+      <small>© 2026 Familiar</small>
+    </div>
   </footer>
 </body>
 </html>

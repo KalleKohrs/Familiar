@@ -6,17 +6,20 @@
   <title>Kontakt – Familiar</title>
   <meta name="theme-color" content="#1E1519">
   <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
   <a class="skip" href="#inhalt">Zum Inhalt</a>
   <header class="site-header">
-    <a class="brand" href="/"><img src="/assets/mark.svg" alt="">Familiar</a>
-    <nav aria-label="Hauptnavigation"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
+    <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="32" height="32">Familiar</a>
+    <nav aria-label="Hauptnavigation"><a href="/support/">Hilfe</a><a href="/kontakt/" aria-current="page">Kontakt</a></nav>
   </header>
-  <main id="inhalt" class="text">
-    <h1>Kontakt</h1>
-    <p>Schreib uns über dieses Formular oder per E-Mail an <a href="mailto:info@familiar-app.de">info@familiar-app.de</a>. Wir antworten in der Regel innerhalb von zwei Werktagen.</p>
+  <main id="inhalt" class="wrap contact-page">
+    <div class="intro prose">
+      <h1>Kontakt</h1>
+      <p>Schreib uns über dieses Formular oder per E-Mail an <a href="mailto:info@familiar-app.de">info@familiar-app.de</a>. Wir antworten in der Regel innerhalb von zwei Werktagen.</p>
+    </div>
     <!-- Netlify Forms (docs.netlify.com/manage/forms/setup): Formular-Erkennung muss in Netlify eingeschaltet sein. -->
     <form class="contact" name="kontakt" method="POST" action="/kontakt/danke/" data-netlify="true" netlify-honeypot="bot-field">
       <input type="hidden" name="form-name" value="kontakt">
@@ -29,8 +32,14 @@
     </form>
   </main>
   <footer class="site-footer">
-    <span>© 2026 Familiar</span>
-    <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="28" height="28">Familiar</a>
+        <p class="tagline">Aufgaben teilen, ruhig planen.</p>
+      </div>
+      <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+      <small>© 2026 Familiar</small>
+    </div>
   </footer>
 </body>
 </html>

@@ -9,4 +9,6 @@ Statische Website für Familiar. Wird bei einem statischen Hoster veröffentlich
 | `/datenschutz/`, `/impressum/`, `/support/`, `/outlook-it/` | Erzeugt aus `docs/legal/*.md` mit `python3 tools/build-website.py` – Texte nur dort ändern, dann neu erzeugen. Platzhalter `[…]` sind gelb markiert und müssen vor dem Veröffentlichen ersetzt sein. |
 | `/` | Startseite. |
 
-Schrift: Bricolage Grotesque (SIL Open Font License, `assets/fonts/`), selbst gehostet – keine externen Ressourcen, kein Tracking.
+Schrift: Bricolage Grotesque (SIL Open Font License, `assets/fonts/`), selbst gehostet als WOFF2, reduziert auf lateinische Zeichen (erzeugt mit `fontTools.subset` aus der Schriftdatei der App) – keine externen Ressourcen, kein Tracking.
+
+App-Bild auf der Startseite: `assets/app-aufgaben.jpg`, verkleinert aus `docs/app-store/screenshots/1-aufgaben.png` (Vorführdaten).

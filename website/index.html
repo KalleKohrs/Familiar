@@ -3,99 +3,124 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Familiar – Aufgaben für die ganze Familie</title>
-  <meta name="description" content="Familiar bringt die Aufgaben deiner Familie an einen ruhigen Ort: zuweisen, rechtzeitig erinnern, direkt vom Sperrbildschirm abhaken.">
+  <title>Familiar – Aufgaben teilen, ruhig planen</title>
+  <meta name="description" content="Wer macht was – und bis wann? Familiar bringt die Aufgaben deiner Familie an einen ruhigen Ort, erinnert rechtzeitig und lässt dich direkt vom Sperrbildschirm abhaken.">
   <meta name="theme-color" content="#1E1519">
   <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
   <a class="skip" href="#inhalt">Zum Inhalt</a>
   <header class="site-header">
-    <a class="brand" href="/"><img src="/assets/mark.svg" alt="">Familiar</a>
+    <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="32" height="32">Familiar</a>
     <nav aria-label="Hauptnavigation"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
   </header>
 
   <main id="inhalt" class="wrap">
-    <section class="hero">
+    <section class="hero" aria-labelledby="titel">
       <div>
-        <p class="eyebrow">Bald im App Store für iPhone</p>
-        <h1>Wer macht was – <em>und bis wann?</em></h1>
+        <p class="status">Bald im App Store für iPhone</p>
+        <h1 id="titel"><span class="line">Wer macht was –</span> <span>und bis wann?</span></h1>
         <p class="lead">Familiar bringt die Aufgaben deiner Familie an einen ruhigen Ort, erinnert rechtzeitig und lässt dich direkt vom Sperrbildschirm abhaken.</p>
-        <div class="actions">
-          <a class="button quiet" href="/support/">So funktioniert’s</a>
-          <span class="note">Keine Werbung. Kein Tracking.</span>
-        </div>
+        <ul class="promises" aria-label="Versprechen">
+          <li><span class="tick" style="--tile: var(--sage)"></span>Keine Werbung</li>
+          <li><span class="tick" style="--tile: var(--sky)"></span>Kein Tracking</li>
+          <li><span class="tick" style="--tile: var(--sun)"></span>Server in der EU</li>
+        </ul>
       </div>
 
-      <!-- Illustration in der Formensprache der App – keine Bildschirmaufnahme. -->
-      <div class="phone" aria-hidden="true">
-        <h2>Aufgaben</h2>
-        <p class="section">Heute</p>
-        <div class="task">
-          <strong>Zimmer aufräumen</strong>
-          <small><span class="dot" style="background: var(--sky)"></span>Jede Person einzeln</small>
-          <div class="people"><span class="done">K</span><span>A</span></div>
-          <span class="check"></span>
+      <!-- Echte Bildschirmaufnahme der App (Vorführdaten, docs/app-store/screenshots/1-aufgaben.png).
+           Weitere Bilder aus docs/app-store/screenshots können hier nach demselben Muster folgen. -->
+      <figure class="shot">
+        <div class="device">
+          <img src="/assets/app-aufgaben.jpg" width="660" height="1434" alt="Die Aufgabenliste in Familiar: unter „Heute“ stehen „Müll rausbringen“, „Zimmer aufräumen“ (1 von 2 erledigt) und „Geschenk für Opa besorgen“, unter „Morgen“ „Pausenbrote machen“ um 7:15 Uhr, werktags. Jede Aufgabe zeigt ihre Familie mit Farbpunkt und die zugewiesenen Personen.">
         </div>
-        <div class="task">
-          <strong>Müll rausbringen</strong>
-          <small><span class="dot" style="background: var(--coral)"></span>WG</small>
-          <div class="people"><span>K</span></div>
-          <span class="check"></span>
-        </div>
-        <p class="section">Morgen</p>
-        <div class="task">
-          <strong>Arzttermin Anna</strong>
-          <small><span class="time">Morgen · 15:30</span></small>
-          <div class="people"><span>A</span></div>
-          <span class="check"></span>
-        </div>
+        <figcaption>Die Aufgabenliste – mit Beispieldaten.</figcaption>
+      </figure>
+    </section>
+
+    <section class="statement" aria-label="Worum es geht">
+      <p>Familiar ist der Planer für alles, was in einer Familie zu tun ist – <em>vom Müll rausbringen bis zum Arzttermin.</em></p>
+    </section>
+
+    <section class="topic" style="--tile: var(--coral)" aria-labelledby="t1">
+      <header><span class="num" aria-hidden="true">01</span><h2 id="t1">Aufgaben, die ankommen</h2></header>
+      <ul>
+        <li><span class="tick"></span>Aufgaben anlegen, Personen zuweisen, Fotos anhängen</li>
+        <li><span class="tick"></span>Erledigungsart wählen: eine Person für alle oder jede Person einzeln</li>
+        <li><span class="tick"></span>Wiederholungen täglich, wöchentlich oder monatlich</li>
+        <li><span class="tick"></span>Rückgängig und Verlauf: Erledigtes und Gelöschtes 30 Tage wiederherstellen</li>
+      </ul>
+    </section>
+
+    <section class="topic" style="--tile: var(--sun)" aria-labelledby="t2">
+      <header><span class="num" aria-hidden="true">02</span><h2 id="t2">Zur richtigen Zeit</h2></header>
+      <ul>
+        <li><span class="tick"></span>Mitteilung, wenn dir etwas zugewiesen wird und wenn es losgeht</li>
+        <li><span class="tick"></span>Live-Anzeige auf dem Sperrbildschirm und in der Dynamic Island – mit Abhaken, ohne die App zu öffnen</li>
+        <li><span class="tick"></span>Erinnerungen, solange etwas offen ist</li>
+      </ul>
+    </section>
+
+    <section class="topic" style="--tile: var(--sky)" aria-labelledby="t3">
+      <header><span class="num" aria-hidden="true">03</span><h2 id="t3">Mehrere Familien, eine Liste</h2></header>
+      <div class="body">
+        <ul class="families" aria-label="Beispiele">
+          <li style="--c: var(--sky)">Familie</li>
+          <li style="--c: var(--coral)">WG</li>
+          <li style="--c: var(--sage)">Großeltern</li>
+        </ul>
+        <ul>
+          <li><span class="tick"></span>Familiar zeigt alle Aufgaben in einer Liste, jede Familie in ihrer Farbe</li>
+          <li><span class="tick"></span>Einladen per Code</li>
+          <li><span class="tick"></span>Admins legen fest, was Mitglieder dürfen</li>
+        </ul>
       </div>
     </section>
 
-    <section class="features" aria-label="Was Familiar kann">
-      <article class="feature">
-        <span class="num">01</span>
-        <h2>Aufgaben, die ankommen</h2>
-        <ul>
-          <li>Aufgaben anlegen, Personen zuweisen, Fotos anhängen</li>
-          <li>Eine Person für alle – oder jede Person einzeln</li>
-          <li>Wiederholungen täglich, wöchentlich oder monatlich</li>
-          <li>Erledigtes und Gelöschtes 30 Tage wiederherstellen</li>
+    <section class="topic" style="--tile: var(--sage)" aria-labelledby="t4">
+      <header><span class="num" aria-hidden="true">04</span><h2 id="t4">Dein Kalender</h2></header>
+      <ul>
+        <li><span class="tick"></span>Monatsansicht mit allen Aufgaben und geplanten Wiederholungen</li>
+        <li><span class="tick"></span>Optional: eigene Outlook-Termine nur lesend einblenden – sichtbar nur für dich</li>
+      </ul>
+    </section>
+
+    <div class="pair">
+      <section class="panel" aria-labelledby="anmelden">
+        <h2 id="anmelden">Einfach anmelden</h2>
+        <p>Mit E-Mail-Code, Apple oder Google – kein Passwort.</p>
+        <ul class="methods" aria-label="Anmeldearten">
+          <li>E-Mail-Code</li><li>Apple</li><li>Google</li>
         </ul>
-      </article>
-      <article class="feature">
-        <span class="num">02</span>
-        <h2>Zur richtigen Zeit</h2>
-        <ul>
-          <li>Mitteilung, wenn dir etwas zugewiesen wird und wenn es losgeht</li>
-          <li>Live-Anzeige auf dem Sperrbildschirm und in der Dynamic Island – abhaken, ohne die App zu öffnen</li>
-          <li>Erinnerungen, solange etwas offen ist</li>
-        </ul>
-      </article>
-      <article class="feature">
-        <span class="num">03</span>
-        <h2>Mehrere Familien, eine Liste</h2>
-        <p>Familie, WG, Großeltern: Alle Aufgaben stehen in einer Liste, jede Familie in ihrer Farbe. Einladen per Link oder Code; Admins legen fest, was Mitglieder dürfen.</p>
-        <div class="chips">
-          <span class="chip"><span class="dot" style="background: var(--sky)"></span>Familie</span>
-          <span class="chip"><span class="dot" style="background: var(--coral)"></span>WG</span>
-          <span class="chip"><span class="dot" style="background: var(--sage)"></span>Großeltern</span>
-        </div>
-      </article>
-      <article class="feature">
-        <span class="num">04</span>
-        <h2>Dein Kalender – und privat</h2>
-        <p>Die Monatsansicht zeigt alle Aufgaben und geplanten Wiederholungen. Auf Wunsch blendest du deine eigenen Outlook-Termine ein – nur lesend und nur für dich sichtbar.</p>
-        <p>Keine Werbung, kein Tracking. Die Daten liegen auf Servern in der EU. <a href="/datenschutz/">Datenschutz</a></p>
-      </article>
+      </section>
+      <section class="panel light" aria-labelledby="privat">
+        <h2 id="privat">Privat</h2>
+        <p>Keine Werbung, kein Tracking. Deine Daten liegen auf Servern in der EU und werden nur für Familiar genutzt. Mehr in der <a href="/datenschutz/">Datenschutzerklärung</a>.</p>
+      </section>
+    </div>
+
+    <section class="closing" aria-labelledby="bald">
+      <img src="/assets/mark.svg" alt="" width="88" height="88">
+      <h2 id="bald">Bald im App Store</h2>
+      <p>Familiar erscheint für iPhone. Fragen bis dahin? Schreib uns gern.</p>
+      <div class="actions">
+        <a class="button" href="/kontakt/">Kontakt aufnehmen</a>
+        <a class="button quiet" href="/support/">Hilfe lesen</a>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <span>© 2026 Familiar</span>
-    <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="28" height="28">Familiar</a>
+        <p class="tagline">Aufgaben teilen, ruhig planen.</p>
+      </div>
+      <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+      <small>© 2026 Familiar</small>
+    </div>
   </footer>
 </body>
 </html>

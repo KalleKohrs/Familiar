@@ -81,6 +81,29 @@ def render(markdown: str) -> str:
 
 
 def page(title: str, body: str) -> str:
+    # Abschnitte bekommen Sprungmarken; ab drei Abschnitten gibt es ein Inhaltsverzeichnis.
+    sections = []
+
+    def anchor(match):
+        text = re.sub(r"<[^>]+>", "", match.group(1))
+        slug = re.sub(r"[^a-z0-9äöüß]+", "-", text.lower()).strip("-")
+        sections.append((slug, match.group(1)))
+        return f'<h2 id="{slug}">{match.group(1)}</h2>'
+
+    body = re.sub(r"<h2>(.*?)</h2>", anchor, body)
+    # Zweispaltige Tabellen ohne Kopfzeile (Begriff | Erklärung) stehen auf dem Handy untereinander.
+    body = body.replace('<div class="table"><table><tbody>', '<div class="table stack"><table><tbody>')
+    toc = ""
+    if len(sections) >= 3:
+        links = "".join(f'<li><a href="#{slug}">{text}</a></li>' for slug, text in sections)
+        toc = f"""<details class="toc" id="toc">
+      <summary>Auf dieser Seite</summary>
+      <nav aria-label="Auf dieser Seite"><ol>{links}</ol></nav>
+    </details>
+    <script>if (matchMedia("(min-width: 960px)").matches) document.getElementById("toc").open = true;</script>
+    """
+    layout = "doc" if toc else "doc single"
+    help_current = ' aria-current="page"' if title == "Hilfe" else ""
     return f"""<!doctype html>
 <html lang="de">
 <head>
@@ -89,20 +112,29 @@ def page(title: str, body: str) -> str:
   <title>{html.escape(title)} – Familiar</title>
   <meta name="theme-color" content="#1E1519">
   <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
   <a class="skip" href="#inhalt">Zum Inhalt</a>
   <header class="site-header">
-    <a class="brand" href="/"><img src="/assets/mark.svg" alt="">Familiar</a>
-    <nav aria-label="Hauptnavigation"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
+    <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="32" height="32">Familiar</a>
+    <nav aria-label="Hauptnavigation"><a href="/support/"{help_current}>Hilfe</a><a href="/kontakt/">Kontakt</a></nav>
   </header>
-  <main id="inhalt" class="text">
+  <div class="{layout}">
+    {toc}<main id="inhalt" class="prose">
 {body}
-  </main>
+    </main>
+  </div>
   <footer class="site-footer">
-    <span>© 2026 Familiar</span>
-    <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="28" height="28">Familiar</a>
+        <p class="tagline">Aufgaben teilen, ruhig planen.</p>
+      </div>
+      <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+      <small>© 2026 Familiar</small>
+    </div>
   </footer>
 </body>
 </html>
