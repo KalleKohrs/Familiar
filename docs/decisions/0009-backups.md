@@ -83,7 +83,7 @@ Ich führe die Wiederherstellung mit dem Inhaber durch. Auf dem Mac braucht es d
    - `select private.start_restore('probe', 'JJJJ-MM-TT');` ist eine **Probe**. Sie spielt alles in einer Transaktion ein, zählt jede Tabelle, macht alles rückgängig (ROLLBACK) und vergleicht Stichproben-Bilder mit den Originalen. Dabei ändert sich nichts.
    - `select private.start_restore('restore', 'JJJJ-MM-TT');` stellt in einem **leeren** Projekt wieder her.
    - Ein **nicht leeres** Projekt wird nur mit `'ÜBERSCHREIBEN'` als drittem Argument überschrieben. Dann werden zuerst alle Konten und alle Tabellen in `public` geleert.
-   - Die Datenbank wird in **einer** Transaktion mit `session_replication_role = replica` eingespielt, sodass die Reihenfolge der Fremdschlüssel und die App-Trigger keine Rolle spielen. Danach werden die Sequenzen nachgezogen.
+   - Die Datenbank wird in **einer** Transaktion eingespielt: Tabellen in Fremdschlüssel-Reihenfolge, App-Trigger in `public` währenddessen aus, Einfügen als Upsert über den Primärschlüssel (der Trigger `on_auth_user_created` legt beim Einfügen in `auth.users` schon Profile an). Danach werden die Sequenzen nachgezogen. `session_replication_role = replica` ist auf Supabase der Rolle `postgres` nicht erlaubt (geprüft 2026-10-22).
    - Anschließend schreibt die Function alle Bilder in Etappen zurück.
 4. **Danach:**
    - Bei einem neuen Projekt braucht es ein App-Update mit der neuen Projekt-URL.
@@ -98,4 +98,6 @@ Das Schema kommt aus dem Repository (`supabase/migrations/`, Quellcode-Sicherung
 - Selbsttest in der echten Edge-Runtime (`select private.start_backup('selftest')`): Ver- und Entschlüsselung inklusive gzip stimmen überein, eine veränderte Datei wird abgelehnt.
 - `backup-restore`: Token, direkte Datenbankverbindung und Bericht funktionieren. Ohne Schlüssel bricht die Function sauber mit Meldung ab.
 - Erster echter Lauf am 2026-10-22 (Lauf 1): Datenbank 90 KB, verschlüsselt 20 KB als `db/2026-10-22.fam`, 1 Profilbild, Dauer 7 s. Die B2-Anmeldung schlug zunächst fehl, weil beim Einfügen Leerzeichen mitkamen; die Function entfernt sie jetzt selbst.
-- **Offen:** die Probe-Wiederherstellung (`probe`) im Dev-Projekt mit dem echten privaten Schlüssel. Die vollständige Wiederherstellung in ein leeres Projekt (`restore`) wird einmal vor dem Start geübt, direkt nach dem Anlegen des Produktionsprojekts und bevor dort echte Daten liegen.
+- Object Lock (30 Tage Standard-Aufbewahrung) am 2026-10-22 auf dem Dev-Bucket eingeschaltet.
+- **Probe-Wiederherstellung am 2026-10-22 bestanden** (Lauf 4 in `private.restore_runs`): Entschlüsselt wurde mit dem privaten Schlüssel aus dem Passwort-Manager des Inhabers, eingetragen als Secret. Alle 14 Tabellen (inkl. `auth.users`, `auth.identities`) wurden vollständig eingespielt, keine Abweichung. Danach ROLLBACK, die Daten sind unverändert und alle Trigger wieder aktiv. Das Profilbild aus B2 ist bitgleich mit dem Original. Zwei Fehler wurden dabei gefunden und behoben: `replica` nicht erlaubt (siehe oben), und postgres.js hat das Dokument bei `$1::jsonb` doppelt kodiert (jetzt `::text::jsonb`, und eine leere Tabellenliste gilt als Fehler).
+- **Offen:** Die vollständige Wiederherstellung in ein leeres Projekt (`restore`) wird einmal vor dem Start geübt, direkt nach dem Anlegen des Produktionsprojekts und bevor dort echte Daten liegen.
