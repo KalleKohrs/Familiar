@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Familiar">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -3 105 105" role="img" aria-label="Familiar">
   <!-- Wie FamiliarMark: hintere Kachel (Familienfarbe), Lücke, vordere Kachel mit Haken. -->
   <defs>
-    <mask id="gap">
-      <rect width="100" height="100" fill="white"/>
+    <mask id="gap" maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
+      <rect x="-10" y="-10" width="120" height="120" fill="white"/>
       <rect x="-4" y="18" width="86" height="86" rx="27" fill="black"/>
     </mask>
   </defs>

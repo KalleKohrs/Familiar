@@ -235,10 +235,12 @@ td:first-child { min-width: 9em; }
   .card { padding: 48px 48px 40px; }
 }
 @media (min-width: 960px) {
-  .hero { grid-template-columns: 1.2fr 0.8fr; align-items: center; gap: 48px; padding: 48px 0 96px; }
+  /* Text und App-Bild passen gemeinsam in die erste Bildschirmhöhe (Kopfzeile ≈ 80 px). */
+  .hero { grid-template-columns: 1.2fr 0.8fr; align-items: center; gap: 48px; padding: 24px 0 48px;
+    min-height: calc(100vh - 80px); min-height: calc(100svh - 80px); }
   .hero h1 { font-size: clamp(56px, 6vw, 74px); }
   .hero h1 .line { white-space: nowrap; }
-  .shot { width: 360px; margin-right: 12px; }
+  .shot { width: clamp(240px, calc((100vh - 240px) / 2.2), 360px); width: clamp(240px, calc((100svh - 240px) / 2.2), 360px); margin-right: 12px; }
   .statement { padding: 96px 0; }
   .topic { grid-template-columns: 5fr 7fr; gap: 48px; padding: 64px 0; }
   .topic ul, .topic .body { padding-top: 6px; }
