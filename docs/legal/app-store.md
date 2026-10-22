@@ -42,6 +42,9 @@ DEIN KALENDER
 • Monatsansicht mit allen Aufgaben und geplanten Wiederholungen
 • Optional: eigene Outlook-Termine nur lesend einblenden – sichtbar nur für dich
 
+EINFACH ANMELDEN
+• Mit E-Mail-Code, Apple oder Google – kein Passwort
+
 PRIVAT
 Keine Werbung, kein Tracking. Deine Daten liegen auf Servern in der EU und werden nur für Familiar genutzt.
 
@@ -78,10 +81,11 @@ Vorschlag Reihenfolge, je mit kurzer Überschrift:
 5. Familien und Rechte – „Für jede Familie die passenden Regeln.“
 6. Verlauf – „Aus Versehen gelöscht? Zurückholen.“
 
-Ich erstelle sie aus dem Simulator, sobald der Design-Durchgang abgeschlossen ist.
+Erstellt mit `-FamiliarInMemoryBackend -FamiliarInMemoryScenario showcase` auf dem iPhone 18 Pro Max (1320 × 2868), Statusleiste 9:41. Fertig: Bild 1 (`docs/app-store/screenshots/1-aufgaben.png`); die übrigen folgen, sobald genug Speicherplatz frei ist (der 6,9″-Simulator braucht gut 2 GB).
 
 ## Prüfhinweise für Apple (App Review)
 
 - Anmeldung: Prüf-Adresse (`REVIEW_EMAIL`) eingeben, „Code senden“, dann statt des E-Mail-Codes den 10-stelligen Prüf-Code (`REVIEW_CODE`) eingeben. Das Prüf-Konto vorher mit einer Beispiel-Familie und Aufgaben füllen.
-- Konto löschen: Profil › Konto löschen.
+- Konto löschen: Profil › Konto löschen (bei „Mit Apple anmelden“ inklusive Widerruf bei Apple).
+- „Mit Apple anmelden“ wird angeboten, weil auch „Mit Google anmelden“ angeboten wird (Richtlinie 4.8).
 - Outlook ist optional und nur lesend.

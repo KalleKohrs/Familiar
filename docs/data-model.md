@@ -18,10 +18,11 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0008_history_purge` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Auch hier wurde der Eintrag `20261021044920` vorher versehentlich mit einer wirkungslosen Platzhalter-Abfrage angelegt; maßgeblich ist die Datei (SHA-256 `3d7a39442fb049e3…`). |
 | `0009_recurrence` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`-Anweisungen; vorher kein Platzhalter-Eintrag). Inhalt per SHA-256 `86cf70d71478f91b…` gegen die Zwischenablage geprüft; Tests `supabase/tests/0006_recurrence.sql`: 42/42 grün. |
 | `0010_family_permissions` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (SHA-256 `3fa201b6d20879ca…`). Tests `supabase/tests/0007_family_permissions.sql`: 23/23 grün. |
-| `0011_outlook` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Tests `supabase/tests/0008_outlook.sql`: 21/21 grün. |
+| `0011_outlook` | 2026-10-21 | **manuell im Supabase-SQL-Editor**. Tests `supabase/tests/0008_outlook.sql`: 21/21 grün. Eintrag in `schema_migrations` (wie 0009, 0010) am 2026-10-21 nachgetragen. |
 | `0012_notifications` | 2026-10-21 | Supabase-MCP `apply_migration` (bewusst ohne `delete`). Tests `supabase/tests/0009_notifications.sql`: 29/29 grün. |
 | `0013_notification_dedupe` | 2026-10-21 | Supabase-MCP `apply_migration` |
 | `0014_push_claim_starts_at` | 2026-10-21 | Supabase-MCP `apply_migration` |
+| `0015_notification_cleanup` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`); trägt sich selbst in `schema_migrations` ein. Täglich 03:45 UTC: Aufträge, beendete Live Activities und abgemeldete Geräte nach 30 Tagen, Cron-Tokens nach 1 Tag. |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
