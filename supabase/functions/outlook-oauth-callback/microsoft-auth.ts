@@ -1,10 +1,9 @@
 // Anmeldung der App selbst bei Microsoft (Client-Authentifizierung für /token).
 // Identische Kopie in outlook-oauth-callback/ und outlook-sync/ (je Function ein eigenes Paket).
 //
-// Bevorzugt Zertifikat (Microsoft: „certificate credentials“, private_key_jwt, PS256):
+// Zertifikat (Microsoft: „certificate credentials“, private_key_jwt, PS256):
 //   MS_CERT_PRIVATE_KEY   – privater RSA-Schlüssel (PKCS#8, PEM), nur in Supabase-Secrets
 //   MS_CERT_THUMBPRINT    – Base64url-SHA-256 des Zertifikats (DER), kein Geheimnis
-// Sonst (Übergang) MS_CLIENT_SECRET.
 
 export const TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
 
@@ -29,20 +28,17 @@ async function signingKey(pem: string): Promise<CryptoKey> {
 export async function clientAuthentication(clientId: string): Promise<Record<string, string> | null> {
   const keyPem = Deno.env.get("MS_CERT_PRIVATE_KEY");
   const thumbprint = Deno.env.get("MS_CERT_THUMBPRINT");
-  if (keyPem && thumbprint) {
-    const now = Math.floor(Date.now() / 1000);
-    const header = base64url(JSON.stringify({ alg: "PS256", typ: "JWT", "x5t#S256": thumbprint }));
-    const claims = base64url(JSON.stringify({
-      aud: TOKEN_URL, iss: clientId, sub: clientId, jti: crypto.randomUUID(), nbf: now, iat: now, exp: now + 300,
-    }));
-    const signature = new Uint8Array(await crypto.subtle.sign(
-      { name: "RSA-PSS", saltLength: 32 }, await signingKey(keyPem), new TextEncoder().encode(`${header}.${claims}`),
-    ));
-    return {
-      client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-      client_assertion: `${header}.${claims}.${base64url(signature)}`,
-    };
-  }
-  const secret = Deno.env.get("MS_CLIENT_SECRET");
-  return secret ? { client_secret: secret } : null;
+  if (!keyPem || !thumbprint) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(JSON.stringify({ alg: "PS256", typ: "JWT", "x5t#S256": thumbprint }));
+  const claims = base64url(JSON.stringify({
+    aud: TOKEN_URL, iss: clientId, sub: clientId, jti: crypto.randomUUID(), nbf: now, iat: now, exp: now + 300,
+  }));
+  const signature = new Uint8Array(await crypto.subtle.sign(
+    { name: "RSA-PSS", saltLength: 32 }, await signingKey(keyPem), new TextEncoder().encode(`${header}.${claims}`),
+  ));
+  return {
+    client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+    client_assertion: `${header}.${claims}.${base64url(signature)}`,
+  };
 }

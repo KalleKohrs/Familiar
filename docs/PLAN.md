@@ -378,7 +378,7 @@ Für jeden Dienst gibt es eine Schritt-für-Schritt-Anleitung in `docs/setup/` (
   - App-Registrierung (Konten in beliebigem Verzeichnis + persönliche Microsoft-Konten).
   - Redirect `https://ldeouecoaqyfvubhrjei.supabase.co/functions/v1/outlook-oauth-callback`.
   - Delegierte Rechte `Calendars.ReadBasic`, `offline_access`, `openid`, `email`.
-  - Secrets `MS_CLIENT_ID`, `MS_CLIENT_SECRET` (später Zertifikat empfohlen).
+  - Secrets `MS_CLIENT_ID`, `MS_CERT_PRIVATE_KEY`, `MS_CERT_THUMBPRINT` (Zertifikat statt Client Secret, seit 2026-10-21).
 - **Optional:** Domain für Universal Links (Einladungslinks).
 
 ---
