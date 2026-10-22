@@ -68,7 +68,9 @@ actor InMemoryBackend {
                 showcaseProfiles[id] = Profile(id: id, displayName: name)
             }
             profiles.merge(showcaseProfiles) { _, new in new }
-            let berger = Family(id: UUID(), name: "Familie Berger", colorHex: "#5EC2F2", createdBy: me)
+            let berger = Family(id: UUID(), name: "Familie Berger", colorHex: "#5EC2F2",
+                                membersCanManageFamily: false, membersCanRemoveMembers: false,
+                                membersCanDeleteTasks: false, createdBy: me)
             let grandparents = Family(id: UUID(), name: "Oma & Opa", colorHex: "#F7C548", createdBy: ruth)
             families[berger.id] = berger
             families[grandparents.id] = grandparents
@@ -113,6 +115,18 @@ actor InMemoryBackend {
                          description: "Milch, Brot, Äpfel", completionMode: .anyOne,
                          completedAt: .now.addingTimeInterval(-7200), completedBy: me, completionSource: .assignee,
                          createdAt: .now.addingTimeInterval(-86400), assignees: [TaskAssignee(userID: me)]),
+                TaskItem(id: UUID(), familyID: berger.id, createdBy: me, title: "Elternabend Klasse 3b",
+                         startDate: today.adding(days: 6), completionMode: .anyOne,
+                         deletedAt: .now.addingTimeInterval(-1800), deletedBy: paul,
+                         createdAt: .now.addingTimeInterval(-172_800), assignees: [TaskAssignee(userID: me)]),
+                TaskItem(id: UUID(), familyID: berger.id, createdBy: jonas, title: "Spülmaschine ausräumen",
+                         completionMode: .anyOne, completedAt: .now.addingTimeInterval(-86400 - 3600),
+                         completedBy: mia, completionSource: .assignee,
+                         createdAt: .now.addingTimeInterval(-172_800), assignees: [TaskAssignee(userID: mia)]),
+                TaskItem(id: UUID(), familyID: grandparents.id, createdBy: ruth, title: "Blumen gießen",
+                         completionMode: .anyOne, completedAt: .now.addingTimeInterval(-86400 - 18000),
+                         completedBy: jonas, completionSource: .assignee,
+                         createdAt: .now.addingTimeInterval(-259_200), assignees: [TaskAssignee(userID: jonas)]),
             ]
             for item in items { tasks[item.id] = item }
             let lunchRule = RecurrenceRule.weekly([1, 2, 3, 4, 5])

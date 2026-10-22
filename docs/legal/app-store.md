@@ -73,15 +73,15 @@ Nicht erhoben: Standort, Kontakte, Gesundheit, Finanzen, Browserverlauf, Suchver
 
 ## Screenshots (6,9″ Pflicht)
 
-Vorschlag Reihenfolge, je mit kurzer Überschrift:
-1. Startseite mit Aufgaben – „Alles, was ansteht. Eine Liste.“
-2. Live Activity auf dem Sperrbildschirm – „Abhaken, ohne zu suchen.“
-3. Aufgabe anlegen mit Zuweisung – „Wer macht's? Kurz zugewiesen.“
-4. Kalender – „Der Monat im Blick.“
-5. Familien und Rechte – „Für jede Familie die passenden Regeln.“
-6. Verlauf – „Aus Versehen gelöscht? Zurückholen.“
+Fertig in `docs/app-store/screenshots/` (1320 × 2868, iPhone 18 Pro Max, dunkles Design, Statusleiste 9:41), je mit Vorschlag für die Überschrift:
+1. `1-aufgaben.png` – Startseite: „Alles, was ansteht. Eine Liste.“
+2. `2-detail.png` – Aufgabe mit „Jede Person einzeln“: „Jeder hakt seinen Teil ab.“
+3. `3-zuweisen.png` – Neue Aufgabe mit Zuweisung: „Wer macht's? Kurz zugewiesen.“
+4. `4-kalender.png` – Kalender: „Der Monat im Blick.“
+5. `5-familien.png` – Familie mit Rollen und Rechten: „Für jede Familie die passenden Regeln.“
+6. `6-verlauf.png` – Verlauf mit gelöschter Aufgabe: „Aus Versehen gelöscht? Zurückholen.“
 
-Erstellt mit `-FamiliarInMemoryBackend -FamiliarInMemoryScenario showcase` auf dem iPhone 18 Pro Max (1320 × 2868), Statusleiste 9:41. Fertig: Bild 1 (`docs/app-store/screenshots/1-aufgaben.png`); die übrigen folgen, sobald genug Speicherplatz frei ist (der 6,9″-Simulator braucht gut 2 GB).
+Erstellt mit `-FamiliarInMemoryBackend -FamiliarInMemoryScenario showcase` (Vorführdaten „Familie Berger“, „Oma & Opa“). Die Live Activity auf dem Sperrbildschirm lässt sich im Simulator nicht aufnehmen; ein Bild davon kann nach dem Apple-Developer-Programm vom echten iPhone ergänzt werden (Screenshot dort ist ebenfalls 1320 × 2868 auf einem 6,9″-Gerät, sonst in App Store Connect als zusätzliche Größe hochladen).
 
 ## Prüfhinweise für Apple (App Review)
 
