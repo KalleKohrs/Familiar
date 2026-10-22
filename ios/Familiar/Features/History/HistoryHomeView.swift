@@ -100,14 +100,17 @@ struct HistoryHomeView: View {
 private struct HistoryRow: View {
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     let task: TaskItem
     let onOpen: () -> Void
 
     var body: some View {
         let kind = HistoryRules.kind(of: task)
-        HStack(alignment: .center, spacing: FamiliarSpacing.s) {
+        let outer = HistoryRowLayout.outer(typeSize)
+        let inner = HistoryRowLayout.inner(typeSize)
+        outer {
             Button(action: onOpen) {
-                HStack(alignment: .top, spacing: FamiliarSpacing.s) {
+                inner {
                     Image(systemName: kind == .deleted ? "trash.circle.fill" : "checkmark.circle.fill")
                         .font(.title2)
                         .foregroundStyle(kind == .deleted ? FamiliarColor.danger : FamiliarColor.success)
@@ -123,7 +126,7 @@ private struct HistoryRow: View {
                         if let days = HistoryRules.daysRemaining(for: task) {
                             Text(days == 1 ? "Noch 1 Tag im Verlauf" : "Noch \(days) Tage im Verlauf")
                                 .font(FamiliarFont.meta)
-                                .foregroundStyle(FamiliarColor.textTertiary)
+                                .foregroundStyle(FamiliarColor.textSecondary)
                         }
                         if session.families.count > 1, let family = session.membership(task.familyID)?.family {
                             FamilyBadge(name: family.name,
@@ -194,6 +197,7 @@ private struct RestoreButton: View {
 private struct SeriesDeletionRow: View {
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     let deletion: SeriesDeletion
     let entry: HistoryEntry
 
@@ -202,8 +206,10 @@ private struct SeriesDeletionRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: FamiliarSpacing.s) {
-            HStack(alignment: .top, spacing: FamiliarSpacing.s) {
+        let outer = HistoryRowLayout.outer(typeSize)
+        let inner = HistoryRowLayout.inner(typeSize)
+        outer {
+            inner {
                 Image(systemName: "repeat.circle.fill")
                     .font(.title2)
                     .foregroundStyle(FamiliarColor.danger)
@@ -223,7 +229,7 @@ private struct SeriesDeletionRow: View {
                     let days = HistoryRules.daysRemaining(for: entry)
                     Text(days == 1 ? "Noch 1 Tag im Verlauf" : "Noch \(days) Tage im Verlauf")
                         .font(FamiliarFont.meta)
-                        .foregroundStyle(FamiliarColor.textTertiary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
                     if session.families.count > 1, let family = session.membership(deletion.familyID)?.family {
                         FamilyBadge(name: family.name,
                                     color: Color(session.familyDisplayColors[deletion.familyID] ?? family.color))
@@ -249,5 +255,21 @@ private struct SeriesDeletionRow: View {
             return String(localized: "Serie gelöscht von \(name) · \(time)")
         }
         return String(localized: "Serie gelöscht · \(time)")
+    }
+}
+
+/// Verlaufszeile: nebeneinander; bei den Bedienungshilfen-Schriftgrößen untereinander, damit Titel
+/// nicht mitten im Wort umbrechen (Symbol oben, Wiederherstellen-Knopf unten).
+private enum HistoryRowLayout {
+    static func outer(_ size: DynamicTypeSize) -> AnyLayout {
+        size.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: FamiliarSpacing.s))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: FamiliarSpacing.s))
+    }
+
+    static func inner(_ size: DynamicTypeSize) -> AnyLayout {
+        size.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: FamiliarSpacing.xs))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: FamiliarSpacing.s))
     }
 }

@@ -111,6 +111,67 @@ extension LocalDate {
     }
 }
 
+/// Wer bei einer Serie zugewiesen wird: alle gemeinsam oder reihum (ADR 0010).
+public enum AssignmentMode: String, Codable, Hashable, Sendable {
+    case together
+    case rotate
+}
+
+/// Wann bei „Reihum“ gewechselt wird.
+public enum RotationUnit: String, Codable, Hashable, Sendable {
+    /// Bei jedem Termin die nächste Person.
+    case occurrence
+    /// Jede Kalenderwoche (ab Montag) die nächste Person.
+    case week
+}
+
+/// Wer bei „Reihum“ dran ist – gleiche Regel wie `private.rotation_index` / `rotation_assignee`
+/// (Migration 0018): Index = Anzahl Serientermine in `[start, Termin)` bzw. Anzahl ganzer Wochen
+/// zwischen den Montagen; dran ist `reihenfolge[index mod n]`.
+public enum RotationRules {
+    public static func index(rule: RecurrenceRule, unit: RotationUnit, start: LocalDate, date: LocalDate) -> Int {
+        switch unit {
+        case .week:
+            let monday = date.adding(days: -(date.isoWeekday - 1))
+            let startMonday = start.adding(days: -(start.isoWeekday - 1))
+            return startMonday.days(until: monday) / 7
+        case .occurrence:
+            guard start < date else { return 0 }
+            return rule.dates(from: start, through: date.adding(days: -1)).count
+        }
+    }
+
+    public static func person(order: [UUID], index: Int) -> UUID? {
+        guard !order.isEmpty else { return nil }
+        let count = order.count
+        return order[((index % count) + count) % count]
+    }
+
+    /// Reihenfolge so gedreht, dass vorne steht, wer bei `index` dran ist (für den Editor:
+    /// „oben = als Nächstes dran“, Speichern ohne Änderung verschiebt nichts).
+    public static func rotated(_ order: [UUID], startingAt index: Int) -> [UUID] {
+        guard !order.isEmpty else { return order }
+        let shift = ((index % order.count) + order.count) % order.count
+        return Array(order[shift...] + order[..<shift])
+    }
+
+    /// Die nächsten Termine ab `from` mit der Person, die dran ist.
+    public static func upcoming(rule: RecurrenceRule, unit: RotationUnit, start: LocalDate, order: [UUID],
+                                from: LocalDate, count: Int) -> [(date: LocalDate, person: UUID)] {
+        guard !order.isEmpty, count > 0 else { return [] }
+        var result: [(date: LocalDate, person: UUID)] = []
+        var day = max(from, start)
+        let limit = day.adding(days: 800)
+        while day <= limit, result.count < count {
+            if rule.matches(day), let person = person(order: order, index: index(rule: rule, unit: unit, start: start, date: day)) {
+                result.append((day, person))
+            }
+            day = day.adding(days: 1)
+        }
+        return result
+    }
+}
+
 /// Serie (`public.task_series`) – so viel, wie die App für Anzeige und Editor braucht.
 public struct TaskSeries: Decodable, Hashable, Identifiable, Sendable {
     public let id: UUID
@@ -119,15 +180,37 @@ public struct TaskSeries: Decodable, Hashable, Identifiable, Sendable {
     public var rule: RecurrenceRule
     public var startDate: LocalDate?
     public var deletedAt: Date?
+    public var assignmentMode: AssignmentMode
+    public var rotationUnit: RotationUnit
+    /// Ab hier wird bei „Reihum“ gezählt (beim Ändern ab einem Termin: dieser Termin).
+    public var rotationStart: LocalDate?
+    /// Zugewiesene der Serie in Reihenfolge (`series_assignees.position`).
+    public var assigneeOrder: [UUID]
 
     public init(id: UUID, familyID: UUID? = nil, title: String? = nil, rule: RecurrenceRule,
-                startDate: LocalDate? = nil, deletedAt: Date? = nil) {
+                startDate: LocalDate? = nil, deletedAt: Date? = nil,
+                assignmentMode: AssignmentMode = .together, rotationUnit: RotationUnit = .occurrence,
+                rotationStart: LocalDate? = nil, assigneeOrder: [UUID] = []) {
         self.id = id
         self.familyID = familyID
         self.title = title
         self.rule = rule
         self.startDate = startDate
         self.deletedAt = deletedAt
+        self.assignmentMode = assignmentMode
+        self.rotationUnit = rotationUnit
+        self.rotationStart = rotationStart
+        self.assigneeOrder = assigneeOrder
+    }
+
+    public var isRotating: Bool { assignmentMode == .rotate }
+
+    /// Wer bei „Reihum“ an `date` dran ist (nur Personen aus `members`, wie auf dem Server).
+    public func rotationPerson(on date: LocalDate, members: Set<UUID>? = nil) -> UUID? {
+        guard isRotating, let start = rotationStart ?? startDate else { return nil }
+        let order = members.map { members in assigneeOrder.filter(members.contains) } ?? assigneeOrder
+        return RotationRules.person(order: order, index: RotationRules.index(rule: rule, unit: rotationUnit,
+                                                                             start: start, date: date))
     }
 
     enum CodingKeys: String, CodingKey {
@@ -136,6 +219,20 @@ public struct TaskSeries: Decodable, Hashable, Identifiable, Sendable {
         case monthDays = "month_days"
         case startDate = "start_date"
         case deletedAt = "deleted_at"
+        case assignmentMode = "assignment_mode"
+        case rotationUnit = "rotation_unit"
+        case rotationStart = "rotation_start"
+        case assignees = "series_assignees"
+    }
+
+    private struct OrderedAssignee: Decodable {
+        let userID: UUID
+        let position: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case userID = "user_id"
+            case position
+        }
     }
 
     public init(from decoder: any Decoder) throws {
@@ -150,8 +247,15 @@ public struct TaskSeries: Decodable, Hashable, Identifiable, Sendable {
         )
         startDate = try container.decodeIfPresent(LocalDate.self, forKey: .startDate)
         deletedAt = try container.decodeIfPresent(Date.self, forKey: .deletedAt)
+        assignmentMode = try container.decodeIfPresent(AssignmentMode.self, forKey: .assignmentMode) ?? .together
+        rotationUnit = try container.decodeIfPresent(RotationUnit.self, forKey: .rotationUnit) ?? .occurrence
+        rotationStart = try container.decodeIfPresent(LocalDate.self, forKey: .rotationStart)
+        assigneeOrder = (try container.decodeIfPresent([OrderedAssignee].self, forKey: .assignees) ?? [])
+            .sorted { ($0.position ?? 0, $0.userID.uuidString) < ($1.position ?? 0, $1.userID.uuidString) }
+            .map(\.userID)
     }
 }
+
 
 /// Verlaufseintrag „Serie gelöscht“ (`public.series_deletions` mit eingebetteter Serie).
 public struct SeriesDeletion: Decodable, Hashable, Identifiable, Sendable {

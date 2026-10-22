@@ -23,6 +23,7 @@ struct FamiliarApp: App {
         let tasks = TaskStore(repository: dependencies.tasks)
         let notifications = NotificationStore(devices: dependencies.devices, isEnabled: dependencies.supportsPush)
         session.beforeSignOut = {
+            WidgetSync.clear()
             await notifications.signOut()
             GoogleSignInFlow.signOut()
         }
@@ -31,6 +32,12 @@ struct FamiliarApp: App {
         TaskCompletionBridge.shared.setHandler { taskID in
             try await repository.complete(taskID: taskID, scope: .me)
             await tasks.reload()
+            // Vor dem Ende des Intents: Danach lädt das System die Widgets neu (Apple, „Adding interactivity…“).
+            await MainActor.run {
+                if let userID = session.userID {
+                    WidgetSync.update(openTasks: tasks.tasks, families: session.families, userID: userID)
+                }
+            }
         }
         _session = State(initialValue: session)
         _avatars = State(initialValue: AvatarImageStore(profiles: dependencies.profiles))

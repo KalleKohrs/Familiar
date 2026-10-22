@@ -100,6 +100,9 @@ struct RootTabView: View {
     /// Nur mit geladener Liste abgleichen – sonst würden laufende Activities fälschlich beendet.
     private func reconcileLiveActivities() async {
         guard tasks.state == .loaded else { return }
+        if let userID = session.userID {
+            WidgetSync.update(openTasks: tasks.tasks, families: session.families, userID: userID)
+        }
         await notifications.refreshAuthorization()
         await notifications.reconcile(openTasks: tasks.tasks, families: session.families)
     }

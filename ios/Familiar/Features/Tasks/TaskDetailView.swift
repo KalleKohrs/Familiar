@@ -124,10 +124,14 @@ struct TaskDetailView: View {
                     .textSelection(.enabled)
             }
             TaskMetaTags(task: task)
+            if let rotation = rotationText(task) {
+                FamiliarTag(rotation, systemImage: "arrow.triangle.2.circlepath", tone: .neutral)
+                    .accessibilityIdentifier("task.rotation")
+            }
             if task.isOccurrence && task.isDetached {
                 Text("Dieses Vorkommen wurde einzeln geändert; Änderungen an der Serie gelten hier nicht.")
                     .font(FamiliarFont.meta)
-                    .foregroundStyle(FamiliarColor.textTertiary)
+                    .foregroundStyle(FamiliarColor.textSecondary)
             }
             if !task.isOpen {
                 FamiliarTag(task.deletedAt != nil ? "Gelöscht" : "Erledigt",
@@ -140,7 +144,7 @@ struct TaskDetailView: View {
             if let creator = task.createdBy {
                 Text("Erstellt von \(session.displayName(of: creator, in: task.familyID))")
                     .font(FamiliarFont.meta)
-                    .foregroundStyle(FamiliarColor.textTertiary)
+                    .foregroundStyle(FamiliarColor.textSecondary)
             }
         }
     }
@@ -169,6 +173,10 @@ struct TaskDetailView: View {
                     }
                     .padding(.vertical, FamiliarSpacing.xs)
                     .accessibilityElement(children: .combine)
+                    if canNudge(assignee, in: task) {
+                        nudgeButton(task: task, userID: assignee.userID, name: name)
+                            .padding(.bottom, FamiliarSpacing.xs)
+                    }
                     if assignee.id != task.assignees.last?.id {
                         Divider().overlay(FamiliarColor.hairline)
                     }
@@ -176,6 +184,43 @@ struct TaskDetailView: View {
             }
             .familiarCard(padding: FamiliarSpacing.s)
         }
+    }
+
+    // MARK: Reihum und Anstupsen (ADR 0010)
+
+    /// „Reihum · nächstes Mal: Mia“ für Vorkommen einer Reihum-Serie.
+    private func rotationText(_ task: TaskItem) -> String? {
+        guard let series = task.series, series.isRotating, let date = task.occurrenceDate,
+              let start = series.rotationStart ?? series.startDate else { return nil }
+        let members = Set(session.membership(task.familyID)?.members.map(\.userID) ?? [])
+        let order = series.assigneeOrder.filter(members.contains)
+        guard let next = RotationRules.upcoming(rule: series.rule, unit: series.rotationUnit, start: start,
+                                                order: order, from: date.adding(days: 1), count: 1).first else {
+            return String(localized: "Reihum")
+        }
+        return String(localized: "Reihum · nächstes Mal: \(session.displayName(of: next.person, in: task.familyID))")
+    }
+
+    /// Erinnern geht bei offenen Aufgaben an Personen, die ihren Teil noch nicht erledigt haben – nie an sich selbst.
+    private func canNudge(_ assignee: TaskAssignee, in task: TaskItem) -> Bool {
+        task.isOpen && !assignee.isDone && assignee.userID != session.userID
+            && session.member(assignee.userID, in: task.familyID) != nil
+    }
+
+    private func nudgeButton(task: TaskItem, userID: UUID, name: String) -> some View {
+        let recently = store.wasNudgedRecently(task.id, userID)
+        return Button {
+            Task { await store.nudge(task, userID: userID, name: name) }
+        } label: {
+            Label(recently ? "Erinnert" : "Erinnern", systemImage: recently ? "bell.badge" : "bell")
+                .font(FamiliarFont.secondary.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: FamiliarSize.minimumTouchTarget)
+        }
+        .buttonStyle(.familiarSecondary)
+        .disabled(recently)
+        .accessibilityLabel(recently ? "\(name) wurde erinnert" : "\(name) erinnern")
+        .accessibilityHint("Schickt \(name) eine freundliche Mitteilung zu dieser Aufgabe.")
+        .accessibilityIdentifier("task.nudge.\(name)")
     }
 
     private func imagesSection(_ task: TaskItem) -> some View {

@@ -67,6 +67,25 @@ public protocol TaskRepository: Sendable {
     func imageURL(path: String) async throws(FamiliarError) -> URL
     /// Hinweise „Aufgabe geändert“ (Realtime); der Inhalt wird danach neu geladen.
     func changes(for userID: UUID) -> AsyncStream<UUID>
+    /// Erinnert eine zugewiesene, noch offene Person (höchstens einmal pro Stunde; nachts erst um 7 Uhr).
+    func nudge(taskID: UUID, userID: UUID) async throws(FamiliarError) -> NudgeResult
+}
+
+/// Ergebnis von `nudge_task`: Wann die Erinnerung zugestellt wird.
+public struct NudgeResult: Decodable, Hashable, Sendable {
+    public let scheduledFor: Date
+    /// `true`, wenn wegen der Ruhezeit (21–7 Uhr) erst morgens zugestellt wird.
+    public let quietHours: Bool
+
+    public init(scheduledFor: Date, quietHours: Bool) {
+        self.scheduledFor = scheduledFor
+        self.quietHours = quietHours
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case scheduledFor = "scheduled_for"
+        case quietHours = "quiet_hours"
+    }
 }
 
 public protocol FamilyRepository: Sendable {

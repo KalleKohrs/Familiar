@@ -33,6 +33,10 @@ final class TaskStore {
     private(set) var state: LoadState = .idle
     private(set) var undo: UndoOffer?
     private(set) var actionError: String?
+    /// Neutraler Hinweis unten (z. B. „Mia wird erinnert“).
+    private(set) var info: String?
+    /// Anstupsen: Zeitpunkt je Aufgabe und Person, um den Knopf eine Stunde lang als „Erinnert“ zu zeigen.
+    private(set) var nudgedAt: [String: Date] = [:]
     private(set) var busyTaskIDs: Set<UUID> = []
     /// Verlauf: erledigte und gelöschte Aufgaben sowie gelöschte Serien der letzten 30 Tage, neueste zuerst.
     private(set) var history: [HistoryEntry] = []
@@ -243,10 +247,41 @@ final class TaskStore {
     func dismissBanner() {
         undo = nil
         actionError = nil
+        info = nil
+    }
+
+    /// Erinnert eine zugewiesene Person an eine offene Aufgabe (ADR 0010).
+    func nudge(_ task: TaskItem, userID: UUID, name: String) async {
+        do throws(FamiliarError) {
+            let result = try await repository.nudge(taskID: task.id, userID: userID)
+            nudgedAt[Self.nudgeKey(task.id, userID)] = .now
+            showInfo(result.quietHours
+                     ? String(localized: "\(name) wird morgen um 7 Uhr erinnert.")
+                     : String(localized: "\(name) wird erinnert."))
+        } catch {
+            if case .app(.nudgeTooSoon, _) = error { nudgedAt[Self.nudgeKey(task.id, userID)] = .now }
+            showError(error.message)
+        }
+    }
+
+    /// Wurde die Person in der letzten Stunde von hier aus erinnert?
+    func wasNudgedRecently(_ taskID: UUID, _ userID: UUID) -> Bool {
+        guard let date = nudgedAt[Self.nudgeKey(taskID, userID)] else { return false }
+        return Date.now.timeIntervalSince(date) < 3600
+    }
+
+    private static func nudgeKey(_ taskID: UUID, _ userID: UUID) -> String { "\(taskID)-\(userID)" }
+
+    private func showInfo(_ message: String) {
+        undo = nil
+        actionError = nil
+        info = message
+        scheduleBannerDismissal()
     }
 
     private func offerUndo(_ taskID: UUID, message: String, kind: UndoOffer.Kind) {
         actionError = nil
+        info = nil
         undo = UndoOffer(taskID: taskID, message: message, kind: kind)
         scheduleBannerDismissal()
     }
@@ -258,6 +293,7 @@ final class TaskStore {
 
     private func showError(_ message: String) {
         undo = nil
+        info = nil
         actionError = message
         scheduleBannerDismissal()
     }

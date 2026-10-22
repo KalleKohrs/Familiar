@@ -103,7 +103,12 @@ struct TaskEditorView: View {
                 }
                 startSection
                 assigneesSection.id(Anchor.assignees)
-                modeSection.id(Anchor.mode)
+                if draft.recurrence != nil && draft.assigneeIDs.count > 1 {
+                    rotationSection
+                }
+                if !draft.isRotating {
+                    modeSection.id(Anchor.mode)
+                }
                 imagesSection.id(Anchor.images)
             }
             .onChange(of: invalidSaveAttempts) { _, _ in
@@ -418,6 +423,107 @@ struct TaskEditorView: View {
         .listRowBackground(FamiliarColor.card)
     }
 
+    // MARK: Reihum (ADR 0010)
+
+    /// Bei Serien mit mehreren Personen: alle gemeinsam oder reihum. Oben steht, wer als Nächstes dran ist.
+    private var rotationSection: some View {
+        Section {
+            Toggle("Reihum", isOn: Binding(
+                get: { draft.assignmentMode == .rotate },
+                set: { draft.assignmentMode = $0 ? .rotate : .together }
+            ).animation(FamiliarMotion.animation(reduceMotion: reduceMotion)))
+            .tint(FamiliarColor.accentFill)
+            .accessibilityIdentifier("editor.rotation")
+
+            if draft.isRotating {
+                if draft.offersWeeklyRotation {
+                    Picker("Wechsel", selection: $draft.rotationUnit) {
+                        Text("Jeder Termin").tag(RotationUnit.occurrence)
+                        Text("Jede Woche").tag(RotationUnit.week)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("editor.rotationUnit")
+                }
+                ForEach(Array(draft.assigneeIDs.enumerated()), id: \.element) { index, userID in
+                    rotationRow(index: index, userID: userID)
+                }
+                if !rotationPreview.isEmpty {
+                    VStack(alignment: .leading, spacing: FamiliarSpacing.xxs) {
+                        Text("Nächste Termine")
+                            .font(FamiliarFont.meta.weight(.semibold))
+                            .foregroundStyle(FamiliarColor.textSecondary)
+                        ForEach(rotationPreview, id: \.date) { entry in
+                            Text("\(previewDate(entry.date)) · \(name(of: entry.person))")
+                                .font(FamiliarFont.secondary)
+                                .foregroundStyle(FamiliarColor.textPrimary)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("editor.rotationPreview")
+                }
+            }
+        } header: {
+            Text("Wer ist dran?")
+        } footer: {
+            if draft.isRotating {
+                Text("Pro Termin ist genau eine Person dran, oben beginnt es. Einzelne Termine kannst du später tauschen, indem du nur diesen Termin bearbeitest.")
+            } else {
+                Text("Aus: Alle Zugewiesenen bekommen jeden Termin. An: Die Personen wechseln sich ab.")
+            }
+        }
+        .listRowBackground(FamiliarColor.card)
+    }
+
+    private func rotationRow(index: Int, userID: UUID) -> some View {
+        HStack(spacing: FamiliarSpacing.s) {
+            Text("\(index + 1).")
+                .font(FamiliarFont.secondary.monospacedDigit())
+                .foregroundStyle(FamiliarColor.textSecondary)
+            Text(name(of: userID))
+                .foregroundStyle(FamiliarColor.textPrimary)
+            Spacer(minLength: 0)
+            Button {
+                draft.moveAssignee(userID, by: -1)
+            } label: {
+                Image(systemName: "arrow.up")
+                    .frame(width: FamiliarSize.minimumTouchTarget, height: FamiliarSize.minimumTouchTarget)
+            }
+            .disabled(index == 0)
+            .accessibilityLabel("\(name(of: userID)) nach oben")
+            Button {
+                draft.moveAssignee(userID, by: 1)
+            } label: {
+                Image(systemName: "arrow.down")
+                    .frame(width: FamiliarSize.minimumTouchTarget, height: FamiliarSize.minimumTouchTarget)
+            }
+            .disabled(index == draft.assigneeIDs.count - 1)
+            .accessibilityLabel("\(name(of: userID)) nach unten")
+        }
+        .buttonStyle(.borderless)
+        .tint(FamiliarColor.accent)
+        .accessibilityIdentifier("editor.rotation.\(name(of: userID))")
+    }
+
+    /// Die nächsten vier Termine mit Person, so wie der Server sie verteilen wird.
+    private var rotationPreview: [(date: LocalDate, person: UUID)] {
+        guard draft.isRotating, let rule = draft.recurrence?.normalized, rule.isComplete else { return [] }
+        let unit = draft.effectiveRotationUnit
+        // Beim Ändern beginnt die Reihe mit dem bearbeiteten Termin.
+        let start = editingTask?.occurrenceDate ?? draft.date
+        let today = LocalDate(.now, timeZone: timeZone)
+        return RotationRules.upcoming(rule: rule, unit: unit, start: start, order: draft.assigneeIDs,
+                                      from: max(start, today), count: 4)
+    }
+
+    private func previewDate(_ date: LocalDate) -> String {
+        date.date(at: LocalTime(hour: 12, minute: 0), in: timeZone)
+            .formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+    }
+
+    private func name(of userID: UUID) -> String {
+        members.first { $0.userID == userID }?.displayName ?? String(localized: "Ehemaliges Mitglied")
+    }
+
     /// Zwei kompakte Kacheln nebeneinander (wie die Aktionskacheln der Design-Referenz);
     /// die Erklärung steht nur einmal darunter – für die gewählte Art.
     private var modeSection: some View {
@@ -509,7 +615,7 @@ struct TaskEditorView: View {
         case .familyMissing: .family
         case .titleMissing, .titleTooLong, .descriptionTooLong: .title
         case .recurrenceIncomplete: .repeating
-        case .assigneesMissing: .assignees
+        case .assigneesMissing, .rotationNeedsTwo: .assignees
         case .completionModeMissing: .mode
         case .tooManyImages: .images
         }
@@ -626,6 +732,7 @@ struct TaskEditorView: View {
             case .completionModeMissing: String(localized: "Erledigungsart")
             case .tooManyImages: String(localized: "höchstens 10 Bilder")
             case .recurrenceIncomplete: String(localized: "mindestens ein Tag für die Wiederholung")
+            case .rotationNeedsTwo: String(localized: "mindestens zwei Personen für „Reihum“")
             }
         }
         return String(localized: "Noch offen: \(parts.formatted(.list(type: .and)))")

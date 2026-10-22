@@ -9,11 +9,13 @@ public struct ProjectedOccurrence: Hashable, Identifiable, Sendable {
     public var timezone: String
     public var title: String
     public var rule: RecurrenceRule?
+    /// Bei „Reihum“: wer an diesem Termin dran ist.
+    public var rotationPerson: UUID?
 
     public var id: String { "\(seriesID)-\(date)" }
 
     public init(seriesID: UUID, familyID: UUID, date: LocalDate, startTime: LocalTime?, timezone: String,
-                title: String, rule: RecurrenceRule? = nil) {
+                title: String, rule: RecurrenceRule? = nil, rotationPerson: UUID? = nil) {
         self.seriesID = seriesID
         self.familyID = familyID
         self.date = date
@@ -21,6 +23,7 @@ public struct ProjectedOccurrence: Hashable, Identifiable, Sendable {
         self.timezone = timezone
         self.title = title
         self.rule = rule
+        self.rotationPerson = rotationPerson
     }
 }
 

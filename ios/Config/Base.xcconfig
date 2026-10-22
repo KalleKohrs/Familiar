@@ -45,6 +45,8 @@ MTL_ENABLE_DEBUG_INFO[config=Release] = NO
 // Platzhalter – werden durch Local.xcconfig überschrieben.
 FAMILIAR_DEVELOPMENT_TEAM =
 FAMILIAR_BUNDLE_ID = com.example.familiar
+// Gemeinsamer Speicher von App und Widgets (Schnappschuss „Heute“, ADR 0010).
+FAMILIAR_APP_GROUP = group.$(FAMILIAR_BUNDLE_ID)
 
 #include "Supabase.xcconfig"
 #include "Google.xcconfig"

@@ -48,6 +48,8 @@ public enum GoogleSignInFlow {
 /// Auf hellem Grund mit grauem Rand (Googles „Light“-Variante, Rand #747775).
 public struct GoogleSignInButtonView: View {
     @Environment(\.colorScheme) private var colorScheme
+    /// Googles Vorgabe 19 pt, wächst mit der Systemschriftgröße (begrenzt, damit der Knopf passt).
+    @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 19
     let action: () -> Void
 
     public init(action: @escaping () -> Void) {
@@ -64,10 +66,13 @@ public struct GoogleSignInButtonView: View {
                         .accessibilityHidden(true)
                 }
                 Text("Mit Google anmelden")
-                    .font(.system(size: 19, weight: .medium))
+                    .font(.system(size: min(fontSize, 30), weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .foregroundStyle(Color(white: 0.12))
             }
             .frame(maxWidth: .infinity, minHeight: 50)
+            .padding(.horizontal, 12)
             .background(Capsule().fill(.white))
             .overlay {
                 if colorScheme == .light {

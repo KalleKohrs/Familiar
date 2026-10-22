@@ -56,6 +56,9 @@ public struct TaskInput: Hashable, Sendable {
     public var images: [TaskImageReference]
     /// Wiederholungsregel (normalisiert); `nil` bei Einzelaufgaben. Dann ist `startDate` gesetzt.
     public var recurrence: RecurrenceRule?
+    /// Nur bei Serien: alle gemeinsam oder reihum (Reihenfolge = `assigneeIDs`).
+    public var assignmentMode: AssignmentMode
+    public var rotationUnit: RotationUnit
 
     public init(
         familyID: UUID,
@@ -67,7 +70,9 @@ public struct TaskInput: Hashable, Sendable {
         completionMode: CompletionMode,
         assigneeIDs: [UUID],
         images: [TaskImageReference],
-        recurrence: RecurrenceRule? = nil
+        recurrence: RecurrenceRule? = nil,
+        assignmentMode: AssignmentMode = .together,
+        rotationUnit: RotationUnit = .occurrence
     ) {
         self.familyID = familyID
         self.title = title
@@ -79,6 +84,8 @@ public struct TaskInput: Hashable, Sendable {
         self.assigneeIDs = assigneeIDs
         self.images = images
         self.recurrence = recurrence
+        self.assignmentMode = assignmentMode
+        self.rotationUnit = rotationUnit
     }
 }
 
@@ -102,6 +109,9 @@ public struct TaskDraft: Hashable, Sendable {
     public var images: [DraftImage] = []
     /// `nil` = keine Wiederholung. Eine Wiederholung braucht ein Startdatum (erstes Vorkommen).
     public var recurrence: RecurrenceRule?
+    /// Bei Serien: alle gemeinsam oder reihum in der Reihenfolge von `assigneeIDs`.
+    public var assignmentMode: AssignmentMode = .together
+    public var rotationUnit: RotationUnit = .occurrence
 
     public init(familyID: UUID?, now: Date = .now, timeZone: TimeZone = .current) {
         self.familyID = familyID
@@ -129,7 +139,31 @@ public struct TaskDraft: Hashable, Sendable {
         assigneeIDs = task.assignees.map(\.userID)
         images = task.images.map(DraftImage.existing)
         recurrence = task.series?.rule
+        if let series = task.series, series.isRotating {
+            assignmentMode = .rotate
+            rotationUnit = series.rotationUnit
+            // Reihenfolge so, dass oben steht, wer bei diesem Termin dran ist.
+            let order = series.assigneeOrder.isEmpty ? assigneeIDs : series.assigneeOrder
+            if let start = series.rotationStart ?? series.startDate, let date = task.occurrenceDate {
+                assigneeIDs = RotationRules.rotated(
+                    order, startingAt: RotationRules.index(rule: series.rule, unit: series.rotationUnit,
+                                                           start: start, date: date))
+            } else {
+                assigneeIDs = order
+            }
+        }
     }
+
+    /// Serie mit „Reihum“: pro Termin genau eine Person, Erledigungsart entfällt.
+    public var isRotating: Bool { recurrence != nil && assignmentMode == .rotate }
+
+    /// Wöchentlicher Wechsel nur, wenn es mehrere Termine pro Woche gibt (täglich oder mehrere Wochentage).
+    public var offersWeeklyRotation: Bool {
+        guard let rule = recurrence?.normalized else { return false }
+        return rule.frequency == .daily || (rule.frequency == .weekly && rule.weekdays.count > 1)
+    }
+
+    public var effectiveRotationUnit: RotationUnit { offersWeeklyRotation ? rotationUnit : .occurrence }
 
     /// Mit Wiederholung ist das Datum immer gesetzt (erstes bzw. dieses Vorkommen).
     public var usesDate: Bool { hasDate || recurrence != nil }
@@ -143,6 +177,7 @@ public struct TaskDraft: Hashable, Sendable {
         case completionModeMissing
         case tooManyImages
         case recurrenceIncomplete
+        case rotationNeedsTwo
     }
 
     public var issues: [Issue] {
@@ -156,6 +191,7 @@ public struct TaskDraft: Hashable, Sendable {
         if effectiveCompletionMode == nil { issues.append(.completionModeMissing) }
         if images.count > Self.maxImages { issues.append(.tooManyImages) }
         if let recurrence, !recurrence.isComplete { issues.append(.recurrenceIncomplete) }
+        if isRotating && assigneeIDs.count < 2 { issues.append(.rotationNeedsTwo) }
         return issues
     }
 
@@ -163,10 +199,20 @@ public struct TaskDraft: Hashable, Sendable {
 
     /// Erst ab zwei Personen macht die Erledigungsart einen Unterschied – dann muss sie bewusst
     /// gewählt werden (Guide, Abschnitt 3). Bei einer Person gilt „Eine für alle“.
-    public var needsCompletionModeChoice: Bool { assigneeIDs.count > 1 }
+    /// Bei „Reihum“ ist pro Termin nur eine Person zugewiesen – keine Wahl nötig.
+    public var needsCompletionModeChoice: Bool { assigneeIDs.count > 1 && !isRotating }
 
     public var effectiveCompletionMode: CompletionMode? {
-        needsCompletionModeChoice ? completionMode : (completionMode ?? .anyOne)
+        if isRotating { return .anyOne }
+        return needsCompletionModeChoice ? completionMode : (completionMode ?? .anyOne)
+    }
+
+    /// Reihenfolge bei „Reihum“ ändern (oben = als Nächstes dran).
+    public mutating func moveAssignee(_ userID: UUID, by offset: Int) {
+        guard let index = assigneeIDs.firstIndex(of: userID) else { return }
+        let target = index + offset
+        guard assigneeIDs.indices.contains(target) else { return }
+        assigneeIDs.swapAt(index, target)
     }
 
     public mutating func toggleAssignee(_ userID: UUID) {
@@ -196,7 +242,9 @@ public struct TaskDraft: Hashable, Sendable {
                 case .new(let image): TaskImageReference(id: image.id, width: image.width, height: image.height)
                 }
             },
-            recurrence: recurrence?.normalized
+            recurrence: recurrence?.normalized,
+            assignmentMode: isRotating ? .rotate : .together,
+            rotationUnit: effectiveRotationUnit
         )
     }
 }

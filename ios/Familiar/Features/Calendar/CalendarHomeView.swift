@@ -122,7 +122,7 @@ struct CalendarHomeView: View {
                 ForEach(RecurrenceFormatting.weekdayOrder, id: \.self) { weekday in
                     Text(RecurrenceFormatting.shortWeekday(weekday))
                         .font(FamiliarFont.caption)
-                        .foregroundStyle(FamiliarColor.textTertiary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -273,7 +273,7 @@ struct CalendarHomeView: View {
         } else if dayEntries.isEmpty {
             Text("Nichts geplant.")
                 .font(FamiliarFont.secondary)
-                .foregroundStyle(FamiliarColor.textTertiary)
+                .foregroundStyle(FamiliarColor.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, FamiliarSpacing.xxs)
         } else {
@@ -298,6 +298,9 @@ struct CalendarHomeView: View {
 /// Eine Zeile der Tagesliste: Uhrzeit links, Titel mit Familie, Status rechts.
 private struct CalendarEntryRow: View {
     @Environment(SessionStore.self) private var session
+    /// Breite der Zeitspalte in der Tagesliste, wächst mit der Schriftgröße.
+    @ScaledMetric(relativeTo: .footnote) private var timeColumnWidth: CGFloat = 52
+    @Environment(\.dynamicTypeSize) private var typeSize
     let entry: CalendarEntry
     let onOpen: (UUID) -> Void
 
@@ -313,8 +316,7 @@ private struct CalendarEntryRow: View {
             .accessibilityIdentifier("calendar.task.\(task.title)")
         case .projected(let occurrence):
             row(time: timeText(occurrence.startTime), title: occurrence.title, familyID: occurrence.familyID,
-                subtitle: occurrence.rule.map(RecurrenceFormatting.summary) ?? String(localized: "Serie"),
-                done: false, planned: true)
+                subtitle: plannedSubtitle(occurrence), done: false, planned: true)
                 .accessibilityHint("Geplanter Termin einer Serie; erscheint als Aufgabe, sobald er an der Reihe ist.")
         case .external(let event):
             row(time: event.isAllDay ? String(localized: "Ganzer Tag") : timeText(LocalTime(event.startsAt, timeZone: .current)),
@@ -333,13 +335,18 @@ private struct CalendarEntryRow: View {
 
     private func row(time: String, title: String, familyID: UUID?, subtitle: String?, done: Bool, planned: Bool,
                      externalProvider: String? = nil) -> some View {
-        HStack(alignment: .center, spacing: FamiliarSpacing.s) {
+        // Bei den Bedienungshilfen-Schriftgrößen steht die Zeit über dem Titel (sonst Silbentrennung).
+        let stacked = typeSize.isAccessibilitySize
+        let layout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: FamiliarSpacing.xxs))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: FamiliarSpacing.s))
+        return layout {
             Text(time)
                 .font(FamiliarFont.time)
                 .foregroundStyle(FamiliarColor.textSecondary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-                .frame(width: 52, alignment: .leading)
+                // Spalte wächst mit der Schriftgröße, damit „Ganzer Tag“ nicht abgeschnitten wird.
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(width: stacked ? nil : timeColumnWidth, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(FamiliarFont.body.weight(.medium))
@@ -368,7 +375,7 @@ private struct CalendarEntryRow: View {
             } else if planned {
                 Text("Geplant")
                     .font(FamiliarFont.caption)
-                    .foregroundStyle(FamiliarColor.textTertiary)
+                    .foregroundStyle(FamiliarColor.textSecondary)
             } else if let externalProvider {
                 // Persönlicher Termin: eigenes Kennzeichen, kein Abhaken.
                 Label(externalProvider, systemImage: "calendar")
@@ -385,6 +392,13 @@ private struct CalendarEntryRow: View {
         .frame(minHeight: FamiliarSize.minimumTouchTarget)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+    }
+
+    /// Regel der Serie; bei „Reihum“ mit der Person, die an diesem Termin dran ist.
+    private func plannedSubtitle(_ occurrence: ProjectedOccurrence) -> String {
+        let rule = occurrence.rule.map(RecurrenceFormatting.summary) ?? String(localized: "Serie")
+        guard let person = occurrence.rotationPerson else { return rule }
+        return String(localized: "Reihum: \(session.displayName(of: person, in: occurrence.familyID)) · \(rule)")
     }
 
     private func timeText(_ time: LocalTime?) -> String {

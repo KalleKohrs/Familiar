@@ -73,4 +73,10 @@ public enum AppErrorKey: String, CaseIterable, Hashable, Sendable {
     case permissionDeniedDeleteTasks = "permission_denied_delete_tasks"
     // Kalender (Migration 0011)
     case calendarNotFound = "calendar_not_found"
+    // Reihum und Anstupsen (Migration 0018)
+    case invalidRotation = "invalid_rotation"
+    case rotationNeedsTwo = "rotation_needs_two"
+    case nudgeSelf = "nudge_self"
+    case nudgeNotOpen = "nudge_not_open"
+    case nudgeTooSoon = "nudge_too_soon"
 }

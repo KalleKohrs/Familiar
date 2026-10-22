@@ -443,6 +443,15 @@ struct TaskBanner: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("banner.undo")
                 }
+            } else if let info = store.info {
+                banner(text: info, systemImage: "bell.circle.fill", tint: FamiliarColor.accent) {
+                    Button { store.dismissBanner() } label: {
+                        Image(systemName: "xmark").frame(width: 44, height: 44)
+                    }
+                    .foregroundStyle(FamiliarColor.textSecondary)
+                    .accessibilityLabel("Hinweis schließen")
+                }
+                .accessibilityIdentifier("banner.info")
             } else if let error = store.actionError {
                 banner(text: error, systemImage: "exclamationmark.circle.fill", tint: FamiliarColor.danger) {
                     Button { store.dismissBanner() } label: {
@@ -457,7 +466,8 @@ struct TaskBanner: View {
         .padding(.bottom, tabBarHeight + FamiliarSpacing.s)
         .familiarAnimation(value: store.undo?.id)
         .familiarAnimation(value: store.actionError)
-        .announcesChanges(of: store.undo?.message ?? store.actionError)
+        .familiarAnimation(value: store.info)
+        .announcesChanges(of: store.undo?.message ?? store.actionError ?? store.info)
     }
 
     private func banner(text: String, systemImage: String, tint: Color, @ViewBuilder action: () -> some View) -> some View {

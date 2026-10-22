@@ -1,4 +1,4 @@
-// Widget-Extension „FamiliarWidgets“ (Live Activities)
+// Widget-Extension „FamiliarWidgets“ (Live Activities, Widgets „Heute“)
 
 PRODUCT_NAME = $(TARGET_NAME)
 PRODUCT_BUNDLE_IDENTIFIER = $(FAMILIAR_BUNDLE_ID).LiveActivity
@@ -9,3 +9,4 @@ SKIP_INSTALL = YES
 APPLICATION_EXTENSION_API_ONLY = YES
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks @executable_path/../../Frameworks
 SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor
+CODE_SIGN_ENTITLEMENTS = Config/FamiliarWidgets.entitlements

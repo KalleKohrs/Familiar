@@ -140,6 +140,8 @@ function alertFor(job: Job): { title: string; body: string } | null {
       return { title: job.title ?? "Aufgabe", body: `${who} hat ${quoted(job.title)} geändert` };
     case "deleted":
       return { title: job.title ?? "Aufgabe", body: `${who} hat ${quoted(job.title)} gelöscht` };
+    case "nudge":
+      return { title: job.title ?? "Aufgabe", body: `${who} erinnert dich daran · ${family}` };
     default:
       return null;
   }
@@ -175,7 +177,8 @@ async function handle(job: Job, jwt: string, topic: string, startedActivity: Set
     else failures.push(r);
   };
 
-  const timely = ["started", "reminder", "activity_start"].includes(job.kind);
+  // Erinnerungen und Anstupsen nur, solange die Person noch offen ist.
+  const timely = ["started", "reminder", "activity_start", "nudge"].includes(job.kind);
   if (timely && !job.is_open) return { id: job.id, status: "skipped", error: "task_closed" };
 
   if (job.kind === "activity_start") {

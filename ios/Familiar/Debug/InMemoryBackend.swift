@@ -39,6 +39,10 @@ actor InMemoryBackend {
     private var imageFiles: [String: URL] = [:]
     private var seriesRecords: [UUID: SeriesRecord] = [:]
     private var deletions: [UUID: SeriesDeletion] = [:]
+    /// Anstupsen: letzter Zeitpunkt je Aufgabe und Person (Grenze 1 Stunde wie `nudge_task`).
+    private var nudges: [String: Date] = [:]
+    /// Für Tests: angelegte Erinnerungen (Aufgabe, Empfänger).
+    private(set) var sentNudges: [(taskID: UUID, userID: UUID)] = []
 
     /// Serie mit Vorlage für neue Vorkommen und Wasserstandsmarke (wie `task_series`).
     private struct SeriesRecord {
@@ -504,14 +508,34 @@ extension InMemoryBackend: TaskRepository {
             let task = TaskItem(id: UUID(), familyID: input.familyID, createdBy: record.createdBy, title: input.title,
                                 description: input.description, startDate: date, startTime: input.startTime,
                                 timezone: input.timezone, startsAt: startsAt(input), completionMode: input.completionMode,
-                                assignees: input.assigneeIDs.map { TaskAssignee(userID: $0) }, images: images(for: input),
-                                seriesID: seriesID, occurrenceDate: date, series: record.info)
+                                assignees: occurrenceAssignees(record, on: date).map { TaskAssignee(userID: $0) },
+                                images: images(for: input), seriesID: seriesID, occurrenceDate: date, series: record.info)
             tasks[task.id] = task
         }
         if let last = dates.last {
             record.generatedUntil = max(record.generatedUntil ?? last, last)
             seriesRecords[seriesID] = record
         }
+    }
+
+    /// Wie `private.occurrence_assignees`: alle Zugewiesenen oder bei „Reihum“ die Person, die dran ist.
+    private func occurrenceAssignees(_ record: SeriesRecord, on date: LocalDate) -> [UUID] {
+        let memberIDs = Set((members[record.input.familyID] ?? []).map(\.userID))
+        if record.info.isRotating {
+            return record.info.rotationPerson(on: date, members: memberIDs).map { [$0] } ?? []
+        }
+        return record.input.assigneeIDs.filter(memberIDs.contains)
+    }
+
+    /// Wie `private.validate_rotation`: Reihum braucht zwei Personen und gilt immer als „eine Person“.
+    private func validatedRotation(_ input: TaskInput) throws(FamiliarError) -> TaskInput {
+        guard input.assignmentMode == .rotate else { return input }
+        guard Set(input.assigneeIDs).count >= 2 else {
+            throw .app(key: .rotationNeedsTwo, message: "Für „Reihum“ braucht es mindestens zwei Personen.")
+        }
+        var input = input
+        input.completionMode = .anyOne
+        return input
     }
 
     func createSeries(_ input: TaskInput) async throws(FamiliarError) {
@@ -523,15 +547,18 @@ extension InMemoryBackend: TaskRepository {
             throw .app(key: .invalidRecurrence, message: "Bitte wähle für die Wiederholung mindestens einen Wochentag bzw. Monatstag.")
         }
         let today = today(input.timezone)
-        var normalizedInput = input
+        var normalizedInput = try validatedRotation(input)
         normalizedInput.recurrence = rule
-        let info = TaskSeries(id: UUID(), familyID: input.familyID, title: input.title, rule: rule, startDate: start)
+        let info = TaskSeries(id: UUID(), familyID: input.familyID, title: input.title, rule: rule, startDate: start,
+                              assignmentMode: input.assignmentMode, rotationUnit: input.rotationUnit,
+                              rotationStart: start, assigneeOrder: input.assigneeIDs)
         seriesRecords[info.id] = SeriesRecord(info: info, input: normalizedInput, createdBy: me,
                                               generatedUntil: start < today ? today.adding(days: -1) : nil)
         generate(info.id)
     }
 
-    func updateSeries(fromTaskID taskID: UUID, expectedVersion: Int, _ input: TaskInput) async throws(FamiliarError) -> TaskItem {
+    func updateSeries(fromTaskID taskID: UUID, expectedVersion: Int, _ originalInput: TaskInput) async throws(FamiliarError) -> TaskItem {
+        let input = try validatedRotation(originalInput)
         let task = try visibleTask(taskID)
         guard let seriesID = task.seriesID, var record = seriesRecords[seriesID],
               let occurrenceDate = task.occurrenceDate else {
@@ -544,12 +571,17 @@ extension InMemoryBackend: TaskRepository {
         let today = today(input.timezone)
         record.info.title = input.title
         record.info.rule = rule
+        record.info.assignmentMode = input.assignmentMode
+        record.info.rotationUnit = input.rotationUnit
+        record.info.rotationStart = occurrenceDate
+        record.info.assigneeOrder = input.assigneeIDs
         record.input = input
         record.input.recurrence = rule
         seriesRecords[seriesID] = record
 
         var updated = try await updateTask(id: taskID, expectedVersion: expectedVersion, input)
         updated.series = record.info
+        updated.assignees = occurrenceAssignees(record, on: occurrenceDate).map { TaskAssignee(userID: $0) }
         updated.isDetached = task.isDetached // „Dieses und zukünftige“ koppelt nicht ab
         tasks[taskID] = updated
         let later = tasks.values.filter {
@@ -567,7 +599,8 @@ extension InMemoryBackend: TaskRepository {
                 other.startTime = input.startTime
                 other.startsAt = startsAt(otherInput)
                 other.completionMode = input.completionMode
-                other.assignees = input.assigneeIDs.map { TaskAssignee(userID: $0) }
+                other.assignees = occurrenceAssignees(record, on: other.occurrenceDate ?? occurrenceDate)
+                    .map { TaskAssignee(userID: $0) }
                 other.images = images(for: input)
                 other.series = record.info
                 other.version += 1
@@ -642,9 +675,30 @@ extension InMemoryBackend: TaskRepository {
             return rule.dates(from: lower, through: through).map { date in
                 ProjectedOccurrence(seriesID: record.info.id, familyID: record.input.familyID, date: date,
                                     startTime: record.input.startTime, timezone: record.input.timezone,
-                                    title: record.input.title, rule: rule)
+                                    title: record.input.title, rule: rule,
+                                    rotationPerson: occurrenceAssignees(record, on: date).first.flatMap {
+                                        record.info.isRotating ? $0 : nil
+                                    })
             }
         }
+    }
+
+    func nudge(taskID: UUID, userID: UUID) async throws(FamiliarError) -> NudgeResult {
+        let me = try requireUser()
+        let task = try visibleTask(taskID)
+        guard userID != me else {
+            throw .app(key: .nudgeSelf, message: "Du kannst dich nicht selbst erinnern.")
+        }
+        guard task.isOpen, task.assignees.contains(where: { $0.userID == userID && !$0.isDone }) else {
+            throw .app(key: .nudgeNotOpen, message: "Diese Person hat die Aufgabe schon erledigt.")
+        }
+        let key = "\(taskID)-\(userID)"
+        if let last = nudges[key], Date.now.timeIntervalSince(last) < 3600 {
+            throw .app(key: .nudgeTooSoon, message: "Du hast diese Person gerade erst erinnert. Versuche es in einer Stunde noch einmal.")
+        }
+        nudges[key] = .now
+        sentNudges.append((taskID, userID))
+        return NudgeResult(scheduledFor: .now, quietHours: false)
     }
 
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {

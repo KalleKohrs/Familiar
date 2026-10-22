@@ -82,7 +82,7 @@ struct TasksHomeView: View {
             Text(title)
                 .foregroundStyle(section == .overdue ? FamiliarColor.danger : FamiliarColor.textSecondary)
             Text("\(count)")
-                .foregroundStyle(FamiliarColor.textTertiary)
+                .foregroundStyle(FamiliarColor.textSecondary)
                 .monospacedDigit()
         }
         .font(FamiliarFont.groupLabel)

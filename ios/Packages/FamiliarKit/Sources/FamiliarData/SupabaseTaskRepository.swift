@@ -7,7 +7,7 @@ final class SupabaseTaskRepository: TaskRepository {
     private static let bucket = "task-images"
     private static let select =
         "*, task_assignees(user_id, completed_at), task_image_links(position, images(id, path, thumb_path, width, height)), "
-        + "task_series(id, family_id, title, freq, weekdays, month_days, start_date, deleted_at)"
+        + "task_series(id, family_id, title, freq, weekdays, month_days, start_date, deleted_at, assignment_mode, rotation_unit, rotation_start, series_assignees(user_id, position))"
 
     init(client: SupabaseClient) {
         self.client = client
@@ -131,7 +131,7 @@ final class SupabaseTaskRepository: TaskRepository {
         let since = Date.now.addingTimeInterval(-Double(HistoryRules.retentionDays) * 86_400)
         return try await perform {
             try await client.from("series_deletions")
-                .select("*, task_series(id, family_id, title, freq, weekdays, month_days, start_date, deleted_at)")
+                .select("*, task_series(id, family_id, title, freq, weekdays, month_days, start_date, deleted_at, assignment_mode, rotation_unit, rotation_start, series_assignees(user_id, position))")
                 .is("restored_at", value: nil)
                 .gte("deleted_at", value: since.formatted(.iso8601))
                 .execute()
@@ -162,7 +162,7 @@ final class SupabaseTaskRepository: TaskRepository {
         guard !ids.isEmpty else { return [] }
         let series: [TaskSeries] = try await perform {
             try await client.from("task_series")
-                .select("id, family_id, title, freq, weekdays, month_days, start_date, deleted_at")
+                .select("id, family_id, title, freq, weekdays, month_days, start_date, deleted_at, assignment_mode, rotation_unit, rotation_start, series_assignees(user_id, position)")
                 .in("id", values: ids.map(\.uuidString))
                 .execute()
                 .value
@@ -172,7 +172,8 @@ final class SupabaseTaskRepository: TaskRepository {
             guard let info = byID[row.seriesID] else { return nil }
             return ProjectedOccurrence(seriesID: row.seriesID, familyID: row.familyID, date: row.occurrenceDate,
                                        startTime: row.startTime, timezone: row.timezone,
-                                       title: info.title ?? "", rule: info.rule)
+                                       title: info.title ?? "", rule: info.rule,
+                                       rotationPerson: info.rotationPerson(on: row.occurrenceDate))
         }
     }
 
@@ -207,6 +208,14 @@ final class SupabaseTaskRepository: TaskRepository {
                 task.cancel()
                 Task { await client.removeChannel(channel) }
             }
+        }
+    }
+
+    func nudge(taskID: UUID, userID: UUID) async throws(FamiliarError) -> NudgeResult {
+        try await perform {
+            try await client.rpc("nudge_task", params: ["p_task_id": taskID.uuidString, "p_user_id": userID.uuidString])
+                .execute()
+                .value
         }
     }
 
@@ -255,6 +264,8 @@ struct TaskParams: Encodable {
     let timezone: String
     let images: [TaskImageReference]
     let recurrence: RecurrenceRule?
+    let assignmentMode: AssignmentMode
+    let rotationUnit: RotationUnit
 
     init(input: TaskInput, taskID: UUID? = nil, expectedVersion: Int? = nil) {
         self.taskID = taskID
@@ -269,6 +280,8 @@ struct TaskParams: Encodable {
         timezone = input.timezone
         images = input.images
         recurrence = input.recurrence
+        assignmentMode = input.assignmentMode
+        rotationUnit = input.rotationUnit
     }
 
     enum CodingKeys: String, CodingKey {
@@ -286,6 +299,8 @@ struct TaskParams: Encodable {
         case freq = "p_freq"
         case weekdays = "p_weekdays"
         case monthDays = "p_month_days"
+        case assignmentMode = "p_assignment_mode"
+        case rotationUnit = "p_rotation_unit"
     }
 
     // Beschreibung, Datum und Uhrzeit werden bei update_task immer gesendet (auch null),
@@ -307,6 +322,8 @@ struct TaskParams: Encodable {
             try container.encode(recurrence.frequency, forKey: .freq)
             try container.encode(recurrence.weekdays, forKey: .weekdays)
             try container.encode(recurrence.monthDays, forKey: .monthDays)
+            try container.encode(assignmentMode, forKey: .assignmentMode)
+            try container.encode(rotationUnit, forKey: .rotationUnit)
         }
     }
 }
