@@ -11,8 +11,11 @@
 // Secrets (nur für die Dauer der Wiederherstellung): BACKUP_PRIVATE_KEY (PKCS#8-PEM),
 // B2_READ_KEY_ID, B2_READ_APPLICATION_KEY (Read Only, ein Bucket).
 // Die Datenbank-Arbeit läuft über eine direkte Verbindung (SUPABASE_DB_URL, Rolle postgres) in einer
-// Transaktion mit session_replication_role = replica: Fremdschlüssel-Reihenfolge und Trigger spielen
-// beim Einfügen keine Rolle (wie bei pg_dump-Wiederherstellungen laut Supabase-Doku).
+// Transaktion. session_replication_role = replica ist der Rolle postgres auf Supabase nicht erlaubt
+// (nur supabase_admin); deshalb: Tabellen in Fremdschlüssel-Reihenfolge, App-Trigger in public
+// währenddessen aus (ALTER TABLE … DISABLE TRIGGER USER, transaktional) und Einfügen als Upsert über
+// den Primärschlüssel – der Trigger on_auth_user_created legt beim Einfügen in auth.users bereits
+// Profile an, die so mit dem gesicherten Stand überschrieben werden.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import postgres from "npm:postgres@3.4.5";
 import * as b2 from "./b2.ts";
@@ -75,8 +78,9 @@ async function work(
   const runId = body.run_id;
   try {
     const pem = Deno.env.get("BACKUP_PRIVATE_KEY");
-    const keyId = Deno.env.get("B2_READ_KEY_ID");
-    const appKey = Deno.env.get("B2_READ_APPLICATION_KEY");
+    // Beim Einfügen ins Dashboard rutschen leicht Leerzeichen oder Zeilenumbrüche mit.
+    const keyId = Deno.env.get("B2_READ_KEY_ID")?.trim();
+    const appKey = Deno.env.get("B2_READ_APPLICATION_KEY")?.trim();
     if (!pem || !keyId || !appKey) {
       throw new Error("BACKUP_PRIVATE_KEY, B2_READ_KEY_ID oder B2_READ_APPLICATION_KEY fehlt.");
     }
@@ -154,18 +158,20 @@ async function restoreDatabase(sql: Sql, doc: string, probe: boolean, confirm: s
     const before: Record<string, number> = {};
 
     await tx`create temp table _restore (doc jsonb) on commit drop`;
-    await tx`insert into _restore values (${doc}::jsonb)`;
+    // Über text casten: Bei $1::jsonb würde postgres.js den String selbst noch einmal als JSON kodieren.
+    await tx`insert into _restore values (${doc}::text::jsonb)`;
     const keys = await tx`
-      select k, to_regclass(format('%I.%I', split_part(k, '.', 1), split_part(k, '.', 2)))::text as reg
+      select k, format('%I.%I', split_part(k, '.', 1), split_part(k, '.', 2)) as q,
+             to_regclass(format('%I.%I', split_part(k, '.', 1), split_part(k, '.', 2))) is not null as present
         from _restore, jsonb_object_keys(doc -> 'tables') k
-       where k not like 'supabase_migrations.%'
-       order by k`;
+       where k not like 'supabase_migrations.%'`;
+    if (keys.length === 0) throw new Error("Die Sicherung enthält keine Tabellen.");
+    const present = keys.filter((r) => r.present);
+    for (const r of keys) if (!r.present) (report.skipped as string[]).push(r.k);
 
-    for (const { k, reg } of keys) {
-      if (reg) {
-        const [{ n }] = await tx.unsafe(`select count(*)::int as n from ${reg}`);
-        before[k] = n;
-      }
+    for (const { k, q } of present) {
+      const [{ n }] = await tx.unsafe(`select count(*)::int as n from ${q}`);
+      before[k] = n;
     }
 
     if (!empty) {
@@ -176,29 +182,39 @@ async function restoreDatabase(sql: Sql, doc: string, probe: boolean, confirm: s
       if (tables.length > 0) await tx.unsafe(`truncate ${tables.map((r) => r.t).join(", ")} cascade`);
     }
 
-    await tx`select set_config('session_replication_role', 'replica', true)`;
+    const order = await dependencyOrder(tx, present.map((r) => r.q));
+    const publicTables = order.filter((q) => q.startsWith("public."));
+    for (const q of publicTables) await tx.unsafe(`alter table ${q} disable trigger user`);
 
+    const keyOf = new Map(present.map((r) => [r.q, r.k]));
     const counts: Record<string, { backup: number; restored: number; before?: number }> = {};
-    for (const { k, reg } of keys) {
-      if (!reg) {
-        (report.skipped as string[]).push(k);
-        continue;
-      }
+    for (const q of order) {
+      const k = keyOf.get(q)!;
       // Nur Spalten, die es im Ziel gibt, die einfügbar sind und die in der Sicherung vorkommen;
       // neuere Spalten bekommen so ihren Standardwert.
       const columns = await tx`
-        select quote_ident(a.attname) as c
+        select quote_ident(a.attname) as c,
+               coalesce(a.attnum = any(i.indkey), false) as pk
           from pg_attribute a
-         where a.attrelid = ${reg}::regclass and a.attnum > 0 and not a.attisdropped and a.attgenerated = ''
+          left join pg_index i on i.indrelid = a.attrelid and i.indisprimary
+         where a.attrelid = ${q}::regclass and a.attnum > 0 and not a.attisdropped and a.attgenerated = ''
            and (select (doc -> 'tables' -> ${k} -> 0) ? a.attname from _restore)
          order by a.attnum`;
       const [{ n: expected }] = await tx`select jsonb_array_length(doc -> 'tables' -> ${k})::int as n from _restore`;
       let restored = 0;
       if (expected > 0) {
         const list = columns.map((c) => c.c).join(", ");
+        const pk = columns.filter((c) => c.pk).map((c) => c.c);
+        const rest = columns.filter((c) => !c.pk).map((c) => `${c.c} = excluded.${c.c}`);
+        const conflict = pk.length === 0
+          ? ""
+          : rest.length === 0
+          ? `on conflict (${pk.join(", ")}) do nothing`
+          : `on conflict (${pk.join(", ")}) do update set ${rest.join(", ")}`;
         const result = await tx.unsafe(
-          `insert into ${reg} (${list}) overriding system value
-           select ${list} from jsonb_populate_recordset(null::${reg}, (select doc -> 'tables' -> $1 from _restore))`,
+          `insert into ${q} (${list}) overriding system value
+           select ${list} from jsonb_populate_recordset(null::${q}, (select doc -> 'tables' -> $1 from _restore))
+           ${conflict}`,
           [k],
         );
         restored = result.count;
@@ -207,6 +223,8 @@ async function restoreDatabase(sql: Sql, doc: string, probe: boolean, confirm: s
       if (restored !== expected) (report.mismatches as string[]).push(k);
     }
     report.tables = counts;
+
+    for (const q of publicTables) await tx.unsafe(`alter table ${q} enable trigger user`);
 
     // Sequenzen hinter die höchsten wiederhergestellten Werte setzen.
     const sequences = await tx`
@@ -221,11 +239,36 @@ async function restoreDatabase(sql: Sql, doc: string, probe: boolean, confirm: s
       await tx.unsafe(`select setval($1, coalesce((select max(${s.col}) from ${s.reg}), 0) + 1, false)`, [s.seq]);
     }
 
-    await tx`select set_config('session_replication_role', 'origin', true)`;
-
     if (probe) throw new ProbeRollback(report);
     return report;
   });
+}
+
+// Eltern vor Kindern (Fremdschlüssel unter den wiederherzustellenden Tabellen). Verweise einer
+// Tabelle auf sich selbst prüft Postgres erst am Ende der Anweisung; echte Zyklen gibt es nicht.
+async function dependencyOrder(tx: postgres.TransactionSql, tables: string[]): Promise<string[]> {
+  const edges = await tx`
+    select format('%I.%I', cn.nspname, c.relname) as child, format('%I.%I', pn.nspname, p.relname) as parent
+      from pg_constraint f
+      join pg_class c on c.oid = f.conrelid join pg_namespace cn on cn.oid = c.relnamespace
+      join pg_class p on p.oid = f.confrelid join pg_namespace pn on pn.oid = p.relnamespace
+     where f.contype = 'f'`;
+  const wanted = new Set(tables);
+  const parents = new Map(tables.map((t) => [t, new Set<string>()]));
+  for (const e of edges) {
+    if (wanted.has(e.child) && wanted.has(e.parent) && e.child !== e.parent) parents.get(e.child)!.add(e.parent);
+  }
+  const order: string[] = [];
+  const done = new Set<string>();
+  while (order.length < tables.length) {
+    const next = tables.filter((t) => !done.has(t) && [...parents.get(t)!].every((p) => done.has(p))).sort();
+    if (next.length === 0) throw new Error("Fremdschlüssel-Zyklus zwischen Tabellen – Reihenfolge nicht bestimmbar.");
+    for (const t of next) {
+      order.push(t);
+      done.add(t);
+    }
+  }
+  return order;
 }
 
 function imagePath(name: string): { bucket: string; path: string } {
