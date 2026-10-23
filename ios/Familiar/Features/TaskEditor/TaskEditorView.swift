@@ -164,7 +164,9 @@ struct TaskEditorView: View {
                     title: "Änderung speichern für …",
                     message: ruleChanged
                         ? "Die neue Wiederholung gilt ab diesem Termin. Erledigte Termine bleiben unverändert; spätere offene werden neu geplant."
-                        : "Erledigte und schon angefangene Termine bleiben unverändert."
+                        : draft.isRotating
+                            ? "Reihum: Bei „Nur diesen Termin“ übernimmt die oben stehende Person diesen einen Termin (Tauschen). Bei „Diesen und alle zukünftigen“ gilt die Reihenfolge ab hier."
+                            : "Erledigte und schon angefangene Termine bleiben unverändert."
                 ) {
                     if !ruleChanged {
                         Button("Nur diesen Termin") { confirmScope = false; performSave(scope: .thisOccurrence) }

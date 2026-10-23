@@ -3,10 +3,10 @@
 ## Context
 
 **Warum:** Für Familien soll eine ruhige, hochwertige iOS-App entstehen, in der Aufgaben der zentrale Produktbereich sind: Aufgaben anlegen, Personen zuweisen, Bilder anhängen, Wiederholungen festlegen und den Status pro Person sehen. Dazu kommen ein Kalender mit persönlichen Outlook-Terminen (nur lesend), Push-Mitteilungen und Live Activities.
-**Fachliche Grundlage:** `Guide.txt`.
+**Fachliche Grundlage:** `docs/guide.txt`.
 
 **Ausgangslage (geprüft am 2026-10-20):**
-- **Projektordner:** enthält nur `Guide.txt`, `.mcp.json` (Supabase-MCP, Projekt `ldeouecoaqyfvubhrjei`) und `.claude/settings.local.json`. Es gibt kein Xcode-Projekt und kein Git-Repository.
+- **Projektordner:** enthält nur `docs/guide.txt`, `.mcp.json` (Supabase-MCP, Projekt `ldeouecoaqyfvubhrjei`) und `.claude/settings.local.json`. Es gibt kein Xcode-Projekt und kein Git-Repository.
 - **Supabase-Projekt** `https://ldeouecoaqyfvubhrjei.supabase.co`: leer. Keine `public`-Tabellen, keine Migrationen, keine Edge Functions, keine Buckets.
   - Installiert: `supabase_vault`, `pgcrypto`, `uuid-ossp`, `pg_stat_statements`.
   - Verfügbar, aber nicht installiert: `pg_cron`, `pg_net`, `pgmq`, `pgtap`.
@@ -48,7 +48,7 @@
 
 ```
 Familiar/
-  Guide.txt  README.md  .gitignore
+  docs/guide.txt  README.md  .gitignore
   docs/  PLAN.md  architecture.md  data-model.md  rls-matrix.md  design-system.md
          decisions/ (ADRs)  setup-secrets.md (nur Anleitung, nie Werte)
   ios/

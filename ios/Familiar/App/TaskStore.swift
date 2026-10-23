@@ -352,6 +352,12 @@ final class TaskStore {
             } else {
                 var single = input
                 single.recurrence = nil
+                if input.assignmentMode == .rotate, let first = input.assigneeIDs.first {
+                    // Reihum, „Nur diesen Termin“ (Tauschen): nur die oben stehende Person übernimmt ihn.
+                    single.assigneeIDs = [first]
+                    single.completionMode = .anyOne
+                    single.assignmentMode = .together
+                }
                 saved = try await repository.updateTask(id: original.id, expectedVersion: original.version, single)
             }
         } else if input.recurrence != nil {

@@ -144,7 +144,11 @@ public struct TaskDraft: Hashable, Sendable {
             rotationUnit = series.rotationUnit
             // Reihenfolge so, dass oben steht, wer bei diesem Termin dran ist.
             let order = series.assigneeOrder.isEmpty ? assigneeIDs : series.assigneeOrder
-            if let start = series.rotationStart ?? series.startDate, let date = task.occurrenceDate {
+            if task.assignees.count == 1, let current = task.assignees.first?.userID,
+               let index = order.firstIndex(of: current) {
+                // Wer diesen Termin tatsächlich hat (auch nach einem Tausch), steht oben.
+                assigneeIDs = RotationRules.rotated(order, startingAt: index)
+            } else if let start = series.rotationStart ?? series.startDate, let date = task.occurrenceDate {
                 assigneeIDs = RotationRules.rotated(
                     order, startingAt: RotationRules.index(rule: series.rule, unit: series.rotationUnit,
                                                            start: start, date: date))

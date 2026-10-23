@@ -69,4 +69,17 @@ struct RotationTests {
         draft.moveAssignee(otto, by: -1)
         #expect(draft.assigneeIDs == [otto, mia])
     }
+
+    @Test func editingASwappedOccurrenceShowsItsPersonFirst() {
+        let series = TaskSeries(id: UUID(), rule: .daily, startDate: thursday, assignmentMode: .rotate,
+                                rotationStart: thursday, assigneeOrder: [mia, otto, clara])
+        // Laut Reihe wäre Mia dran, getauscht wurde an Clara.
+        let task = TaskItem(id: UUID(), familyID: UUID(), createdBy: mia, title: "Tisch decken",
+                            startDate: thursday, completionMode: .anyOne,
+                            assignees: [TaskAssignee(userID: clara)], seriesID: series.id,
+                            occurrenceDate: thursday, series: series)
+        let draft = TaskDraft(task: task)
+        #expect(draft.isRotating)
+        #expect(draft.assigneeIDs == [clara, mia, otto])
+    }
 }

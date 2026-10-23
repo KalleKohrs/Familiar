@@ -2,7 +2,7 @@
 
 Familienplaner für iOS: Aufgaben anlegen, Personen zuweisen, Bilder anhängen, Wiederholungen festlegen und den Erledigungsstatus pro Person sehen – über mehrere Familien hinweg. Persönliche Outlook-Termine erscheinen nur lesend und nur für die Person, die ihren Kalender verbunden hat.
 
-- Fachliche Grundlage: [Guide.txt](Guide.txt)
+- Fachliche Grundlage: [docs/guide.txt](docs/guide.txt)
 - Technischer Plan (freigegeben): [docs/PLAN.md](docs/PLAN.md)
 - Architektur: [docs/architecture.md](docs/architecture.md)
 - Design-System „Fluid Ambient“: [docs/design-system.md](docs/design-system.md)
