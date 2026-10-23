@@ -2,8 +2,11 @@
 
 Familienplaner für iOS: Aufgaben anlegen, Personen zuweisen, Bilder anhängen, Wiederholungen festlegen und den Erledigungsstatus pro Person sehen – über mehrere Familien hinweg. Persönliche Outlook-Termine erscheinen nur lesend und nur für die Person, die ihren Kalender verbunden hat.
 
+- **Für Entwicklerinnen und KI-Assistenten: [AGENTS.md](AGENTS.md)** (Start, Befehle, Regeln, Stolpersteine)
 - Fachliche Grundlage: [docs/guide.txt](docs/guide.txt)
-- Technischer Plan (freigegeben): [docs/PLAN.md](docs/PLAN.md)
+- Ursprünglicher technischer Plan (historisch): [docs/PLAN.md](docs/PLAN.md)
+- Was noch zu tun ist: [docs/LAUNCH-TODO.md](docs/LAUNCH-TODO.md)
+- Rechtstexte und Prüfbericht: [docs/legal/](docs/legal/)
 - Architektur: [docs/architecture.md](docs/architecture.md)
 - Design-System „Fluid Ambient“: [docs/design-system.md](docs/design-system.md)
 - Entscheidungen (ADRs): [docs/decisions/](docs/decisions/)
@@ -15,10 +18,12 @@ Familienplaner für iOS: Aufgaben anlegen, Personen zuweisen, Bilder anhängen, 
 |---|---|
 | `ios/Familiar.xcodeproj` | Xcode-Projekt (App, Live-Activity-Extension, Tests) – Deployment Target iOS 27 |
 | `ios/Familiar/` | App-Code (SwiftUI) |
-| `ios/FamiliarWidgets/` | Widget-Extension für Live Activities |
-| `ios/Packages/FamiliarKit/` | Lokales Swift-Paket: `FamiliarCore`, `FamiliarDesign`, `FamiliarActivity` |
+| `ios/FamiliarWidgets/` | Widget-Extension: Live Activities und Widgets „Heute“ |
+| `ios/Packages/FamiliarKit/` | Lokales Swift-Paket: `FamiliarCore`, `FamiliarData`, `FamiliarDesign`, `FamiliarActivity` |
 | `ios/Config/` | xcconfig-Dateien und Info.plists |
 | `supabase/` | Migrationen, SQL-Tests, Edge Functions |
+| `website/` | Website familiar-app.de (Netlify) |
+| `tools/` | Website-, Lizenz- und Icon-Generatoren |
 
 ## Lokal starten
 
