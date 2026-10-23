@@ -30,7 +30,15 @@ struct FamilyDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: FamiliarSpacing.l) {
                 HStack(spacing: FamiliarSpacing.s) {
-                    FamilyBadge(name: membership.family.name, color: Color(membership.family.color))
+                    // Der Name steht schon als Titel – hier nur Farbe und Größe der Familie.
+                    Circle()
+                        .fill(Color(membership.family.color))
+                        .overlay(Circle().strokeBorder(FamiliarColor.hairline, lineWidth: 0.5))
+                        .frame(width: 12, height: 12)
+                        .accessibilityHidden(true)
+                    Text(membership.members.count == 1 ? "1 Mitglied" : "\(membership.members.count) Mitglieder")
+                        .font(FamiliarFont.secondary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
                     Spacer(minLength: 0)
                     if membership.allows(.manageFamily) {
                         NavigationLink {

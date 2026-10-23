@@ -631,6 +631,48 @@ revoke execute on function public.nudge_task(uuid, uuid) from public, anon, serv
 grant execute on function public.nudge_task(uuid, uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Prüf-Zugang für Apple (Edge Function review-sign-in): Fehlversuche begrenzen
+-- ---------------------------------------------------------------------------
+
+-- Höchstens 10 Fehlversuche pro Stunde (alle Absender zusammen); danach antwortet die Function 429.
+create table private.review_sign_in_attempts (
+  id         bigint generated always as identity primary key,
+  succeeded  boolean not null,
+  created_at timestamptz not null default now()
+);
+
+create index review_sign_in_attempts_created_at_idx on private.review_sign_in_attempts (created_at);
+
+alter table private.review_sign_in_attempts enable row level security;
+
+create function public.review_sign_in_allowed()
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  select count(*) < 10 from private.review_sign_in_attempts a
+  where not a.succeeded and a.created_at > now() - interval '1 hour';
+$$;
+
+create function public.review_sign_in_record(p_succeeded boolean)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from private.review_sign_in_attempts a where a.created_at < now() - interval '1 day';
+  insert into private.review_sign_in_attempts (succeeded) values (coalesce(p_succeeded, false));
+end;
+$$;
+
+revoke execute on function public.review_sign_in_allowed() from public, anon, authenticated;
+revoke execute on function public.review_sign_in_record(boolean) from public, anon, authenticated;
+grant execute on function public.review_sign_in_allowed() to service_role;
+grant execute on function public.review_sign_in_record(boolean) to service_role;
+
+-- ---------------------------------------------------------------------------
 -- Fehlerkatalog ergänzen
 -- ---------------------------------------------------------------------------
 

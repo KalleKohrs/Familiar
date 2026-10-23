@@ -3,3 +3,10 @@
   Content-Type: application/json
 /apple-app-site-association
   Content-Type: application/json
+
+# Grundlegende Sicherheits-Header für alle Seiten (keine externen Ressourcen, kein Einbetten in fremde Seiten).
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()

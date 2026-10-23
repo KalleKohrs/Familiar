@@ -20,6 +20,7 @@ PAGES = {
     "impressum.md": ("impressum", "Impressum"),
     "outlook-it.md": ("outlook-it", "Familiar für Outlook freigeben"),
     "support.md": ("support", "Hilfe"),
+    "nutzungsbedingungen.md": ("nutzungsbedingungen", "Nutzungsbedingungen"),
 }
 
 
@@ -134,7 +135,7 @@ def page(title: str, body: str) -> str:
         <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="28" height="28">Familiar</a>
         <p class="tagline">Aufgaben teilen, ruhig planen.</p>
       </div>
-      <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
+      <nav aria-label="Rechtliches"><a href="/support/">Hilfe</a><a href="/kontakt/">Kontakt</a><a href="/melden/">Inhalt melden</a><a href="/nutzungsbedingungen/">Nutzungsbedingungen</a><a href="/datenschutz/">Datenschutz</a><a href="/impressum/">Impressum</a></nav>
       <small>© 2026 Familiar</small>
     </div>
   </footer>

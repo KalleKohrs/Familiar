@@ -25,6 +25,7 @@ enum IntentError: Error, CustomLocalizedStringResourceConvertible {
     case notReady
     case notSignedIn
     case noFamily
+    case notAllowed
     case failed(String)
 
     var localizedStringResource: LocalizedStringResource {
@@ -32,6 +33,7 @@ enum IntentError: Error, CustomLocalizedStringResourceConvertible {
         case .notReady: "Familiar startet gerade. Bitte versuche es gleich noch einmal."
         case .notSignedIn: "Bitte melde dich zuerst in Familiar an."
         case .noFamily: "Du bist noch in keiner Familie. Lege in Familiar zuerst eine an."
+        case .notAllowed: "Diese Aufgabe kannst du nicht abhaken – sie ist anderen zugewiesen."
         case .failed(let message): "\(message)"
         }
     }
@@ -71,11 +73,16 @@ struct TaskEntityQuery: EntityStringQuery {
         try await openTasks()
     }
 
+    /// Nur Aufgaben, die die Person abhaken darf (wie die Knöpfe in der App); gleiche Titel
+    /// (z. B. Serie heute und morgen): der frühere Termin zuerst.
     private func openTasks() async throws -> [TaskEntity] {
         let dependencies = try await IntentEnvironment.require()
         do {
-            // Gleiche Titel (z. B. Serien heute und morgen): der frühere Termin zuerst.
+            let me = try await dependencies.profiles.myProfile().id
             return try await dependencies.tasks.openTasks()
+                .filter { task in
+                    TaskRules.actions(for: task, userID: me).contains { $0 == .completeForMe || $0 == .completeForAll }
+                }
                 .sorted { ($0.startDate ?? .init(year: 1, month: 1, day: 1)) < ($1.startDate ?? .init(year: 1, month: 1, day: 1)) }
                 .map { TaskEntity(id: $0.id, title: $0.title) }
         } catch {
@@ -116,6 +123,8 @@ struct FamilyEntityQuery: EntityQuery {
 struct CompleteTaskByNameIntent: AppIntent {
     static let title: LocalizedStringResource = "Aufgabe erledigen"
     static let description = IntentDescription("Hakt eine offene Aufgabe in Familiar ab.")
+    /// Familiendaten nur bei entsperrtem iPhone ändern.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     @Parameter(title: "Aufgabe", requestValueDialog: "Welche Aufgabe ist erledigt?")
     var task: TaskEntity
@@ -123,8 +132,18 @@ struct CompleteTaskByNameIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let dependencies = try await IntentEnvironment.require()
         do {
-            try await dependencies.tasks.complete(taskID: task.id, scope: .me)
-        } catch {
+            // Wie in der App: als zugewiesene Person den eigenen Teil, als Erstellerin ohne Zuweisung „für alle“.
+            let me = try await dependencies.profiles.myProfile().id
+            let current = try await dependencies.tasks.task(id: task.id)
+            let actions = TaskRules.actions(for: current, userID: me)
+            if actions.contains(.completeForMe) {
+                try await dependencies.tasks.complete(taskID: task.id, scope: .me)
+            } else if actions.contains(.completeForAll) {
+                try await dependencies.tasks.complete(taskID: task.id, scope: .all)
+            } else {
+                throw IntentError.notAllowed
+            }
+        } catch let error as FamiliarError {
             throw IntentError.from(error)
         }
         await IntentEnvironment.notifyChange()
@@ -135,6 +154,7 @@ struct CompleteTaskByNameIntent: AppIntent {
 struct AddTaskIntent: AppIntent {
     static let title: LocalizedStringResource = "Aufgabe hinzufügen"
     static let description = IntentDescription("Legt in Familiar eine Aufgabe für dich an.")
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     @Parameter(title: "Aufgabe", requestValueDialog: "Was soll erledigt werden?")
     var title: String
@@ -181,6 +201,8 @@ struct AddTaskIntent: AppIntent {
 struct TodayTasksIntent: AppIntent {
     static let title: LocalizedStringResource = "Was steht heute an?"
     static let description = IntentDescription("Liest deine offenen Aufgaben für heute vor.")
+    /// Aufgabentitel nicht bei gesperrtem iPhone vorlesen.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let dependencies = try await IntentEnvironment.require()

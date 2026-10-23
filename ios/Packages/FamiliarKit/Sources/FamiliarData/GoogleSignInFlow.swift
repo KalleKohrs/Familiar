@@ -36,6 +36,18 @@ public enum GoogleSignInFlow {
         (error as NSError).domain == kGIDSignInErrorDomain && (error as NSError).code == GIDSignInError.canceled.rawValue
     }
 
+    /// Beim Löschen des Kontos die Verbindung zu Google widerrufen (App-Store-Richtlinie 5.1.1(v):
+    /// Zugang zum Konto des sozialen Netzwerks trennen). Fehler sind nicht kritisch – das Konto wird trotzdem gelöscht.
+    @MainActor
+    public static func disconnect() async {
+        guard isConfigured else { return }
+        if GIDSignIn.sharedInstance.currentUser == nil {
+            _ = try? await GIDSignIn.sharedInstance.restorePreviousSignIn()
+        }
+        guard GIDSignIn.sharedInstance.currentUser != nil else { return }
+        try? await GIDSignIn.sharedInstance.disconnect()
+    }
+
     /// Beim Abmelden auch die Google-Sitzung im Gerät vergessen.
     @MainActor
     public static func signOut() {

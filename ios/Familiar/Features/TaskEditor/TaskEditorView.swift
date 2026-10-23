@@ -125,9 +125,12 @@ struct TaskEditorView: View {
             .navigationTitle(editingTask == nil ? "Neue Aufgabe" : "Aufgabe bearbeiten")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Symbol-Knöpfe wie bei System-Blättern: Der Titel bleibt lesbar (Text-Knöpfe kürzten ihn ab).
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Abbrechen") {
+                    Button(role: .cancel) {
                         if draft != original { confirmDiscard = true } else { dismiss() }
+                    } label: {
+                        Label("Abbrechen", systemImage: "xmark")
                     }
                 }
                 ToolbarItemGroup(placement: .keyboard) {
@@ -136,10 +139,14 @@ struct TaskEditorView: View {
                         .fontWeight(.semibold)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(editingTask == nil ? "Hinzufügen" : "Fertig", action: save)
-                        .fontWeight(.semibold)
-                        .disabled(isSaving)
-                        .accessibilityIdentifier("editor.save")
+                    Button(role: .confirm, action: save) {
+                        Label(editingTask == nil ? "Hinzufügen" : "Sichern", systemImage: "checkmark")
+                            .foregroundStyle(FamiliarColor.onAccent)
+                    }
+                    // Wie der Plus-Knopf: kräftiges Orange mit dunklem Haken (hell und dunkel gut lesbar).
+                    .tint(FamiliarColor.accentFill)
+                    .disabled(isSaving)
+                    .accessibilityIdentifier("editor.save")
                 }
             }
             .overlay {

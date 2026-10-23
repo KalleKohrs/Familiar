@@ -46,7 +46,8 @@ final class SupabaseAuthService: AuthService {
         } catch {
             // Prüf-Konto für Apples App-Prüfung (Edge Function `review-sign-in`): Nur die dort
             // hinterlegte Adresse mit festem Prüf-Code erhält einen gültigen Einmal-Code.
-            guard error == .invalidEmailCode,
+            // Der Prüf-Code hat 10 Stellen, normale Einmal-Codes weniger – nur dann nachfragen.
+            guard error == .invalidEmailCode, token.count >= 10,
                   let review: ReviewSignIn = try? await client.functions.invoke(
                       "review-sign-in",
                       options: FunctionInvokeOptions(method: .post, body: ["email": address, "code": token]))

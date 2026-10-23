@@ -22,6 +22,7 @@ struct FamiliarApp: App {
         let session = SessionStore(dependencies: dependencies)
         let tasks = TaskStore(repository: dependencies.tasks)
         let notifications = NotificationStore(devices: dependencies.devices, isEnabled: dependencies.supportsPush)
+        session.beforeAccountDeletion = { await GoogleSignInFlow.disconnect() }
         session.beforeSignOut = {
             WidgetSync.clear()
             await notifications.signOut()

@@ -89,6 +89,15 @@ struct SignInView: View {
                                 .disabled(isSigningInWithGoogle)
                                 .accessibilityIdentifier("signIn.google")
                         }
+
+                        // Rechtstexte schon vor der Anmeldung erreichbar (§ 5 DDG, App-Store-Richtlinie 5.1.1).
+                        Text(legalNotice)
+                            .font(FamiliarFont.meta)
+                            .foregroundStyle(FamiliarColor.textSecondary)
+                            .tint(FamiliarColor.accent)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, FamiliarSpacing.xs)
                     }
                 }
                 .padding(.horizontal, FamiliarSpacing.m)
@@ -101,6 +110,12 @@ struct SignInView: View {
                 EmailCodeView(email: email)
             }
         }
+    }
+
+    private var legalNotice: AttributedString {
+        let markdown = String(localized: "Mit der Anmeldung gelten die [Nutzungsbedingungen](\(LegalLink.terms.absoluteString)).\n[Datenschutz](\(LegalLink.privacy.absoluteString)) · [Impressum](\(LegalLink.imprint.absoluteString))")
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
     }
 
     private func send() {

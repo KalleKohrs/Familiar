@@ -72,6 +72,10 @@ final class TaskStore {
     func stop() {
         changesTask?.cancel()
         changesTask = nil
+        reloadTask?.cancel()
+        reloadTask = nil
+        bannerTask?.cancel()
+        bannerTask = nil
         userID = nil
         tasks = []
         state = .idle
@@ -79,6 +83,9 @@ final class TaskStore {
         historyState = .idle
         hadOpenTasks = false
         undo = nil
+        actionError = nil
+        info = nil
+        nudgedAt = [:]
     }
 
     /// Lädt Liste und – falls schon geöffnet – den Verlauf neu.
@@ -88,10 +95,13 @@ final class TaskStore {
     }
 
     func reloadHistory() async {
+        let requestedFor = userID
         if history.isEmpty { historyState = .loading }
         do throws(FamiliarError) {
             let tasks = try await repository.historyTasks()
             let deletions = try await repository.seriesDeletions()
+            // Inzwischen abgemeldet oder Konto gewechselt: Ergebnis verwerfen.
+            guard userID == requestedFor else { return }
             history = HistoryRules.entries(tasks, deletions: deletions)
             historyState = .loaded
         } catch {
@@ -128,9 +138,13 @@ final class TaskStore {
     func reload() async {
         // Ladeanzeige nur beim ersten Laden – sonst blitzen Platzhalter auf, sobald die letzte
         // Aufgabe erledigt ist.
+        let requestedFor = userID
         if state == .idle { state = .loading }
         do throws(FamiliarError) {
-            tasks = TaskRules.homeOrder(try await repository.openTasks())
+            let loaded = try await repository.openTasks()
+            // Inzwischen abgemeldet oder Konto gewechselt: keine Aufgaben der vorigen Person übernehmen.
+            guard userID == requestedFor else { return }
+            tasks = TaskRules.homeOrder(loaded)
             if !tasks.isEmpty { hadOpenTasks = true }
             state = .loaded
             // Leere Liste: am Verlauf erkennen, ob „Alles erledigt“ oder „Noch keine Aufgaben“ passt.

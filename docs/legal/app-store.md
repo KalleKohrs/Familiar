@@ -9,10 +9,10 @@
 | **Name** | Familiar – Familienplaner |
 | **Untertitel** | Aufgaben teilen, ruhig planen |
 | **Kategorie** | Produktivität (zweite: Lifestyle) |
-| **Altersfreigabe** | 4+ (keine Inhalte aus den Fragebogen-Kategorien; Nutzer erstellen Inhalte nur innerhalb ihrer Familie) |
-| **Preis** | [kostenlos?] |
-| **Support-URL** | https://familiar-app.de/support [Seite anlegen] |
-| **Datenschutz-URL** | https://familiar-app.de/datenschutz |
+| **Altersfreigabe** | ergibt sich aus Apples Fragebogen (siehe unten „Weitere Angaben“); Nutzer erstellen Inhalte nur innerhalb ihrer Familie |
+| **Preis** | kostenlos |
+| **Support-URL** | https://familiar-app.de/support/ |
+| **Datenschutz-URL** | https://familiar-app.de/datenschutz/ |
 
 ## Werbetext (170)
 
@@ -90,3 +90,13 @@ Erstellt mit `-FamiliarInMemoryBackend -FamiliarInMemoryScenario showcase` (Vorf
 - Konto löschen: Profil › Konto löschen (bei „Mit Apple anmelden“ inklusive Widerruf bei Apple).
 - „Mit Apple anmelden“ wird angeboten, weil auch „Mit Google anmelden“ angeboten wird (Richtlinie 4.8).
 - Outlook ist optional und nur lesend.
+- Nutzerinhalte (Richtlinie 1.2): Inhalte sind nur innerhalb einer privaten Familie sichtbar, nie öffentlich. Melden: Aufgabe › „Inhalt melden“ (Formular familiar-app.de/melden, Bearbeitung binnen 24 h), Profil › Hilfe & Rechtliches › Inhalt melden. Schutz vor Missbrauch: Admins entfernen Mitglieder, jede Person kann eine Familie verlassen, Erinnern ist auf 1×/Stunde begrenzt. Kontakt: info@familiar-app.de, familiar-app.de/kontakt.
+- Datenschutz und Impressum: Profil › Hilfe & Rechtliches sowie auf dem Anmeldebildschirm.
+
+## Weitere Angaben in App Store Connect
+
+- **Datenschutzrichtlinie (URL):** https://familiar-app.de/datenschutz/ – **Support-URL:** https://familiar-app.de/support/ – **Nutzungsbedingungen:** Apples Standard-Lizenzvertrag (EULA) plus eigene Bedingungen https://familiar-app.de/nutzungsbedingungen/ (in der Beschreibung verlinken).
+- **EU Digital Services Act – Händlerstatus:** „Kein Händler“ (Privatperson, keine Einnahmen, keine Werbung, keine In-App-Käufe). Hinweis: Dann zeigt Apple EU-Kunden, dass Verbraucherrechte aus Verbraucherverträgen nicht gelten. Ändert sich das Modell (Einnahmen), muss neu bewertet werden.
+- **Altersfreigabe:** Fragebogen wahrheitsgemäß beantworten – Nutzerinhalte: ja (nur private Gruppen, kein öffentlicher Austausch, keine anonyme Kommunikation); keine Werbung, keine Käufe, kein Web-Zugang in der App. Unsere Bedingungen: ab 16, jünger mit Zustimmung der Eltern.
+- **Exportkonformität:** `ITSAppUsesNonExemptEncryption = NO` (nur Standard-Verschlüsselung von iOS/HTTPS).
+

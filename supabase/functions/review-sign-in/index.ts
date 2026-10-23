@@ -4,6 +4,7 @@
 // (Secret REVIEW_CODE). Stimmt beides, erzeugt die Function über die Admin-API einen gültigen
 // Einmal-Code (generateLink → email_otp), mit dem sich die App normal per verifyOTP anmeldet.
 // Ohne die Secrets ist die Function wirkungslos (404). Für alle anderen Adressen ändert sich nichts.
+// Höchstens 10 Fehlversuche pro Stunde (Migration 0018, review_sign_in_allowed/_record).
 // verify_jwt = false (vor der Anmeldung gibt es kein Nutzer-JWT).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -26,16 +27,26 @@ Deno.serve(async (req) => {
   const reviewCode = Deno.env.get("REVIEW_CODE")?.trim();
   if (!reviewEmail || !reviewCode || reviewCode.length < 10) return json({ error: "not_found" }, 404);
 
-  const body = await req.json().catch(() => ({}));
-  const email = String(body?.email ?? "").trim().toLowerCase();
-  const code = String(body?.code ?? "").trim();
-  if (email !== reviewEmail || !sameText(code, reviewCode)) return json({ error: "invalid" }, 401);
-
   const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}");
   const key = secretKeys["default"] ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const url = Deno.env.get("SUPABASE_URL");
   if (!key || !url) return json({ error: "misconfigured" }, 500);
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+
+  const body = await req.json().catch(() => ({}));
+  const email = String(body?.email ?? "").trim().toLowerCase();
+  const code = String(body?.code ?? "").trim();
+  // Andere Adressen (Tippfehler normaler Nutzer) zählen nicht als Angriff auf den Prüf-Zugang.
+  if (email !== reviewEmail) return json({ error: "invalid" }, 401);
+
+  // Schutz gegen Durchprobieren: nach 10 Fehlversuchen pro Stunde ist der Zugang gesperrt (Migration 0018).
+  const { data: allowed, error: limitError } = await admin.rpc("review_sign_in_allowed");
+  if (limitError) return json({ error: "misconfigured" }, 500);
+  if (allowed !== true) return json({ error: "too_many_attempts" }, 429);
+
+  const valid = sameText(code, reviewCode);
+  await admin.rpc("review_sign_in_record", { p_succeeded: valid });
+  if (!valid) return json({ error: "invalid" }, 401);
 
   // Prüf-Konto anlegen, falls es noch nicht existiert (Fehler „existiert bereits“ ist erwartet).
   await admin.auth.admin.createUser({ email, email_confirm: true, user_metadata: { full_name: "App Review" } });

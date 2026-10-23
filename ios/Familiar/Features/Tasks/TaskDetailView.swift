@@ -283,6 +283,18 @@ struct TaskDetailView: View {
                     .disabled(busy)
                     .padding(.top, FamiliarSpacing.m)
             }
+            // Rechtswidrige Inhalte melden (Art. 16 DSA, App-Store-Richtlinie 1.2) – ruhig, ganz unten.
+            if task.createdBy != session.userID || !task.images.isEmpty {
+                Link(destination: LegalLink.report(taskID: task.id)) {
+                    Label("Inhalt melden", systemImage: "exclamationmark.bubble")
+                        .font(FamiliarFont.secondary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
+                        .frame(maxWidth: .infinity, minHeight: FamiliarSize.minimumTouchTarget)
+                }
+                .padding(.top, FamiliarSpacing.s)
+                .accessibilityHint("Öffnet das Meldeformular auf familiar-app.de mit der Kennung dieser Aufgabe.")
+                .accessibilityIdentifier("task.report")
+            }
         }
     }
 

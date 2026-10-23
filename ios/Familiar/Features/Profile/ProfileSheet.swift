@@ -136,6 +136,8 @@ struct ProfileSheet: View {
                         }
                     }
 
+                    LegalSection()
+
                     #if DEBUG
                     NavigationLink("Design-System ansehen") {
                         DesignGalleryView()

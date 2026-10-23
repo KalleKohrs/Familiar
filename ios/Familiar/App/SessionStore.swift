@@ -60,11 +60,17 @@ final class SessionStore {
 
     /// Lädt Profil und Familien und bestimmt den nächsten Schritt.
     func reload() async {
+        let requestedFor = userID
         do throws(FamiliarError) {
-            profile = try await dependencies.profiles.myProfile()
-            families = try await dependencies.families.myFamilies()
+            let loadedProfile = try await dependencies.profiles.myProfile()
+            let loadedFamilies = try await dependencies.families.myFamilies()
+            // Während des Ladens abgemeldet oder Konto gewechselt: alten Stand nicht übernehmen.
+            guard userID == requestedFor, userID != nil else { return }
+            profile = loadedProfile
+            families = loadedFamilies
             updatePhase()
         } catch {
+            guard userID == requestedFor else { return }
             phase = error == .notAuthenticated ? .signedOut : .failed(error)
         }
     }
@@ -174,7 +180,10 @@ final class SessionStore {
     }
 
     func refreshFamilies() async throws(FamiliarError) {
-        families = try await dependencies.families.myFamilies()
+        let requestedFor = userID
+        let loaded = try await dependencies.families.myFamilies()
+        guard userID == requestedFor else { return }
+        families = loaded
         if case .launching = phase { return }
         if phase != .signedOut { updatePhase() }
     }
@@ -263,7 +272,11 @@ final class SessionStore {
     }
 
     /// Konto endgültig löschen; danach meldet der Anmeldestatus `signedOut`.
+    /// Vor dem Löschen des Kontos zusätzlich: Verbindung zu Google widerrufen (App setzt den Handler).
+    var beforeAccountDeletion: (() async -> Void)?
+
     func deleteAccount(appleAuthorizationCode: String?) async throws(FamiliarError) {
+        await beforeAccountDeletion?()
         await beforeSignOut?()
         try await dependencies.auth.deleteAccount(appleAuthorizationCode: appleAuthorizationCode)
     }
