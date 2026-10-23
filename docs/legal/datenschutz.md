@@ -6,7 +6,7 @@
 
 Familiar wird von einer Privatperson entwickelt und betrieben:
 
-Kalle Kohrs
+Sven Olaf Kohrs
 Claus-von-Stauffenberg-Weg 1
 21684 Stade
 E-Mail: [info@familiar-app.de](mailto:info@familiar-app.de)

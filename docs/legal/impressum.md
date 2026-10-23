@@ -4,7 +4,7 @@
 
 **Angaben gemäß § 5 DDG**
 
-Kalle Kohrs
+Sven Olaf Kohrs
 Claus-von-Stauffenberg-Weg 1
 21684 Stade
 Deutschland
@@ -14,7 +14,7 @@ E-Mail: [info@familiar-app.de](mailto:info@familiar-app.de)
 Kontaktformular: [familiar-app.de/kontakt](/kontakt/)
 
 **Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV**
-Kalle Kohrs, Anschrift wie oben
+Sven Olaf Kohrs, Anschrift wie oben
 
 **Verbraucherstreitbeilegung**
 Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
