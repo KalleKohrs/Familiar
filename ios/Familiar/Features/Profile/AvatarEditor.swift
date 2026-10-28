@@ -19,8 +19,8 @@ struct AvatarEditor: View {
             ProfileAvatar(profile: session.profile, name: name, diameter: 104)
                 .overlay {
                     if isWorking {
-                        Circle().fill(.black.opacity(0.45))
-                        ProgressView().tint(FamiliarColor.textPrimary)
+                        Circle().fill(FamiliarColor.scrim)
+                        ProgressView().tint(FamiliarColor.onScrim)
                     }
                 }
                 .accessibilityLabel(hasAvatar ? "Profilbild" : "Kein Profilbild, Initialen")

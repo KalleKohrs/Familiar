@@ -40,6 +40,10 @@ public enum FamiliarColor {
     /// Orange für Flächen mit `onAccent` darauf (Plus, Hauptknopf, „heute“, erledigt).
     public static let accentFill = Color.familiar(dark: 0xFF8C42, darkHC: 0xFFA266, light: 0xF27A2B, lightHC: 0xE86E1F)
     public static let onAccent = Color.familiar(dark: 0x1B1006, darkHC: 0x000000, light: 0x1B1006, lightHC: 0x000000)
+    /// Schrift und Symbole auf dunklen Schleiern über Bildern (`scrim`) – in beiden Modi hell.
+    public static let onScrim = Color.familiar(dark: 0xF6EEE6, darkHC: 0xFFFFFF, light: 0xF6EEE6, lightHC: 0xFFFFFF)
+    /// Dunkler Schleier über Bildern und Profilbildern, damit `onScrim` darauf lesbar ist.
+    public static let scrim = Color.black.opacity(0.6)
     public static let success = Color.familiar(dark: 0x7DD69B, darkHC: 0x9BE6B2, light: 0x1B7340, lightHC: 0x165E34)
     public static let warning = Color.familiar(dark: 0xF5C451, darkHC: 0xFFD878, light: 0x855500, lightHC: 0x6E4600)
     public static let danger = Color.familiar(dark: 0xFF6B5B, darkHC: 0xFF8E81, light: 0xC23A2C, lightHC: 0xA62D21)

@@ -51,4 +51,4 @@ Familiar ist kostenlos. Wir haften unbeschränkt bei Vorsatz und grober Fahrläs
 
 ## 10. Änderungen
 
-Wir können diese Bedingungen ändern, wenn sich die App oder die Rechtslage ändert. Über wesentliche Änderungen informieren wir rechtzeitig in der App. Es gilt deutsches Recht; zwingende Verbraucherschutzvorschriften deines Wohnsitzstaates bleiben unberührt.
+Wir können diese Bedingungen ändern, wenn sich die App oder die Rechtslage ändert. Über wesentliche Änderungen informieren wir dich rechtzeitig vorher per E-Mail an die Adresse deines Kontos; die aktuelle Fassung findest du jederzeit in der App unter Profil › Hilfe & Rechtliches. Es gilt deutsches Recht; zwingende Verbraucherschutzvorschriften deines Wohnsitzstaates bleiben unberührt.

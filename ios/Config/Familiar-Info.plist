@@ -2,23 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>FamiliarAppGroup</key>
-	<string>$(FAMILIAR_APP_GROUP)</string>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIColorName</key>
-		<string>LaunchBackground</string>
-	</dict>
-	<key>FamiliarSupabaseHost</key>
-	<string>$(FAMILIAR_SUPABASE_HOST)</string>
-	<key>FamiliarSupabasePublishableKey</key>
-	<string>$(FAMILIAR_SUPABASE_PUBLISHABLE_KEY)</string>
-	<key>GIDClientID</key>
-	<string>$(FAMILIAR_GOOGLE_IOS_CLIENT_ID)</string>
-	<key>GIDServerClientID</key>
-	<string>$(FAMILIAR_GOOGLE_SERVER_CLIENT_ID)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -32,7 +15,20 @@
 			</array>
 		</dict>
 	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
+	<key>FamiliarAppGroup</key>
+	<string>$(FAMILIAR_APP_GROUP)</string>
+	<key>FamiliarSupabaseHost</key>
+	<string>$(FAMILIAR_SUPABASE_HOST)</string>
+	<key>FamiliarSupabasePublishableKey</key>
+	<string>$(FAMILIAR_SUPABASE_PUBLISHABLE_KEY)</string>
+	<key>GIDClientID</key>
+	<string>$(FAMILIAR_GOOGLE_IOS_CLIENT_ID)</string>
+	<key>GIDServerClientID</key>
+	<string>$(FAMILIAR_GOOGLE_SERVER_CLIENT_ID)</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 </dict>
 </plist>

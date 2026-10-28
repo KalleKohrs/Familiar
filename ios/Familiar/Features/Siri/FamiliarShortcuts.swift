@@ -1,6 +1,7 @@
 import AppIntents
 import FamiliarCore
 import Foundation
+import UIKit
 
 /// Siri und Kurzbefehle (ADR 0010): Aufgabe erledigen, Aufgabe hinzufügen, „Was steht heute an?“.
 /// Die Intents laufen im Prozess der App mit der gespeicherten Anmeldung; die App hinterlegt beim Start
@@ -15,7 +16,10 @@ enum IntentEnvironment {
         await didChange?()
     }
 
+    /// Datenquellen nur bei entsperrtem Gerät – auch für die Auswahl von Aufgaben (Titel), die iOS
+    /// unter Umständen schon vor dem eigentlichen Intent abfragt.
     static func require() throws -> AppDependencies {
+        guard UIApplication.shared.isProtectedDataAvailable else { throw IntentError.locked }
         guard let dependencies else { throw IntentError.notReady }
         return dependencies
     }
@@ -23,6 +27,7 @@ enum IntentEnvironment {
 
 enum IntentError: Error, CustomLocalizedStringResourceConvertible {
     case notReady
+    case locked
     case notSignedIn
     case noFamily
     case notAllowed
@@ -31,6 +36,7 @@ enum IntentError: Error, CustomLocalizedStringResourceConvertible {
     var localizedStringResource: LocalizedStringResource {
         switch self {
         case .notReady: "Familiar startet gerade. Bitte versuche es gleich noch einmal."
+        case .locked: "Entsperre zuerst dein iPhone."
         case .notSignedIn: "Bitte melde dich zuerst in Familiar an."
         case .noFamily: "Du bist noch in keiner Familie. Lege in Familiar zuerst eine an."
         case .notAllowed: "Diese Aufgabe kannst du nicht abhaken – sie ist anderen zugewiesen."

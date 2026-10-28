@@ -1,4 +1,4 @@
-# Rechtsprüfung Familiar – Stand 2026-10-23
+# Rechtsprüfung Familiar – Stand 2026-10-24
 
 **Intern, kein Rechtsrat.** Systematische Prüfung, was für eine kostenlose, private iOS-App mit geteilten Familieninhalten gilt, und was daraufhin umgesetzt wurde. Vor dem Start empfiehlt sich trotzdem eine kurze anwaltliche Durchsicht (Datenschutzerklärung, Nutzungsbedingungen, Impressum).
 
@@ -8,7 +8,7 @@
 |---|---|---|
 | Impressum (§ 5 DDG) | leicht erkennbar, unmittelbar erreichbar, ständig verfügbar – auch in der App und im Store | ✅ Website; **neu:** in der App (Profil › Hilfe & Rechtliches, Anmeldebildschirm). Verantwortlicher Sven Olaf Kohrs. Hinweis nach § 18 MStV entfernt (keine journalistisch-redaktionellen Inhalte) |
 | Datenschutzerklärung (Art. 12–14 DSGVO) | alle Pflichtangaben, Widerspruch nach Art. 21 hervorgehoben | ✅ **ergänzt:** Pflicht zur Angabe, Daten von Dritten, keine automatisierten Entscheidungen, § 25 TDDDG, eigener Abschnitt Widerspruchsrecht, Meldungen (DSA), Schutzzusage für Empfänger (auch für Apple 5.1.1(i)) |
-| Endgerätezugriff (§ 25 TDDDG) | Speichern auf dem Gerät nur mit Einwilligung oder wenn unbedingt erforderlich | ✅ nur Anmeldung, Push-Token, Widget-Liste, Darstellungs-Einstellung → Ausnahme § 25 Abs. 2 Nr. 2; kein Tracking |
+| Endgerätezugriff (§ 25 TDDDG) | Speichern auf dem Gerät nur mit Einwilligung oder wenn unbedingt erforderlich | ✅ nur Anmeldung (inkl. Google-Anmeldestand), Push-Token, Widget-Liste (nicht im Backup), offener Einladungscode, Ablauf-Vermerke, Darstellung, Bild-Zwischenspeicher → Ausnahme § 25 Abs. 2 Nr. 2; kein Tracking. Vollständige Liste in der Datenschutzerklärung (zweite Prüfung 2026-10-24) |
 | Verzeichnis der Verarbeitungen (Art. 30) und TOM (Art. 32) | Pflicht auch für Kleine bei regelmäßiger Verarbeitung | ✅ **neu:** [intern/verarbeitungsverzeichnis.md](intern/verarbeitungsverzeichnis.md) |
 | Auftragsverarbeitung (Art. 28) | Verträge mit Supabase, Resend, Netlify, Backblaze | ⚠️ **du:** AV-Verträge abschließen (Launch-Liste) |
 | Aufsichtsbehörde | Beschwerderecht nennen | ✅ LfD Niedersachsen |
@@ -35,7 +35,17 @@
 - Aufsichtsbehörde: [LfD Niedersachsen – Beschwerde](https://www.lfd.niedersachsen.de/download/140049/Hinweise_fuer_die_Beschwerde.pdf)
 - BFSG: [IHK Frankfurt – BFSG](https://www.frankfurt-main.ihk.de/recht/uebersicht-alle-rechtsthemen/barrierefreiheitsstaerkungsg-6282214)
 
+## Zweite Prüfung (unabhängige Durchsicht, 2026-10-24)
+
+Ein zweiter, unabhängiger Durchgang durch Code und Texte hat keine Lücke in den Zugriffsrechten gefunden, aber Abweichungen zwischen Text und tatsächlichem Verhalten. Behoben:
+
+- **Recht auf Löschung (Art. 17 DSGVO, Apple 5.1.1(v)):** Die Kontolöschung konnte bei einer noch als aktiv geführten Live-Anzeige scheitern. Mitteilungs-Aufträge entstehen jetzt nur noch für bestehende Profile (Migration 0018, Test K1).
+- **Ausgetretene Mitglieder:** bekamen weiter Erinnerungen mit Aufgabentiteln. Jetzt enden beim Austritt alle offenen Zuweisungen; Mitteilungen gehen nur an aktuelle Mitglieder.
+- **Löschfrist „Erinnern“ (1 Tag):** wird jetzt täglich durchgesetzt, ebenso für die Fehlversuche des Prüf-Zugangs.
+- **Texte:** Widget-Liste (alle offenen Aufgaben, nicht im Backup), vollständige Liste der Gerätespeicherung, Siri-Titel, Live-Anzeige-Token, Google-Widerruf beim Löschen, Hinweis auf Änderungen der Nutzungsbedingungen per E-Mail, App-Store-Text „Familiendaten in der EU“.
+
 ## Offene Restrisiken (bewusst)
 
 - **Speicher-Missbrauch:** Ein Familienmitglied könnte viele Bilder hochladen und den kostenlosen Speicher (1 GB) füllen. Grenzen: 10 Bilder je Aufgabe, 5 MB je Bild, verwaiste Dateien werden nach einem Tag gelöscht. Bei Bedarf Kontingent je Familie nachrüsten.
 - **Verfügbarkeit:** Supabase Free pausiert Projekte ohne Aktivität nach 7 Tagen; im Betrieb unkritisch, Nutzungsbedingungen sagen keine ständige Verfügbarkeit zu.
+- **Änderungen der Nutzungsbedingungen:** Die Bedingungen versprechen eine Ankündigung per E-Mail. Bei wesentlichen Änderungen deshalb vorher allen Nutzern schreiben (über Resend; im kostenlosen Tarif höchstens 100 E-Mails am Tag – bei vielen Nutzern auf mehrere Tage verteilen).

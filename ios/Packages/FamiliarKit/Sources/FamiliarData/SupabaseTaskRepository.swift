@@ -168,6 +168,8 @@ final class SupabaseTaskRepository: TaskRepository {
                 .value
         }
         let byID = Dictionary(uniqueKeysWithValues: series.map { ($0.id, $0) })
+        // series_assignees enthält nur aktuelle Mitglieder (Austritt räumt auf, Migration 0018) –
+        // die Reihenfolge entspricht also schon der Reihe, die der Server verteilt.
         return rows.compactMap { row in
             guard let info = byID[row.seriesID] else { return nil }
             return ProjectedOccurrence(seriesID: row.seriesID, familyID: row.familyID, date: row.occurrenceDate,

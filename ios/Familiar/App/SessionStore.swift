@@ -43,6 +43,10 @@ final class SessionStore {
         }
     }
 
+    /// Jede Änderung des Anmeldestatus (Konto bzw. `nil` nach dem Abmelden) – auch ohne Zutun der
+    /// Person, etwa wenn die Sitzung auf einem anderen Gerät beendet wurde.
+    var onAccountChange: ((UUID?) -> Void)?
+
     private func handle(_ state: AuthState) async {
         switch state {
         case .signedOut:
@@ -51,9 +55,11 @@ final class SessionStore {
             profile = nil
             families = []
             phase = .signedOut
+            onAccountChange?(nil)
         case .signedIn(let id, let email):
             userID = id
             self.email = email
+            onAccountChange?(id)
             await reload()
         }
     }
@@ -268,7 +274,13 @@ final class SessionStore {
 
     func signOut(everywhere: Bool) async throws(FamiliarError) {
         await beforeSignOut?()
-        try await dependencies.auth.signOut(everywhere: everywhere)
+        do {
+            try await dependencies.auth.signOut(everywhere: everywhere)
+        } catch {
+            // Abmelden fehlgeschlagen: weiter angemeldet (z. B. Widgets wieder zulassen).
+            onAccountChange?(userID)
+            throw error
+        }
     }
 
     /// Konto endgültig löschen; danach meldet der Anmeldestatus `signedOut`.
@@ -278,6 +290,11 @@ final class SessionStore {
     func deleteAccount(appleAuthorizationCode: String?) async throws(FamiliarError) {
         await beforeAccountDeletion?()
         await beforeSignOut?()
-        try await dependencies.auth.deleteAccount(appleAuthorizationCode: appleAuthorizationCode)
+        do {
+            try await dependencies.auth.deleteAccount(appleAuthorizationCode: appleAuthorizationCode)
+        } catch {
+            onAccountChange?(userID)
+            throw error
+        }
     }
 }

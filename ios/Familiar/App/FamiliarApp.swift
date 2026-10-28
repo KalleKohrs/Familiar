@@ -23,6 +23,10 @@ struct FamiliarApp: App {
         let tasks = TaskStore(repository: dependencies.tasks)
         let notifications = NotificationStore(devices: dependencies.devices, isEnabled: dependencies.supportsPush)
         session.beforeAccountDeletion = { await GoogleSignInFlow.disconnect() }
+        // Widgets zeigen nur Aufgaben des angemeldeten Kontos; nach jeder Abmeldung ist die Liste weg.
+        session.onAccountChange = { userID in
+            if let userID { WidgetSync.activate(userID: userID) } else { WidgetSync.clear() }
+        }
         session.beforeSignOut = {
             WidgetSync.clear()
             await notifications.signOut()

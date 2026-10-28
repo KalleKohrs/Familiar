@@ -126,9 +126,12 @@ public enum RotationUnit: String, Codable, Hashable, Sendable {
 }
 
 /// Wer bei „Reihum“ dran ist – gleiche Regel wie `private.rotation_index` / `rotation_assignee`
-/// (Migration 0018): Index = Anzahl Serientermine in `[start, Termin)` bzw. Anzahl ganzer Wochen
+/// (Migration 0018): Index = Anzahl Serientermine in `(start, Termin]` bzw. Anzahl ganzer Wochen
 /// zwischen den Montagen; dran ist `reihenfolge[index mod n]`.
 public enum RotationRules {
+    /// Index des Termins in der Reihe (0 = erste Person). Der Start ist immer ein echter Termin und hat 0 –
+    /// auch wenn er nach einer Regeländerung nicht auf die neue Regel fällt; danach zählen die Termine in
+    /// (Start, Datum]. Wie `private.rotation_index` (Migration 0018).
     public static func index(rule: RecurrenceRule, unit: RotationUnit, start: LocalDate, date: LocalDate) -> Int {
         switch unit {
         case .week:
@@ -137,8 +140,15 @@ public enum RotationRules {
             return startMonday.days(until: monday) / 7
         case .occurrence:
             guard start < date else { return 0 }
-            return rule.dates(from: start, through: date.adding(days: -1)).count
+            return rule.dates(from: start.adding(days: 1), through: date).count
         }
+    }
+
+    /// Beginn der Reihe beim Anlegen: der erste Termin, der tatsächlich entsteht (Vergangenes wird nicht
+    /// erzeugt), wie `create_recurring_task`. So ist die erste Person der Liste wirklich als Erste dran.
+    public static func start(rule: RecurrenceRule, startDate: LocalDate, today: LocalDate) -> LocalDate {
+        let from = max(startDate, today)
+        return rule.normalized.firstDate(onOrAfter: from) ?? from
     }
 
     public static func person(order: [UUID], index: Int) -> UUID? {

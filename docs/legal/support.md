@@ -4,7 +4,7 @@
 
 **Ich bekomme keinen Code.** Schau im Spam-Ordner nach. Ein neuer Code lässt sich nach 60 Sekunden anfordern; es gilt immer der zuletzt gesendete.
 
-**Ich habe kein Passwort.** Familiar braucht keins: Du meldest dich mit einem Code per E-Mail oder mit Apple an.
+**Ich habe kein Passwort.** Familiar braucht keins: Du meldest dich mit einem Code per E-Mail, mit Apple oder mit Google an.
 
 ## Familien und Einladungen
 
@@ -18,8 +18,8 @@
 
 ## Reihum, Erinnern, Widgets und Siri
 
-- **Reihum:** Bei einer wiederkehrenden Aufgabe mit mindestens zwei Personen „Reihum“ einschalten – dann ist pro Termin (oder pro Woche) genau eine Person dran. Die Reihenfolge änderst du mit den Pfeilen; einen einzelnen Termin tauschst du, indem du nur diesen Termin bearbeitest.
-- **Erinnern:** In den Details einer offenen Aufgabe neben der Person auf „Erinnern“ tippen. Höchstens einmal pro Stunde; zwischen 21 und 7 Uhr kommt die Erinnerung erst morgens um 7.
+- **Reihum:** Bei einer wiederkehrenden Aufgabe mit mindestens zwei Personen „Reihum“ einschalten – dann ist pro Termin (oder pro Woche) genau eine Person dran. Die Reihenfolge änderst du mit den Pfeilen; einen einzelnen Termin tauschst du, indem du nur diesen Termin bearbeitest. Alle, die bei der Reihe mitmachen, sehen alle ihre Termine. Verlässt jemand die Familie, übernimmt die nächste Person seine offenen Termine.
+- **Erinnern:** In den Details einer offenen Aufgabe neben der Person auf „Erinnern“ tippen. Höchstens einmal pro Stunde; zwischen 21 und 7 Uhr kommt die Erinnerung erst morgens um 7 – mehrere Erinnerungen aus der Nacht kommen dann als eine.
 - **Widgets:** Homescreen bzw. Sperrbildschirm gedrückt halten → „Widget hinzufügen“ → Familiar. Im Widget kannst du einstellen, ob nur deine oder alle Aufgaben und welche Familie angezeigt werden.
 - **Siri:** z. B. „Müll rausbringen in Familiar erledigen“, „Neue Aufgabe in Familiar“, „Was steht heute in Familiar an?“.
 

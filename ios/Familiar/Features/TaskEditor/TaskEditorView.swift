@@ -103,7 +103,8 @@ struct TaskEditorView: View {
                 }
                 startSection
                 assigneesSection.id(Anchor.assignees)
-                if draft.recurrence != nil && draft.assigneeIDs.count > 1 {
+                // Sichtbar, solange „Reihum“ an ist – auch bei nur einer Person, damit es sich abschalten lässt.
+                if draft.recurrence != nil && (draft.assigneeIDs.count > 1 || draft.assignmentMode == .rotate) {
                     rotationSection
                 }
                 if !draft.isRotating {
@@ -194,6 +195,12 @@ struct TaskEditorView: View {
             .onAppear {
                 if draft.familyID == nil { draft.familyID = creatableFamilies.first?.id }
                 original.familyID = draft.familyID
+                // Ausgetretene Personen fallen weg (sonst ließe sich nicht speichern).
+                let memberIDs = Set(members.map(\.userID))
+                if !memberIDs.isEmpty {
+                    draft.keepOnlyMembers(memberIDs)
+                    original.keepOnlyMembers(memberIDs)
+                }
             }
             .task {
                 // Neue Aufgabe: gleich mit dem Titel beginnen.
@@ -460,7 +467,9 @@ struct TaskEditorView: View {
         } header: {
             Text("Wer ist dran?")
         } footer: {
-            if draft.isRotating, !rotationPreview.isEmpty {
+            if draft.isRotating && draft.assigneeIDs.count < 2 {
+                issueText("Für „Reihum“ braucht es mindestens zwei Personen.")
+            } else if draft.isRotating, !rotationPreview.isEmpty {
                 // Eine Zeile Vorschau statt einer eigenen Liste – der Editor bleibt kurz.
                 Text("Als Nächstes: \(rotationPreview.map { "\(previewDate($0.date)) \(name(of: $0.person))" }.joined(separator: " · "))")
                     .accessibilityIdentifier("editor.rotationPreview")
@@ -501,13 +510,13 @@ struct TaskEditorView: View {
         .accessibilityIdentifier("editor.rotation.\(name(of: userID))")
     }
 
-    /// Die nächsten vier Termine mit Person, so wie der Server sie verteilen wird.
+    /// Die nächsten drei Termine mit Person, so wie der Server sie verteilen wird.
     private var rotationPreview: [(date: LocalDate, person: UUID)] {
         guard draft.isRotating, let rule = draft.recurrence?.normalized, rule.isComplete else { return [] }
         let unit = draft.effectiveRotationUnit
-        // Beim Ändern beginnt die Reihe mit dem bearbeiteten Termin.
-        let start = editingTask?.occurrenceDate ?? draft.date
         let today = LocalDate(.now, timeZone: timeZone)
+        // Beim Ändern beginnt die Reihe mit dem bearbeiteten Termin, beim Anlegen mit dem ersten Termin.
+        let start = editingTask?.occurrenceDate ?? RotationRules.start(rule: rule, startDate: draft.date, today: today)
         return RotationRules.upcoming(rule: rule, unit: unit, start: start, order: draft.assigneeIDs,
                                       from: max(start, today), count: 3)
     }
@@ -631,7 +640,7 @@ struct TaskEditorView: View {
                                     } label: {
                                         Image(systemName: "xmark.circle.fill")
                                             .symbolRenderingMode(.palette)
-                                            .foregroundStyle(FamiliarColor.textPrimary, .black.opacity(0.6))
+                                            .foregroundStyle(FamiliarColor.onScrim, FamiliarColor.scrim)
                                             .font(.title3)
                                             .frame(width: 44, height: 44)
                                     }

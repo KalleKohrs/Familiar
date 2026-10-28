@@ -269,9 +269,15 @@ final class TaskStore {
         do throws(FamiliarError) {
             let result = try await repository.nudge(taskID: task.id, userID: userID)
             nudgedAt[Self.nudgeKey(task.id, userID)] = .now
-            showInfo(result.quietHours
-                     ? String(localized: "\(name) wird morgen um 7 Uhr erinnert.")
-                     : String(localized: "\(name) wird erinnert."))
+            if result.quietHours {
+                // Ruhezeit 21–7 Uhr: Zustellung morgens – nach Mitternacht noch am selben Tag.
+                let time = result.scheduledFor.formatted(date: .omitted, time: .shortened)
+                showInfo(Calendar.current.isDateInToday(result.scheduledFor)
+                         ? String(localized: "\(name) wird heute um \(time) erinnert.")
+                         : String(localized: "\(name) wird morgen um \(time) erinnert."))
+            } else {
+                showInfo(String(localized: "\(name) wird erinnert."))
+            }
         } catch {
             if case .app(.nudgeTooSoon, _) = error { nudgedAt[Self.nudgeKey(task.id, userID)] = .now }
             showError(error.message)

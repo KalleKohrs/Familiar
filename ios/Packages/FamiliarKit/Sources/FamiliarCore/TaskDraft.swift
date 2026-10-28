@@ -219,6 +219,12 @@ public struct TaskDraft: Hashable, Sendable {
         assigneeIDs.swapAt(index, target)
     }
 
+    /// Entfernt Personen, die nicht (mehr) Mitglied der Familie sind: Der Server nimmt sie nicht an
+    /// (`assignee_not_member`), und im Editor gibt es für sie keine Zeile zum Abwählen.
+    public mutating func keepOnlyMembers(_ members: Set<UUID>) {
+        assigneeIDs.removeAll { !members.contains($0) }
+    }
+
     public mutating func toggleAssignee(_ userID: UUID) {
         if let index = assigneeIDs.firstIndex(of: userID) {
             assigneeIDs.remove(at: index)

@@ -1,6 +1,6 @@
 # Datenschutzerklärung – Familiar (Entwurf)
 
-> **Entwurf, Stand 2026-10-23.** Von mir aus dem tatsächlichen Datenfluss der App abgeleitet (Datenbank-Schema, Edge Functions, Privacy Manifest). Ich bin kein Anwalt: Bitte vor Veröffentlichung prüfen lassen (z. B. Anwalt oder seriöser Generator wie eRecht24) und die Platzhalter `[…]` ergänzen. Veröffentlichung unter `https://familiar-app.de/datenschutz`.
+> **Entwurf, Stand 2026-10-24.** Von mir aus dem tatsächlichen Datenfluss der App abgeleitet (Datenbank-Schema, Edge Functions, Privacy Manifest). Ich bin kein Anwalt: Bitte vor Veröffentlichung prüfen lassen (z. B. Anwalt oder seriöser Generator wie eRecht24) und die Platzhalter `[…]` ergänzen. Veröffentlichung unter `https://familiar-app.de/datenschutz`.
 
 ## 1. Verantwortlicher
 
@@ -26,7 +26,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 | **Familien** (Name, Farbe, Mitglieder, Rollen, Einladungscodes) | Gemeinsame Planung | Art. 6 Abs. 1 lit. b DSGVO |
 | **Aufgaben** (Titel, Beschreibung, Datum/Uhrzeit, Wiederholung inkl. „Reihum“-Reihenfolge, Zuweisungen, Erledigt-Status, Bilder) | Kernfunktion | Art. 6 Abs. 1 lit. b DSGVO |
 | **Erinnerungen („Erinnern“)**: wer wen an welche Aufgabe erinnert hat, mit Zeitpunkt | Zustellung der Erinnerung; Schutz vor zu vielen Erinnerungen (höchstens eine pro Stunde) | Art. 6 Abs. 1 lit. b DSGVO |
-| **Geräte-Kennung für Mitteilungen** (APNs-Token, App-Version, Zeitzone) | Mitteilungen und Live-Anzeigen auf dem Sperrbildschirm | Art. 6 Abs. 1 lit. b DSGVO; die Mitteilungen selbst nur mit deiner Einwilligung in iOS |
+| **Geräte-Kennung für Mitteilungen** (APNs-Token, App-Version, Zeitzone) und **Push-Token der Live-Anzeigen** (zum Starten, Aktualisieren und Beenden) | Mitteilungen und Live-Anzeigen auf dem Sperrbildschirm | Art. 6 Abs. 1 lit. b DSGVO; die Mitteilungen selbst nur mit deiner Einwilligung in iOS |
 | **Outlook-Termine** (nur wenn du Outlook verbindest: Titel, Zeit, Ort, Organisator, Absage-Status der gewählten Kalender) | Anzeige im Familiar-Kalender – **nur für dich**, nicht für deine Familie | Art. 6 Abs. 1 lit. a DSGVO (Einwilligung durch Verbinden) |
 | **Server-Protokolle** (IP-Adresse, Zeitpunkt, Anfrage) – App-Server und Website | Betrieb und Sicherheit | Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren Betrieb) |
 | **Kontaktformular** auf familiar-app.de (Name, E-Mail-Adresse, Nachricht) | Beantwortung deiner Anfrage | Art. 6 Abs. 1 lit. b bzw. f DSGVO |
@@ -38,11 +38,11 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 
 **Keine automatisierten Entscheidungen:** Es gibt kein Profiling und keine automatisierten Einzelentscheidungen im Sinne von Art. 22 DSGVO.
 
-**Speicherung auf deinem Gerät (§ 25 TDDDG):** Die App speichert auf deinem Gerät nur, was für die von dir genutzten Funktionen unbedingt erforderlich ist: die Anmeldung (im Schlüsselbund), das Geräte-Token für Mitteilungen, die Liste für die Widgets und deine Darstellungs-Einstellung. Dafür ist keine Einwilligung nötig (§ 25 Abs. 2 Nr. 2 TDDDG). Es gibt keine Analyse- oder Werbekennungen.
+**Speicherung auf deinem Gerät (§ 25 TDDDG):** Die App speichert auf deinem Gerät nur, was für die von dir genutzten Funktionen unbedingt erforderlich ist: die Anmeldung (im Schlüsselbund; bei „Mit Google anmelden“ zusätzlich der Anmeldestand von Google), das Geräte-Token für Mitteilungen, die Liste für die Widgets, einen noch nicht eingelösten Einladungscode, kleine Vermerke zum Ablauf (ob du dein Profil bestätigt und die Mitteilungs-Erklärung gesehen hast), deine Darstellungs-Einstellung und vorübergehend zwischengespeicherte Bilder. Dafür ist keine Einwilligung nötig (§ 25 Abs. 2 Nr. 2 TDDDG). Es gibt keine Analyse- oder Werbekennungen.
 
-**Wer sieht was:** Aufgaben, Bilder und Status sehen die Mitglieder der jeweiligen Familie; ist eine Familie auf „nur Zugewiesene“ gestellt, sehen nur zugewiesene Personen und die Erstellerin bzw. der Ersteller die Aufgabe. Deine Outlook-Termine sieht niemand außer dir.
+**Wer sieht was:** Aufgaben, Bilder und Status sehen die Mitglieder der jeweiligen Familie; ist eine Familie auf „nur Zugewiesene“ gestellt, sehen nur zugewiesene Personen und die Erstellerin bzw. der Ersteller die Aufgabe. Bei Aufgaben „Reihum“ sehen alle, die bei der Reihe mitmachen, alle Termine dieser Reihe (damit ihr tauschen und euch erinnern könnt). Verlässt jemand eine Familie oder wird entfernt, enden dort seine offenen Zuweisungen, und er bekommt keine Mitteilungen mehr zu Aufgaben dieser Familie. Deine Outlook-Termine sieht niemand außer dir.
 
-**Widgets und Siri:** Für die Widgets „Heute“ legt die App eine kleine Liste der heutigen Aufgaben (Titel, Uhrzeit, Familie, Initialen) **nur auf deinem Gerät** ab; sie verlässt das Gerät nicht und wird beim Abmelden gelöscht. Auf dem Sperrbildschirm blendet iOS die Titel aus, wenn du dort keinen Zugriff im gesperrten Zustand erlaubst. Wenn du Siri oder Kurzbefehle nutzt (z. B. „Müll rausbringen in Familiar erledigen“), verarbeitet Apple deine Spracheingabe nach den Siri-Bedingungen; Familiar erhält davon nur die erkannte Aufgabe bzw. den Titel.
+**Widgets und Siri:** Für die Widgets „Heute“ legt die App eine Liste deiner offenen Aufgaben (Titel, Datum und Uhrzeit, Familie, Initialen der Zugewiesenen) **nur auf deinem Gerät** ab, damit das Widget auch ohne geöffnete App zum nächsten Tag weiterschalten kann. Die Liste ist von iCloud- und Computer-Backups ausgenommen, verlässt das Gerät nicht und wird bei jeder Abmeldung gelöscht. Auf dem Sperrbildschirm blendet iOS die Titel aus, wenn du dort keinen Zugriff im gesperrten Zustand erlaubst. Damit Siri und Kurzbefehle deine Aufgaben beim Namen erkennen (z. B. „Müll rausbringen in Familiar erledigen“), übergibt die App die Titel deiner offenen Aufgaben an iOS auf deinem Gerät. Deine Spracheingabe verarbeitet Apple nach den Siri-Bedingungen; Familiar erhält davon nur die erkannte Aufgabe bzw. den Titel. Siri nennt, erledigt oder legt Aufgaben nur bei entsperrtem iPhone an.
 
 **Outlook:** Familiar erhält von Microsoft nur das Recht, deine Kalender zu **lesen** (`Calendars.ReadBasic` – ohne Termin-Text und Anhänge). Familiar schreibt nie in deinen Kalender. Das Zugriffs-Token liegt verschlüsselt auf dem Server. Du kannst die Verbindung jederzeit in der App trennen; dann werden Token und gespeicherte Termine gelöscht.
 
@@ -56,7 +56,7 @@ Familiar ist ein Familienplaner. Wir verarbeiten nur die Daten, die für die Fun
 | **Backblaze, Inc.** | Speicherort der nächtlichen Datensicherung; erhält nur Daten, die vorher bei Supabase verschlüsselt wurden und die Backblaze nicht lesen kann | Server in der EU (Amsterdam); Unternehmen in den USA – Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln |
 | **Apple Inc.** (Apple Push Notification service) | Zustellung von Mitteilungen und Live-Anzeigen; erhält Geräte-Token und Mitteilungsinhalt (z. B. Aufgabentitel) | USA bzw. Apple Distribution International (Irland) |
 | **Microsoft** | Nur bei verbundenem Outlook: Abruf deiner Termine | nach den Bedingungen deines Microsoft-Kontos |
-| **Google** – nur bei „Mit Google anmelden“ | Anmeldung (Google Ireland Limited) | Irland, ggf. USA – EU-US Data Privacy Framework bzw. EU-Standardvertragsklauseln |
+| **Google** – nur bei „Mit Google anmelden“ | Anmeldung (Google Ireland Limited); beim Löschen deines Kontos widerrufen wir die Verbindung zu deinem Google-Konto | Irland, ggf. USA – EU-US Data Privacy Framework bzw. EU-Standardvertragsklauseln |
 | **Apple** – nur bei „Mit Apple anmelden“ | Anmeldung; beim Löschen deines Kontos widerrufen wir die Verknüpfung bei Apple | USA bzw. Apple Distribution International (Irland) |
 
 Supabase, Netlify, Resend und Backblaze verarbeiten Daten nur in unserem Auftrag (Art. 28 DSGVO) und sind vertraglich verpflichtet, sie mindestens so zu schützen wie in dieser Erklärung beschrieben. Bei Übermittlungen in die USA stützen wir uns auf das EU-US Data Privacy Framework, soweit der Anbieter zertifiziert ist, und ergänzend auf die EU-Standardvertragsklauseln. Apple, Google und Microsoft handeln bei der Anmeldung bzw. dem Kalenderzugriff in eigener Verantwortung nach ihren Datenschutzbestimmungen. Wir verkaufen keine Daten und geben sie an niemanden sonst weiter, außer wir sind gesetzlich dazu verpflichtet.
@@ -75,7 +75,7 @@ Supabase, Netlify, Resend und Backblaze verarbeiten Daten nur in unserem Auftrag
 
 ## 6. Konto löschen
 
-In der App unter **Profil › Konto löschen**. Gelöscht werden dein Konto, Profil und Profilbild, deine Mitgliedschaften, Zuweisungen, Geräte und Outlook-Verbindung. Hast du dich mit Apple angemeldet, bestätigst du das Löschen kurz bei Apple; wir widerrufen dann die Verknüpfung mit deiner Apple-ID. Familien, in denen du allein bist, werden mit allen Aufgaben gelöscht. In Familien mit weiteren Mitgliedern bleiben von dir angelegte Aufgaben und Bilder für die Familie erhalten, aber ohne Bezug zu deiner Person; war niemand sonst Admin, wird das am längsten beteiligte Mitglied Admin.
+In der App unter **Profil › Konto löschen**. Gelöscht werden dein Konto, Profil und Profilbild, deine Mitgliedschaften, Zuweisungen, Geräte und Outlook-Verbindung. Hast du dich mit Apple angemeldet, bestätigst du das Löschen kurz bei Apple; wir widerrufen dann die Verknüpfung mit deiner Apple-ID. Bei „Mit Google anmelden“ widerruft die App die Verbindung zu deinem Google-Konto. Bei „Reihum“ übernimmt die nächste Person deine offenen Termine. Familien, in denen du allein bist, werden mit allen Aufgaben gelöscht. In Familien mit weiteren Mitgliedern bleiben von dir angelegte Aufgaben und Bilder für die Familie erhalten, aber ohne Bezug zu deiner Person; war niemand sonst Admin, wird das am längsten beteiligte Mitglied Admin.
 
 ## 7. Widerspruchsrecht
 

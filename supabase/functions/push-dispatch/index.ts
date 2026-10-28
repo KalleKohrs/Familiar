@@ -27,6 +27,7 @@ type Job = {
   starts_at_unix: number | null;
   completion_mode: string | null;
   is_open: boolean;
+  is_member: boolean;
   can_complete: boolean;
   assignees: { initials: string; isDone: boolean }[];
   devices: Device[];
@@ -176,6 +177,12 @@ async function handle(job: Job, jwt: string, topic: string, startedActivity: Set
     else if (isDeadToken(r)) onDead();
     else failures.push(r);
   };
+
+  // Wer die Familie verlassen hat, bekommt keine Inhalte mehr – nur das Ende einer Live Activity.
+  // (is_member fehlt nur bei älteren Datenbankständen; dann wie bisher senden.)
+  if (job.is_member === false && job.kind !== "activity_end") {
+    return { id: job.id, status: "skipped", error: "not_member" };
+  }
 
   // Erinnerungen und Anstupsen nur, solange die Person noch offen ist.
   const timely = ["started", "reminder", "activity_start", "nudge"].includes(job.kind);

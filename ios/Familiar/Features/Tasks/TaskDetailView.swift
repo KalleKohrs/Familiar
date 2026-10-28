@@ -190,17 +190,25 @@ struct TaskDetailView: View {
 
     // MARK: Reihum und Anstupsen (ADR 0010)
 
-    /// „Reihum · nächstes Mal: Mia“ für Vorkommen einer Reihum-Serie.
+    /// „Reihum · nächstes Mal: Mia“ für Vorkommen einer Reihum-Serie. Ist der nächste Termin schon
+    /// erzeugt (vielleicht getauscht), zählt dessen Person, sonst die Regel.
     private func rotationText(_ task: TaskItem) -> String? {
         guard let series = task.series, series.isRotating, let date = task.occurrenceDate,
               let start = series.rotationStart ?? series.startDate else { return nil }
-        let members = Set(session.membership(task.familyID)?.members.map(\.userID) ?? [])
-        let order = series.assigneeOrder.filter(members.contains)
-        guard let next = RotationRules.upcoming(rule: series.rule, unit: series.rotationUnit, start: start,
-                                                order: order, from: date.adding(days: 1), count: 1).first else {
-            return String(localized: "Reihum")
+        let generated = store.tasks
+            .filter { $0.seriesID == series.id && ($0.occurrenceDate.map { $0 > date } ?? false) }
+            .min { ($0.occurrenceDate ?? date) < ($1.occurrenceDate ?? date) }
+        let person: UUID?
+        if let generated, generated.assignees.count == 1 {
+            person = generated.assignees.first?.userID
+        } else {
+            let members = Set(session.membership(task.familyID)?.members.map(\.userID) ?? [])
+            let order = series.assigneeOrder.filter(members.contains)
+            person = RotationRules.upcoming(rule: series.rule, unit: series.rotationUnit, start: start,
+                                            order: order, from: date.adding(days: 1), count: 1).first?.person
         }
-        return String(localized: "Reihum · nächstes Mal: \(session.displayName(of: next.person, in: task.familyID))")
+        guard let person else { return String(localized: "Reihum") }
+        return String(localized: "Reihum · nächstes Mal: \(session.displayName(of: person, in: task.familyID))")
     }
 
     /// Erinnern geht bei offenen Aufgaben an Personen, die ihren Teil noch nicht erledigt haben – nie an sich selbst.

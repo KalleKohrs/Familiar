@@ -28,8 +28,8 @@ Kontrastwerte berechnet (WCAG) für den ungünstigsten Fall: Glas-Karte über de
 | `textPrimary` | `#F6EEE6` | `#2B1F25` (Aubergine-Tinte) | `#140C10` | 15,6 : 1 |
 | `textSecondary` | `#BFB2A5` | `#675850` | `#4A3D36` | 6,7 : 1 |
 | `textTertiary` | `#8F8378` | `#857669` (nur groß/dekorativ) | `#6B5D55` | 3,9 : 1 |
-| `accent` (Fläche: Plus, Hauptknopf, „heute“-Kreis) | `#FF8C42` | `#F27A2B` | `#E86E1F` | Schrift darauf 6,8 : 1 |
-| **neu** `accentInk` (orange Schrift, Symbole, Links) | = `accent` | `#A84A0A` | `#943F06` | 5,1 : 1 auf Glas-Karte, 4,3 : 1 im stärksten Schein |
+| `accent` (orange **Schrift**, Symbole, Links, aktiver Tab) | `#FF8C42` | `#A84A0A` | `#943F06` | 5,1 : 1 auf Glas-Karte, 4,3 : 1 im stärksten Schein |
+| **neu** `accentFill` (orange **Fläche**: Plus, Hauptknopf, „heute“-Kreis, Schalter) | = `accent` | `#F27A2B` | `#E86E1F` | `onAccent` darauf 6,8 : 1 |
 | `onAccent` | `#1B1006` | `#1B1006` | `#000000` | 6,8 : 1 |
 | `success` | `#7DD69B` | `#1B7340` | `#165E34` | 5,2 : 1 |
 | `warning` | `#F5C451` | `#855500` | `#6E4600` | 5,6 : 1 |
@@ -39,7 +39,7 @@ Kontrastwerte berechnet (WCAG) für den ungünstigsten Fall: Glas-Karte über de
 | `glowWarm` | `#FF7A3D` · 16 % | `#FF9655` · 42 % (oben rechts) | 40 % davon | – |
 | `glowPlum` | `#7A3B5C` · 28 % | `#E896B2` · 45 % (Rosé, unten links) | 40 % davon | – |
 
-**Warum zwei Orange-Töne:** Das Marken-Orange ist auf Hell als Schrift zu schwach (2,4 : 1). Flächen (Plus, „Für alle erledigt“) behalten ein kräftiges Orange mit dunkler Schrift; orange **Schrift** („Heute“, „Bearbeiten“, aktiver Tab) bekommt das dunklere Bernstein `accentInk`. Im Dunkelmodus sind beide gleich – dort ändert sich nichts.
+**Warum zwei Orange-Töne:** Das Marken-Orange ist auf Hell als Schrift zu schwach (2,4 : 1). Flächen (Plus, „Für alle erledigt“) behalten ein kräftiges Orange mit dunkler Schrift; orange **Schrift** („Heute“, „Bearbeiten“, aktiver Tab) bekommt das dunklere Bernstein. Im Code: `accent` = Schrift/Symbol, `accentFill` = Fläche (mit `onAccent`). Im Dunkelmodus sind beide gleich – dort ändert sich nichts.
 
 **Karten auf Hell:** durchscheinendes warmes Glas, damit der Schein durchkommt; oben eine weiße Glanzkante, darunter ein warmer, weicher Schatten. Bei „Transparenz reduzieren“ opak (`card`).
 
@@ -62,11 +62,11 @@ Die acht Voreinstellungen sind auf Hell zu blass (Sonne 1,6 : 1, Salbei 1,8 : 1)
 
 ## Umsetzung (erledigt)
 
-1. `FamiliarColor`: jede Farbe bekommt eine helle Variante (dieselbe Mechanik wie „Kontrast erhöhen“), neues Token `accentInk`; Stellen mit orangem Text darauf umstellen.
+1. `FamiliarColor`: jede Farbe bekommt eine helle Variante (dieselbe Mechanik wie „Kontrast erhöhen“), neues Token `accentFill` für orange Flächen (`accent` bleibt für Schrift und Symbole); Flächen darauf umstellen.
 2. Feste Dunkelmodus-Sperre entfernen (`preferredColorScheme(.dark)` an drei Stellen, `UIUserInterfaceStyle`), Auswahl im Profil.
 3. Ambient-Hintergrund, Karten-Schatten, ca. 15 fest kodierte Farbwerte (Schatten, Glanzlichter).
 4. Familienfarben-Anzeige (`FamilyColorResolver`).
 5. Widgets und Live Activity.
 6. Prüfung: alle Bildschirme hell/dunkel × normal/Kontrast erhöht/Transparenz reduziert, UI-Tests in beiden Modi, Design-Galerie mit Umschalter; App-Store-Bilder zusätzlich hell.
 
-Ergänzungen bei der Umsetzung: neue Tokens `cardGlassLow` (unteres Ende des Glas-Verlaufs), `cardShadow`, `selection` (Kapsel des aktiven Tabs); Schalter im Editor in `accentFill`; Anmelde-Knöpfe: Apple im Hellen schwarz, Google mit grauem Rand (#747775); `LaunchBackground` und `AccentColor` mit heller und dunkler Variante; Familienfarben über `RGBColor.forLightBackground` (OKLab-Helligkeit ≤ 0,68, getestet).
+Ergänzungen bei der Umsetzung: neue Tokens `onScrim`/`scrim` (helle Schrift auf dunklem Schleier über Bildern, in beiden Modi gleich), `cardGlassLow` (unteres Ende des Glas-Verlaufs), `cardShadow`, `selection` (Kapsel des aktiven Tabs); Schalter im Editor in `accentFill`; Anmelde-Knöpfe: Apple im Hellen schwarz, Google mit grauem Rand (#747775); `LaunchBackground` und `AccentColor` mit heller und dunkler Variante; Familienfarben über `RGBColor.forLightBackground` (OKLab-Helligkeit ≤ 0,68, getestet).

@@ -157,6 +157,12 @@ public enum WidgetSnapshotStore {
         guard let data = try? JSONEncoder().encode(snapshot) else { return false }
         do {
             try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            // Nur für die Widgets auf diesem Gerät – nicht in iCloud- oder Computer-Backups.
+            // (Nach jedem atomaren Schreiben neu setzen: Die Datei wird dabei ersetzt.)
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            var fileURL = url
+            try? fileURL.setResourceValues(values)
             return true
         } catch {
             return false

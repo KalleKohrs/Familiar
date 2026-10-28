@@ -25,7 +25,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0015_notification_cleanup` | 2026-10-21 | **manuell im Supabase-SQL-Editor** (enthält `delete`); trägt sich selbst in `schema_migrations` ein. Täglich 03:45 UTC: Aufträge, beendete Live Activities und abgemeldete Geräte nach 30 Tagen, Cron-Tokens nach 1 Tag. |
 | `0016_oauth_states_user_index` | 2026-10-22 | Supabase-MCP `apply_migration` (Advisor: Index für Fremdschlüssel) |
 | `0017_backup` | 2026-10-22 | Supabase-MCP `apply_migration` (bewusst ohne Löschbefehle). Datensicherung, siehe unten und [ADR 0009](decisions/0009-backups.md). |
-| `0018_rotation_and_nudges` | – | **noch einzuspielen, manuell im Supabase-SQL-Editor** (enthält `drop function`). Tests `supabase/tests/0010_rotation_nudges.sql`. |
+| `0018_rotation_and_nudges` | `20261024120000` | **noch einzuspielen, manuell im Supabase-SQL-Editor** (enthält `drop function`, `delete`; trägt sich selbst in die Migrationsliste ein). Tests `supabase/tests/0010_rotation_nudges.sql`. |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
@@ -256,12 +256,19 @@ Entscheidung: [ADR 0010](decisions/0010-reihum-widgets-anstupsen-siri.md).
 | Objekt | Zweck |
 |---|---|
 | `task_series.assignment_mode` | `together` (alle Zugewiesenen, Standard) \| `rotate` (reihum, pro Termin eine Person) |
-| `task_series.rotation_unit`, `rotation_start` | Wechsel pro Termin (`occurrence`) oder pro Kalenderwoche (`week`); ab `rotation_start` wird gezählt (beim Ändern ab einem Termin: dieser Termin) |
+| `task_series.rotation_unit`, `rotation_start` | Wechsel pro Termin (`occurrence`) oder pro Kalenderwoche (`week`); `rotation_start` ist ein echter Termin mit Index 0 (beim Anlegen der erste Termin ab `max(Start, heute)`, beim Ändern ab einem Termin dieser Termin) |
 | `series_assignees.position` | Reihenfolge |
-| `private.rotation_index`, `rotation_assignee`, `occurrence_assignees` | Wer dran ist: `liste[k mod n]`, nur aktuelle Mitglieder; gleiche Regel in Swift (`RotationRules`) |
+| `private.rotation_index`, `rotation_assignee`, `occurrence_assignees` | Wer dran ist: `liste[k mod n]`, `k` = Termine in `(rotation_start, Termin]` bzw. Wochen; nur aktuelle Mitglieder; gleiche Regel in Swift (`RotationRules`) |
 | `create_recurring_task`, `update_series_from` | neue Parameter `p_assignment_mode`, `p_rotation_unit`; Reihum erzwingt `any_one` und ≥ 2 Personen (`rotation_needs_two`) |
-| `nudge_task(p_task_id, p_user_id)` | Anstupsen: nur offene, zugewiesene Personen, nicht sich selbst, 1 × pro Stunde (`private.task_nudges`), 21–7 Uhr Zustellung um 7 Uhr; Auftrag `nudge` |
-| Mitteilungen | automatisch erzeugte Vorkommen: keine „zugewiesen“-Mitteilung (`familiar.generating`); neue Serie: einmal an die Personen des ersten Termins; Tauschen/Umstellen: neue Person bekommt „zugewiesen“, bei der alten endet die Live Activity (`task_assignees_notify_removal`) |
+| `private.handle_member_departure()` (Trigger `family_members_departure`) | Austritt: Serienplätze und offene Zuweisungen der Person in der Familie löschen, Reihum-Termine ohne Person neu besetzen, „jede Person einzeln“ ggf. abschließen, Version erhöhen (Realtime). Einmalige Bereinigung alter Zuweisungen von Nicht-Mitgliedern |
+| `private.my_rotation_series_ids()`, `can_view_task`, Policy `tasks_select_visible` | Reihum-Beteiligte sehen alle Termine ihrer Serie (auch bei „nur Zugewiesene“) |
+| `nudge_task(p_task_id, p_user_id)` | Anstupsen: nur offene Aufgaben, nur aktuelle Mitglieder (`member_not_found`), nur offene Zuweisungen, nicht sich selbst, 1 × pro Stunde und Person (`private.task_nudges`, Löschung nach 1 Tag), 21–7 Uhr gebündelte Zustellung um 7 Uhr; Auftrag `nudge` |
+| Mitteilungen | Sammeländerungen setzen `familiar.bulk_change = 'on'` (Erzeugung, Ändern ab Termin, Austritt): keine Einzelmitteilungen „zugewiesen“/„geändert“. `update_series_from` meldet danach je Person einmal („zugewiesen“, wenn ihr nächster Termin neu ist, sonst „geändert“). Neue Serie: einmal an die Personen des ersten Termins. Tauschen: neue Person bekommt „zugewiesen“, bei der alten endet die Live Activity (`task_assignees_notify_removal`) |
+| `private.enqueue_notification` | legt Aufträge nur für bestehende Profile an (Kontolöschung) |
+| `private.enqueue_due_notifications`, `push_claim_jobs` (`is_member`) | Zeitgesteuertes und alle Inhalte nur an aktuelle Mitglieder; das Ende einer Live Activity geht trotzdem raus |
+| `private.enqueue_activity_end` | nur Live Activities auf angemeldeten Geräten |
+| `review_sign_in_begin()` / `review_sign_in_succeeded(id)` | Prüf-Zugang: jeder Versuch zählt zunächst als Fehlversuch (Advisory Lock), höchstens 10 pro Stunde; nur `service_role` |
+| `private.purge_notifications()` | wie 0015, zusätzlich `task_nudges` und `review_sign_in_attempts` nach 1 Tag |
 
 Neue Fehlerschlüssel: `invalid_rotation`, `rotation_needs_two`, `nudge_self`, `nudge_not_open`, `nudge_too_soon`.
 

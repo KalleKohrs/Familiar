@@ -396,7 +396,35 @@ extension InMemoryBackend: FamilyRepository {
             throw .app(key: .lastAdmin, message: "Die Familie braucht mindestens einen Admin. Ernenne zuerst eine andere Person zum Admin.")
         }
         members[familyID]?.removeAll { $0.userID == id }
+        handleDeparture(of: id, from: familyID)
         return .left
+    }
+
+    /// Wie `private.handle_member_departure` (Migration 0018): Wer austritt, ist für nichts mehr
+    /// zuständig; Reihum-Termine ohne Person gehen an die Person, die nach der Regel dran ist.
+    private func handleDeparture(of userID: UUID, from familyID: UUID) {
+        for (seriesID, var record) in seriesRecords where record.input.familyID == familyID {
+            record.input.assigneeIDs.removeAll { $0 == userID }
+            record.info.assigneeOrder.removeAll { $0 == userID }
+            seriesRecords[seriesID] = record
+        }
+        for var task in tasks.values where task.familyID == familyID && task.isOpen {
+            let before = task.assignees
+            task.assignees.removeAll { $0.userID == userID && !$0.isDone }
+            if task.assignees.isEmpty, let seriesID = task.seriesID, let record = seriesRecords[seriesID],
+               record.info.isRotating, let date = task.occurrenceDate {
+                task.assignees = occurrenceAssignees(record, on: date).map { TaskAssignee(userID: $0) }
+            }
+            if task.completionMode == .each, !task.assignees.isEmpty, task.assignees.allSatisfy(\.isDone) {
+                task.completedAt = .now
+                task.completedBy = task.assignees.max { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }?.userID
+                task.completionSource = .assignee
+            }
+            guard task.assignees != before || task.completedAt != nil else { continue }
+            task.series = task.seriesID.flatMap { seriesRecords[$0]?.info } ?? task.series
+            task.version += 1
+            tasks[task.id] = task
+        }
     }
 }
 
@@ -446,6 +474,7 @@ extension InMemoryBackend {
             throw .app(key: .permissionDeniedRemoveMembers, message: "Du darfst in dieser Familie keine Mitglieder entfernen.")
         }
         members[familyID]?.removeAll { $0.userID == userID }
+        handleDeparture(of: userID, from: familyID)
     }
 
     func deleteFamily(familyID: UUID) async throws(FamiliarError) {
@@ -551,7 +580,8 @@ extension InMemoryBackend: TaskRepository {
         normalizedInput.recurrence = rule
         let info = TaskSeries(id: UUID(), familyID: input.familyID, title: input.title, rule: rule, startDate: start,
                               assignmentMode: input.assignmentMode, rotationUnit: input.rotationUnit,
-                              rotationStart: start, assigneeOrder: input.assigneeIDs)
+                              rotationStart: RotationRules.start(rule: rule, startDate: start, today: today),
+                              assigneeOrder: input.assigneeIDs)
         seriesRecords[info.id] = SeriesRecord(info: info, input: normalizedInput, createdBy: me,
                                               generatedUntil: start < today ? today.adding(days: -1) : nil)
         generate(info.id)
@@ -689,12 +719,18 @@ extension InMemoryBackend: TaskRepository {
         guard userID != me else {
             throw .app(key: .nudgeSelf, message: "Du kannst dich nicht selbst erinnern.")
         }
-        guard task.isOpen, task.assignees.contains(where: { $0.userID == userID && !$0.isDone }) else {
-            throw .app(key: .nudgeNotOpen, message: "Diese Person hat die Aufgabe schon erledigt.")
+        guard task.isOpen else {
+            throw .app(key: .nudgeNotOpen, message: "Für diese Person ist die Aufgabe nicht mehr offen.")
+        }
+        guard membership(task.familyID, for: userID) != nil else {
+            throw .app(key: .memberNotFound, message: "Diese Person ist kein Mitglied der Familie.")
+        }
+        guard task.assignees.contains(where: { $0.userID == userID && !$0.isDone }) else {
+            throw .app(key: .nudgeNotOpen, message: "Für diese Person ist die Aufgabe nicht mehr offen.")
         }
         let key = "\(taskID)-\(userID)"
         if let last = nudges[key], Date.now.timeIntervalSince(last) < 3600 {
-            throw .app(key: .nudgeTooSoon, message: "Du hast diese Person gerade erst erinnert. Versuche es in einer Stunde noch einmal.")
+            throw .app(key: .nudgeTooSoon, message: "Diese Person wurde in der letzten Stunde schon erinnert. Versuche es später noch einmal.")
         }
         nudges[key] = .now
         sentNudges.append((taskID, userID))

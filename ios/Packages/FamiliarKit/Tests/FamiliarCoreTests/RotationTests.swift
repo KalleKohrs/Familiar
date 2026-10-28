@@ -70,6 +70,45 @@ struct RotationTests {
         #expect(draft.assigneeIDs == [otto, mia])
     }
 
+    /// Wie W16 in `0010_rotation_nudges.sql`: Freitag → Montag ab diesem Freitag (Mia) – danach Otto, nicht wieder Mia.
+    @Test func ruleChangeDoesNotGiveTwoTurnsInARow() {
+        let friday = LocalDate(year: 2026, month: 10, day: 23)
+        let monday = friday.adding(days: 3)
+        let rule = RecurrenceRule.weekly([monday.isoWeekday])
+        let person = { (date: LocalDate) in
+            RotationRules.person(order: [self.mia, self.otto], index: RotationRules.index(
+                rule: rule, unit: .occurrence, start: friday, date: date))
+        }
+        #expect(person(friday) == mia)
+        #expect(person(monday) == otto)
+        #expect(person(monday.adding(days: 7)) == mia)
+        let preview = RotationRules.upcoming(rule: rule, unit: .occurrence, start: friday, order: [mia, otto],
+                                             from: friday.adding(days: 1), count: 2)
+        #expect(preview.map(\.person) == [otto, mia])
+    }
+
+    /// Wie W17: Start in der Vergangenheit – die Reihe beginnt beim ersten Termin, der entsteht.
+    @Test func rotationStartsAtFirstRealOccurrence() {
+        let rule = RecurrenceRule.weekly([thursday.isoWeekday])
+        #expect(RotationRules.start(rule: rule, startDate: thursday.adding(days: -7), today: thursday) == thursday)
+        #expect(RotationRules.start(rule: rule, startDate: thursday.adding(days: -6), today: thursday.adding(days: 1))
+                == thursday.adding(days: 7))
+        #expect(RotationRules.start(rule: rule, startDate: thursday.adding(days: 7), today: thursday)
+                == thursday.adding(days: 7))
+        // Startdatum an einem anderen Wochentag: Erste Person ist beim ersten Donnerstag dran.
+        let sunday = thursday.adding(days: 3)
+        let start = RotationRules.start(rule: rule, startDate: sunday, today: sunday)
+        #expect(RotationRules.index(rule: rule, unit: .week, start: start, date: thursday.adding(days: 7)) == 0)
+        #expect(RotationRules.index(rule: rule, unit: .occurrence, start: start, date: thursday.adding(days: 7)) == 0)
+    }
+
+    @Test func draftDropsFormerMembers() {
+        var draft = TaskDraft(familyID: UUID())
+        draft.assigneeIDs = [otto, mia, clara]
+        draft.keepOnlyMembers([mia, clara])
+        #expect(draft.assigneeIDs == [mia, clara])
+    }
+
     @Test func editingASwappedOccurrenceShowsItsPersonFirst() {
         let series = TaskSeries(id: UUID(), rule: .daily, startDate: thursday, assignmentMode: .rotate,
                                 rotationStart: thursday, assigneeOrder: [mia, otto, clara])

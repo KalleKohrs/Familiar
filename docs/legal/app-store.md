@@ -47,7 +47,7 @@ EINFACH ANMELDEN
 • Mit E-Mail-Code, Apple oder Google – kein Passwort
 
 PRIVAT
-Keine Werbung, kein Tracking. Deine Daten liegen auf Servern in der EU und werden nur für Familiar genutzt.
+Keine Werbung, kein Tracking. Deine Familiendaten (Aufgaben, Bilder, Profile) liegen auf Servern in der EU und werden nur für Familiar genutzt.
 
 ## Schlüsselwörter (100)
 

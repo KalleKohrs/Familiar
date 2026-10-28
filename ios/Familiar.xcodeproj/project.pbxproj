@@ -417,6 +417,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F0000000000000000000A021 /* Familiar.xcconfig */;
 			buildSettings = {
+				INFOPLIST_KEY_CFBundleDisplayName = Familiar;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Familiar nutzt die Kamera, um Fotos direkt an Aufgaben anzuhängen.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 			};
 			name = Debug;
 		};
@@ -424,6 +432,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F0000000000000000000A021 /* Familiar.xcconfig */;
 			buildSettings = {
+				INFOPLIST_KEY_CFBundleDisplayName = Familiar;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Familiar nutzt die Kamera, um Fotos direkt an Aufgaben anzuhängen.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 			};
 			name = Release;
 		};

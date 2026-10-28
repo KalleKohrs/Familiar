@@ -324,10 +324,10 @@ struct TaskCard: View {
                                 if task.images.count > 1 {
                                     Text("\(task.images.count)")
                                         .font(.caption2.weight(.bold))
-                                        .foregroundStyle(FamiliarColor.textPrimary)
+                                        .foregroundStyle(FamiliarColor.onScrim)
                                         .padding(.horizontal, 5)
                                         .padding(.vertical, 2)
-                                        .background(Capsule().fill(.black.opacity(0.6)))
+                                        .background(Capsule().fill(FamiliarColor.scrim))
                                         .padding(4)
                                 }
                             }
