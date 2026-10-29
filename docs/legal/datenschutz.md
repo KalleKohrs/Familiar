@@ -64,7 +64,7 @@ Supabase, Netlify, Resend und Backblaze verarbeiten Daten nur in unserem Auftrag
 ## 5. Speicherdauer
 
 - **Konto, Familien, offene Aufgaben:** bis du sie löschst bzw. dein Konto löschst.
-- **Erledigte und gelöschte Aufgaben:** 30 Tage im Verlauf (zum Wiederherstellen), danach automatisch endgültig gelöscht – einschließlich Bildern.
+- **Erledigte und gelöschte Aufgaben:** 30 Tage im Verlauf (zum Wiederherstellen), danach automatisch endgültig gelöscht – einschließlich Bildern. Admins können den Verlauf ihrer Familie auch früher endgültig leeren.
 - **Mitteilungs-Aufträge, beendete Live-Anzeigen, abgemeldete Geräte:** 30 Tage, danach automatisch gelöscht.
 - **Erinnerungen („Erinnern“):** der Vermerk, wer wen erinnert hat, nach 1 Tag; der Mitteilungs-Auftrag wie oben nach 30 Tagen.
 - **Outlook-Termine:** nur ein Fenster von 7 Tagen zurück bis 120 Tage voraus; ältere fallen beim Abgleich weg; beim Trennen sofort gelöscht.

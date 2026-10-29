@@ -127,6 +127,12 @@ final class SupabaseTaskRepository: TaskRepository {
         }
     }
 
+    func clearHistory() async throws(FamiliarError) {
+        _ = try await perform {
+            try await client.rpc("clear_history").execute()
+        }
+    }
+
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {
         let since = Date.now.addingTimeInterval(-Double(HistoryRules.retentionDays) * 86_400)
         return try await perform {

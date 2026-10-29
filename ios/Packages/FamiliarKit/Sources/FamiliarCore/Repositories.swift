@@ -57,6 +57,8 @@ public protocol TaskRepository: Sendable {
     /// „Gesamte Serie“ löschen; liefert die ID des Verlaufseintrags (für Rückgängig).
     func deleteSeries(fromTaskID taskID: UUID) async throws(FamiliarError) -> UUID
     func restoreSeries(deletionID: UUID) async throws(FamiliarError)
+    /// Verlauf aller Familien, in denen der Nutzer Admin ist, endgültig leeren (`clear_history`).
+    func clearHistory() async throws(FamiliarError)
     /// Serien-Löschungen der letzten 30 Tage, die noch nicht wiederhergestellt sind.
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion]
     /// Nicht gelöschte Aufgaben (offen und erledigt) mit Startdatum im Zeitraum, für den Kalender.

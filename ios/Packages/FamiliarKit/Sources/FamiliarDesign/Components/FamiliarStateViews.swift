@@ -81,9 +81,12 @@ public struct FamiliarErrorState: View {
 }
 
 /// Platzhalterblock während des Ladens. Der Schimmer entfällt bei „Bewegung reduzieren“.
+/// Er blendet erst nach kurzer Verzögerung ein: Ist alles sofort da (Tabwechsel, Monatswechsel),
+/// würde sonst eine helle Fläche kurz aufblitzen. Der Platz bleibt von Anfang an reserviert.
 public struct FamiliarSkeleton: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase: CGFloat = -1
+    @State private var isVisible = false
     let height: CGFloat
 
     public init(height: CGFloat = 88) {
@@ -112,6 +115,12 @@ public struct FamiliarSkeleton: View {
             .onAppear {
                 guard !reduceMotion else { return }
                 withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) { phase = 1.4 }
+            }
+            .opacity(isVisible ? 1 : 0)
+            .animation(.easeOut(duration: 0.2), value: isVisible)
+            .task {
+                try? await Task.sleep(for: .milliseconds(400))
+                isVisible = true
             }
             .accessibilityHidden(true)
     }

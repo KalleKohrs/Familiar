@@ -7,8 +7,15 @@ import SwiftUI
 /// Jedes Mitglied mit Sicht auf eine Aufgabe darf sie wiederherstellen (Guide, Abschnitt 3).
 struct HistoryHomeView: View {
     @Environment(TaskStore.self) private var store
+    @Environment(SessionStore.self) private var session
     @Namespace private var transition
     @State private var path: [UUID] = []
+    @State private var confirmsClearing = false
+
+    /// Nur Admins dürfen den Verlauf ihrer Familien leeren (`clear_history`).
+    private var canClear: Bool {
+        !store.history.isEmpty && session.families.contains { $0.myRole == .admin }
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -30,6 +37,24 @@ struct HistoryHomeView: View {
             .navigationTitle("Verlauf")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title)
+            .toolbar {
+                if canClear {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(role: .destructive) { confirmsClearing = true } label: {
+                            Image(systemName: "trash")
+                        }
+                        .accessibilityLabel("Verlauf löschen")
+                        .accessibilityIdentifier("history.clear")
+                    }
+                }
+            }
+            .confirmationDialog("Verlauf löschen?", isPresented: $confirmsClearing, titleVisibility: .visible) {
+                Button("Verlauf endgültig löschen", role: .destructive) {
+                    Task { _ = await store.clearHistory() }
+                }
+            } message: {
+                Text("Alle erledigten und gelöschten Aufgaben und Serien in den Familien, in denen du Admin bist, werden für alle endgültig entfernt. Das lässt sich nicht rückgängig machen.")
+            }
             .navigationDestination(for: UUID.self) { taskID in
                 TaskDetailView(taskID: taskID)
                     .navigationTransition(.zoom(sourceID: taskID, in: transition))

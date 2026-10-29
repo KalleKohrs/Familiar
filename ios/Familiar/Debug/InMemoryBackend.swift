@@ -686,6 +686,23 @@ extension InMemoryBackend: TaskRepository {
         generate(deletion.seriesID)
     }
 
+    func clearHistory() async throws(FamiliarError) {
+        let me = try requireUser()
+        let adminFamilies = Set(families.keys.filter { membership($0, for: me)?.myRole == .admin })
+        guard !adminFamilies.isEmpty else {
+            throw .app(key: .adminRequired, message: "Nur Admins dürfen das.")
+        }
+        for (id, record) in seriesRecords where record.info.familyID.map(adminFamilies.contains) == true && record.info.deletedAt != nil {
+            seriesRecords[id] = nil
+        }
+        for (id, task) in tasks where adminFamilies.contains(task.familyID) && (task.completedAt != nil || task.deletedAt != nil) {
+            tasks[id] = nil
+        }
+        for (id, deletion) in deletions where adminFamilies.contains(deletion.familyID) {
+            deletions[id] = nil
+        }
+    }
+
     func calendarTasks(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [TaskItem] {
         let me = try requireUser()
         generateAll()

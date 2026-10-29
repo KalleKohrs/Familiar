@@ -135,6 +135,18 @@ final class TaskStore {
         }
     }
 
+    /// Verlauf leeren (nur Admins, endgültig). Liefert `true`, wenn es geklappt hat.
+    func clearHistory() async -> Bool {
+        do throws(FamiliarError) {
+            try await repository.clearHistory()
+            await refreshAll()
+            return true
+        } catch {
+            showError(error.message)
+            return false
+        }
+    }
+
     func reload() async {
         // Ladeanzeige nur beim ersten Laden – sonst blitzen Platzhalter auf, sobald die letzte
         // Aufgabe erledigt ist.

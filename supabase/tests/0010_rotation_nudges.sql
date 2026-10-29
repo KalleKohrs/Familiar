@@ -239,13 +239,13 @@ select tests.expect('W13c Tausch: Mia bekommt „zugewiesen“ für den getausch
    where j.kind = 'assigned' and j.task_id = tests.id('t7') and j.user_id = tests.u('mia')), '1');
 
 -- Zurück zu „gemeinsam“: alle drei am Termin.
-select tests.expect('W14 Wechsel zu „gemeinsam“ weist allen zu',
-  tests.run_as(tests.u('clara'), format(
+select tests.put('w14', tests.run_as(tests.u('clara'), format(
     $$select (public.update_series_from(%L, (select version from public.tasks where id = %L), 'Müll rausbringen', 'any_one',
               array[%L, %L, %L]::uuid[], 'weekly', %L, p_weekdays => array[%s]::smallint[])).id is not null$$,
-    tests.id('t7'), tests.id('t7'), tests.u('clara'), tests.u('mia'), tests.u('otto'), tests.d(7), tests.dow(7))) || '|'
-    || tests.who(tests.id('s'), 7),
-  'true|Clara,Mia,Otto');
+    tests.id('t7'), tests.id('t7'), tests.u('clara'), tests.u('mia'), tests.u('otto'), tests.d(7), tests.dow(7))));
+-- Getrennte Anweisung: tests.who ist stable und sähe sonst den Stand vor der Änderung.
+select tests.expect('W14 Wechsel zu „gemeinsam“ weist allen zu',
+  tests.get('w14') || '|' || tests.who(tests.id('s'), 7), 'true|Clara,Mia,Otto');
 
 -- ---------------------------------------------------------------------------
 -- Reihum: Regeländerung, Start in der Vergangenheit
