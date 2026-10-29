@@ -1,0 +1,32 @@
+# Nur für die Supabase-Kommandozeile (Deploy der Edge Functions). Die Datenbank wird über die
+# Migrationen in migrations/ gepflegt, nicht über diese Datei.
+project_id = "familiar"
+
+# Cron- und Browser-Aufrufe tragen kein Nutzer-JWT: Sie prüfen Einmal-Tokens bzw. den State selbst
+# (siehe AGENTS.md). Alle anderen Functions verlangen ein angemeldetes Konto.
+[functions.account-delete]
+verify_jwt = true
+
+[functions.outlook-oauth-start]
+verify_jwt = true
+
+[functions.outlook-oauth-callback]
+verify_jwt = false
+
+[functions.outlook-sync]
+verify_jwt = false
+
+[functions.push-dispatch]
+verify_jwt = false
+
+[functions.purge-history]
+verify_jwt = false
+
+[functions.review-sign-in]
+verify_jwt = false
+
+[functions.backup]
+verify_jwt = false
+
+[functions.backup-restore]
+verify_jwt = false
