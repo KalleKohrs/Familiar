@@ -127,14 +127,13 @@ function quoted(title: string | null): string {
 
 function alertFor(job: Job): { title: string; body: string } | null {
   const who = job.actor_name ?? "Jemand";
-  const family = job.family_name ?? "";
   switch (job.kind) {
     case "assigned":
-      return { title: job.title ?? "Neue Aufgabe", body: `${who} hat dir eine Aufgabe zugewiesen · ${family}` };
+      return { title: job.title ?? "Neue Aufgabe", body: `${who} hat dir die Aufgabe ${quoted(job.title)} zugewiesen` };
     case "started":
-      return { title: job.title ?? "Aufgabe", body: `Jetzt fällig · ${family}` };
+      return { title: job.title ?? "Aufgabe", body: `${quoted(job.title)} ist jetzt fällig` };
     case "reminder":
-      return { title: job.title ?? "Aufgabe", body: `Noch offen · ${family}` };
+      return { title: job.title ?? "Aufgabe", body: `${quoted(job.title)} ist noch offen` };
     case "completed":
       return { title: job.title ?? "Aufgabe", body: `${who} hat ${quoted(job.title)} erledigt` };
     case "changed":
@@ -142,7 +141,7 @@ function alertFor(job: Job): { title: string; body: string } | null {
     case "deleted":
       return { title: job.title ?? "Aufgabe", body: `${who} hat ${quoted(job.title)} gelöscht` };
     case "nudge":
-      return { title: job.title ?? "Aufgabe", body: `${who} erinnert dich daran · ${family}` };
+      return { title: job.title ?? "Aufgabe", body: `${who} erinnert dich an ${quoted(job.title)}` };
     default:
       return null;
   }
