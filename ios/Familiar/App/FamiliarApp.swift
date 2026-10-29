@@ -18,6 +18,7 @@ struct FamiliarApp: App {
 
     init() {
         FamiliarTypeface.register()
+        FamiliarDiagnostics.record("App gestartet")
         let dependencies = AppDependencies.live()
         let session = SessionStore(dependencies: dependencies)
         let tasks = TaskStore(repository: dependencies.tasks)

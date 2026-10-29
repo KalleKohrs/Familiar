@@ -42,13 +42,39 @@ final class NotificationStore {
     /// Zuletzt bekanntes APNs-Token dieses Geräts (Hex).
     var deviceToken: String? { defaults.string(forKey: Self.tokenKey) }
 
-    private var environment: PushEnvironment {
-        #if DEBUG
-        .sandbox
+    /// Apples Push-Umgebung dieses Builds. Maßgeblich ist, wie die App signiert ist – nicht ob Debug oder Release:
+    /// Ein von Xcode installierter Release-Build bekommt ein Sandbox-Token, TestFlight und App Store ein
+    /// Produktions-Token. Mit der falschen Angabe lehnt Apple die Mitteilungen ab (BadDeviceToken).
+    private var environment: PushEnvironment { Self.currentEnvironment }
+
+    static let currentEnvironment: PushEnvironment = {
+        #if targetEnvironment(simulator)
+        return .sandbox
         #else
-        .production
+        // Entwicklungs-Builds enthalten das Bereitstellungsprofil mit „aps-environment“; TestFlight und
+        // App Store nicht (dort ist es immer Produktion).
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let data = try? Data(contentsOf: url) else { return .production }
+        let text = String(decoding: data, as: UTF8.self)
+        if let key = text.range(of: "<key>aps-environment</key>"),
+           let open = text.range(of: "<string>", range: key.upperBound..<text.endIndex),
+           let close = text.range(of: "</string>", range: open.upperBound..<text.endIndex) {
+            return text[open.upperBound..<close.lowerBound] == "development" ? .sandbox : .production
+        }
+        return .production
         #endif
-    }
+    }()
+
+    /// Ob dies ein Test-Build ist (Xcode oder TestFlight): dort zeigt das Profil die Diagnose.
+    static let isTestBuild: Bool = {
+        #if DEBUG
+        return true
+        #else
+        // TestFlight legt eine „sandboxReceipt“ ins Paket, der App Store eine „receipt“.
+        return FileManager.default.fileExists(atPath: Bundle.main.bundleURL.appending(path: "StoreKit/sandboxReceipt").path)
+            || Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision") != nil
+        #endif
+    }()
 
     // MARK: Anmeldung
 
@@ -109,6 +135,7 @@ final class NotificationStore {
 
     func didRegister(deviceToken data: Data) {
         let token = data.hexString
+        FamiliarDiagnostics.record("Geräte-Token erhalten")
         defaults.set(token, forKey: Self.tokenKey)
         Task { await register(token: token) }
     }
@@ -116,8 +143,13 @@ final class NotificationStore {
     private func register(token: String) async {
         guard userID != nil else { return }
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        try? await devices.registerDevice(token: token, environment: environment, pushToStartToken: pushToStartToken,
-                                          appVersion: version, timezone: TimeZone.current.identifier)
+        do {
+            try await devices.registerDevice(token: token, environment: environment, pushToStartToken: pushToStartToken,
+                                             appVersion: version, timezone: TimeZone.current.identifier)
+            FamiliarDiagnostics.record("Gerät angemeldet (\(environment.rawValue), Push-to-Start: \(pushToStartToken == nil ? "nein" : "ja"))")
+        } catch {
+            FamiliarDiagnostics.record("Geräte-Anmeldung fehlgeschlagen: \(error)")
+        }
         // Activities, die vor dem Geräte-Token entstanden sind, jetzt melden.
         for activity in Activity<TaskActivityAttributes>.activities {
             if let updateToken = activity.pushToken {
@@ -131,6 +163,7 @@ final class NotificationStore {
             for await data in Activity<TaskActivityAttributes>.pushToStartTokenUpdates {
                 guard let self else { return }
                 self.pushToStartToken = data.hexString
+                FamiliarDiagnostics.record("Push-to-Start-Token erhalten")
                 if let token = self.deviceToken { await self.register(token: token) }
             }
         })
@@ -144,6 +177,7 @@ final class NotificationStore {
 
     private func observe(_ activity: Activity<TaskActivityAttributes>) {
         guard observedActivityIDs.insert(activity.id).inserted else { return }
+        FamiliarDiagnostics.record("Live Activity erkannt")
         observers.append(Task { [weak self] in
             for await data in activity.pushTokenUpdates {
                 await self?.registerActivity(activity, updateToken: data.hexString)
@@ -160,8 +194,13 @@ final class NotificationStore {
 
     private func registerActivity(_ activity: Activity<TaskActivityAttributes>, updateToken: String) async {
         guard userID != nil, let token = deviceToken else { return }
-        try? await devices.registerLiveActivity(taskID: activity.attributes.taskID, deviceToken: token,
-                                                activityID: activity.id, updateToken: updateToken)
+        do {
+            try await devices.registerLiveActivity(taskID: activity.attributes.taskID, deviceToken: token,
+                                                   activityID: activity.id, updateToken: updateToken)
+            FamiliarDiagnostics.record("Live Activity beim Server angemeldet")
+        } catch {
+            FamiliarDiagnostics.record("Live-Activity-Anmeldung fehlgeschlagen: \(error)")
+        }
     }
 
     // MARK: Abgleich
@@ -170,7 +209,15 @@ final class NotificationStore {
     /// laufende auf den aktuellen Stand bringen.
     func reconcile(openTasks: [TaskItem], families: [FamilyMembership]) async {
         guard isEnabled, let userID, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let activities = Activity<TaskActivityAttributes>.activities
+        var activities = Activity<TaskActivityAttributes>.activities
+        // Doppelte Activities derselben Aufgabe (z. B. vom Server per Push gestartet und gleichzeitig lokal):
+        // nur eine behalten, sonst erscheinen beim Öffnen zwei Karten, und eine bleibt später hängen.
+        var seen: Set<UUID> = []
+        for activity in activities where !seen.insert(activity.attributes.taskID).inserted {
+            FamiliarDiagnostics.record("Doppelte Live Activity beendet")
+            await Self.endActivity(id: activity.id)
+        }
+        activities = Activity<TaskActivityAttributes>.activities
         let running = Set(activities.map(\.attributes.taskID))
         let plan = LiveActivityRules.reconcile(openTasks: openTasks, running: running, userID: userID)
         let names = Dictionary(families.flatMap(\.members).map { ($0.userID, $0.profile?.displayName ?? "?") },
@@ -189,13 +236,20 @@ final class NotificationStore {
                 }
             }
         }
+        if !plan.start.isEmpty || !plan.end.isEmpty {
+            FamiliarDiagnostics.record("Abgleich: \(plan.start.count) starten, \(plan.end.count) beenden")
+        }
         for task in plan.start {
             let attributes = TaskActivityAttributes(taskID: task.id, familyColorHex: colors[task.familyID] ?? "#FFA43A")
             let state = TaskActivityAttributes.ContentState(task: task, userID: userID, names: names)
             // Fehler (z. B. Systemgrenze erreicht, Activities abgeschaltet) sind nicht kritisch.
-            _ = try? Activity.request(attributes: attributes,
-                                      content: ActivityContent(state: state, staleDate: Self.staleDate(for: task)),
-                                      pushType: .token)
+            do {
+                _ = try Activity.request(attributes: attributes,
+                                         content: ActivityContent(state: state, staleDate: Self.staleDate(for: task)),
+                                         pushType: .token)
+            } catch {
+                FamiliarDiagnostics.record("Live Activity konnte nicht starten: \(error)")
+            }
         }
     }
 

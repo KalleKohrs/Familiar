@@ -277,6 +277,42 @@ select tests.run_as(tests.u('clara'), format($$select 'ok' from (select public.u
 select tests.expect('G11 Abmelden macht das Gerät ungültig',
   (select (invalidated_at is not null)::text from public.devices where id = tests.id('dev')), 'true');
 
+-- Ende nach Terminänderung trifft keine neuere Activity (Migration 0020) -------------
+
+select tests.run_as(tests.u('mia'), $$select public.register_device(repeat('ab', 32), 'sandbox', 'pts-mia')::text$$);
+select tests.run_as(tests.u('mia'), format($$select 'ok' from (select public.register_live_activity(%L, %L, 'act-alt', 'upd-alt')) x$$,
+  tests.id('soon'), repeat('ab', 32)));
+select tests.run_as(tests.u('clara'), format(
+  $$select (public.update_task(%L, %s, 'Bald', 'any_one', array[%L]::uuid[], null, %L::date, %L::time)).version$$,
+  tests.id('soon'), (select version from public.tasks where id = tests.id('soon')), tests.u('mia'),
+  ((now() + interval '40 minutes') at time zone 'Europe/Berlin')::date,
+  ((now() + interval '40 minutes') at time zone 'Europe/Berlin')::time));
+-- Die App startet für den neuen Termin sofort eine neue Activity (später als der Auftrag).
+select tests.run_as(tests.u('mia'), format($$select 'ok' from (select public.register_live_activity(%L, %L, 'act-neu', 'upd-neu')) x$$,
+  tests.id('soon'), repeat('ab', 32)));
+update public.live_activities set started_at = now() + interval '5 seconds' where activity_id = 'act-neu';
+select tests.put('j_resched', (select id::text from public.notification_jobs
+  where task_id = tests.id('soon') and kind = 'activity_end' order by id desc limit 1));
+update public.notification_jobs set scheduled_for = now() where id = tests.get('j_resched')::bigint;
+insert into private.cron_tokens (token_hash, purpose) values (encode(sha256(convert_to('tok-2', 'UTF8')), 'hex'), 'push_dispatch');
+select tests.put('claim2', public.push_claim_jobs('tok-2')::text);
+select tests.expect('P8 Ende nach Terminänderung beendet nur die ältere Activity',
+  (select string_agg(a ->> 'update_token', ',' order by a ->> 'update_token')
+     from jsonb_array_elements(tests.get('claim2')::jsonb) e, jsonb_array_elements(e -> 'activities') a
+    where (e ->> 'id')::bigint = tests.get('j_resched')::bigint), 'upd-alt');
+
+-- Erledigt beendet dagegen alle Activities, auch eine später gemeldete.
+select tests.run_as(tests.u('mia'), format($$select (public.complete_task(%L)).id$$, tests.id('soon')));
+select tests.put('j_done', (select id::text from public.notification_jobs
+  where task_id = tests.id('soon') and kind = 'activity_end' and status = 'pending' order by id desc limit 1));
+update public.notification_jobs set scheduled_for = now() where id = tests.get('j_done')::bigint;
+insert into private.cron_tokens (token_hash, purpose) values (encode(sha256(convert_to('tok-3', 'UTF8')), 'hex'), 'push_dispatch');
+select tests.put('claim3', public.push_claim_jobs('tok-3')::text);
+select tests.expect('P9 Erledigt beendet alle Activities der Aufgabe',
+  (select string_agg(a ->> 'update_token', ',' order by a ->> 'update_token')
+     from jsonb_array_elements(tests.get('claim3')::jsonb) e, jsonb_array_elements(e -> 'activities') a
+    where (e ->> 'id')::bigint = tests.get('j_done')::bigint), 'upd-alt,upd-neu');
+
 select (select count(*) from tests.results) as gesamt, (select count(*) from tests.results where passed) as bestanden,
   coalesce((select string_agg(name || ' :: ' || coalesce(info, ''), E'\n' order by id) from tests.results where not passed), 'alle grün') as fehler;
 rollback;

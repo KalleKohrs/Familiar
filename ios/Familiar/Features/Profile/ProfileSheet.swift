@@ -136,6 +136,10 @@ struct ProfileSheet: View {
                         }
                     }
 
+                    if NotificationStore.isTestBuild, notifications.isAvailable {
+                        DiagnosticsSection()
+                    }
+
                     LegalSection()
 
                     #if DEBUG
