@@ -227,7 +227,7 @@ struct TodayTasksIntent: AppIntent {
                 let more = titles.count > 5 ? String(localized: " Und \(titles.count - 5) weitere.") : ""
                 return .result(dialog: "Heute stehen \(titles.count) Aufgaben an: \(shown).\(more)")
             }
-        } catch let error as FamiliarError {
+        } catch {
             throw IntentError.from(error)
         }
     }
