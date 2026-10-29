@@ -657,19 +657,21 @@ struct TaskEditorView: View {
                 .contentMargins(.bottom, 0)
             }
             let remaining = TaskDraft.maxImages - draft.images.count
+            // Das Label von PhotosPicker ist eine Sendable-Closure: Zähler vorher berechnen.
+            let counter = String(localized: "\(draft.images.count) von \(TaskDraft.maxImages)")
             PhotosPicker(selection: $pickerItems, maxSelectionCount: max(remaining, 1), matching: .images) {
                 HStack {
                     Label("Fotos wählen", systemImage: "photo.on.rectangle")
                     Spacer()
                     // Zählt mit, damit die Höchstzahl vor dem Öffnen der Auswahl klar ist.
-                    Text("\(draft.images.count) von \(TaskDraft.maxImages)")
+                    Text(counter)
                         .font(FamiliarFont.secondary)
                         .foregroundStyle(FamiliarColor.textSecondary)
                         .monospacedDigit()
                 }
             }
             .disabled(remaining <= 0)
-            .accessibilityValue(String(localized: "\(draft.images.count) von \(TaskDraft.maxImages) Bildern gewählt"))
+            .accessibilityValue(counter)
             if CameraPicker.isAvailable {
                 Button {
                     showsCamera = true
@@ -759,21 +761,35 @@ struct TaskEditorView: View {
     }
 
     private func addPhotos(_ items: [PhotosPickerItem]) async {
+        var failed = 0
+        var reason: String?
         for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self) {
-                addImage(data)
+            // Nacheinander laden (schont den Speicher); bei einem Fehler einmal wiederholen, z. B. wenn
+            // das Foto erst aus iCloud geladen werden muss.
+            var data: Data?
+            for _ in 0..<2 where data == nil {
+                do { data = try await item.loadTransferable(type: Data.self) } catch { reason = error.localizedDescription }
             }
+            if let data, addImage(data, reportsFailure: false) { continue }
+            failed += 1
         }
         pickerItems = []
+        if failed > 0 {
+            errorMessage = failed == items.count
+                ? String(localized: "Die gewählten Bilder konnten nicht geladen werden. \(reason ?? "")")
+                : String(localized: "\(failed) von \(items.count) Bildern konnten nicht geladen werden. \(reason ?? "")")
+        }
     }
 
-    private func addImage(_ data: Data) {
-        guard draft.images.count < TaskDraft.maxImages else { return }
+    @discardableResult
+    private func addImage(_ data: Data, reportsFailure: Bool = true) -> Bool {
+        guard draft.images.count < TaskDraft.maxImages else { return false }
         guard let prepared = ImageProcessor.taskImage(from: data) else {
-            errorMessage = String(localized: "Ein Bild konnte nicht gelesen werden.")
-            return
+            if reportsFailure { errorMessage = String(localized: "Ein Bild konnte nicht gelesen werden.") }
+            return false
         }
         draft.images.append(.new(prepared))
+        return true
     }
 
     private func save() {
