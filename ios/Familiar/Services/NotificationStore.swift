@@ -222,7 +222,7 @@ extension Data {
 }
 
 /// Empfängt Geräte-Token und Mitteilungs-Antippen vom System.
-final class FamiliarAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+final class FamiliarAppDelegate: NSObject, UIApplicationDelegate, @preconcurrency UNUserNotificationCenterDelegate {
     var notifications: NotificationStore?
 
     func application(_ application: UIApplication,
@@ -240,16 +240,16 @@ final class FamiliarAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
     }
 
     /// Auch im Vordergrund anzeigen – die Liste aktualisiert sich zusätzlich über Realtime.
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification)
+    /// Bewusst auf dem MainActor: UIKit ruft den Abschluss dieser async-Methoden auf dem Thread auf, auf dem
+    /// sie endet, und stürzt ab („Call must be made on main thread“), wenn das nicht der Hauptthread ist.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification)
         async -> UNNotificationPresentationOptions {
         [.banner, .list, .sound]
     }
 
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                            didReceive response: UNNotificationResponse) async {
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse) async {
         let taskID = (response.notification.request.content.userInfo["task_id"] as? String).flatMap(UUID.init(uuidString:))
-        await MainActor.run {
-            if let taskID { self.notifications?.requestedTaskID = taskID }
-        }
+        if let taskID { notifications?.requestedTaskID = taskID }
     }
 }
