@@ -26,7 +26,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0016_oauth_states_user_index` | 2026-10-22 | Supabase-MCP `apply_migration` (Advisor: Index für Fremdschlüssel) |
 | `0017_backup` | 2026-10-22 | Supabase-MCP `apply_migration` (bewusst ohne Löschbefehle). Datensicherung, siehe unten und [ADR 0009](decisions/0009-backups.md). |
 | `0018_rotation_and_nudges` | `20261024120000` | eingespielt am 2026-10-29 über den SQL-Editor (enthält `drop function`, `delete`). Tests `supabase/tests/0010_rotation_nudges.sql` (47/47). |
-| `0019_clear_history` | `20261029100000` | **noch einzuspielen, manuell im SQL-Editor** (enthält `delete`; trägt sich selbst ein). `clear_history()`: Admins leeren den Verlauf ihrer Familien endgültig. Tests `supabase/tests/0011_clear_history.sql`. |
+| `0019_clear_history` | `20261029100000` | eingespielt am 2026-10-29 über den SQL-Editor (enthält `delete`). `clear_history()`: Admins leeren den Verlauf ihrer Familien endgültig. Tests `supabase/tests/0011_clear_history.sql`. |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.
