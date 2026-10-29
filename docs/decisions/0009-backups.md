@@ -74,7 +74,7 @@
 Ich führe die Wiederherstellung mit dem Inhaber durch. Auf dem Mac braucht es dafür keine Programme: Alles läuft im Supabase-Dashboard und in der Edge Function `backup-restore`. Das Ergebnis steht jeweils in `private.restore_runs`.
 
 1. **Ziel vorbereiten:**
-   - **Leeres Projekt** (Projekt verloren): neues Supabase-Projekt in der EU (Frankfurt) anlegen. Migrationen aus dem Repository einspielen, Edge Functions deployen, `functions_base_url` anpassen, wie bei jedem neuen Projekt.
+   - **Leeres Projekt** (Projekt verloren): neues Supabase-Projekt in der EU (Irland, eu-west-1 wie bisher) anlegen. Migrationen aus dem Repository einspielen, Edge Functions deployen, `functions_base_url` anpassen, wie bei jedem neuen Projekt.
    - **Bestehendes Projekt** (Daten kaputt): Es wird überschrieben, siehe Schritt 3.
 2. **Secrets setzen** (nur für die Dauer der Wiederherstellung):
    - Bei Backblaze einen **Lese-Schlüssel** anlegen („Read Only“, nur dieser Bucket).

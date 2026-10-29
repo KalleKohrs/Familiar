@@ -41,7 +41,7 @@ FamiliarKit (lokales Swift-Paket)
 - **Erscheinungsbild:** hell und dunkel; Farben nur über `FamiliarColor`-Tokens (`accent` = orange Schrift, `accentFill` = orange Fläche).
 - **Projektdatei:** synchronisierte Ordner – neue Dateien im Ordner gehören automatisch zum Target.
 
-## Backend (Supabase, Projekt `ldeouecoaqyfvubhrjei`, Region Frankfurt)
+## Backend (Supabase, Projekt `ldeouecoaqyfvubhrjei`, Region Irland, eu-west-1)
 
 | Baustein | Aufgabe |
 |---|---|
