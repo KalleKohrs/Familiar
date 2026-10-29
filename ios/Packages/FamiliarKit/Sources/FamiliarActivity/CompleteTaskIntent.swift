@@ -18,6 +18,7 @@ public struct CompleteTaskIntent: LiveActivityIntent {
         self.taskID = taskID.uuidString
     }
 
+    @MainActor
     public func perform() async throws -> some IntentResult {
         guard let id = UUID(uuidString: taskID) else { return .result() }
         try await TaskCompletionBridge.shared.complete(id)
@@ -27,7 +28,8 @@ public struct CompleteTaskIntent: LiveActivityIntent {
 
 /// Verbindung vom Intent zur App: Die App setzt beim Start den Handler (Repository-Aufruf).
 public final class TaskCompletionBridge: Sendable {
-    public typealias Handler = @Sendable (UUID) async throws -> Void
+    /// Läuft auf dem MainActor: Danach werden Listen, Widgets und Siri-Parameter (UIKit/WidgetKit) angefasst.
+    public typealias Handler = @MainActor @Sendable (UUID) async throws -> Void
 
     public static let shared = TaskCompletionBridge()
 
@@ -37,6 +39,7 @@ public final class TaskCompletionBridge: Sendable {
         self.handler.withLock { $0 = handler }
     }
 
+    @MainActor
     func complete(_ taskID: UUID) async throws {
         guard let handler = handler.withLock({ $0 }) else { throw BridgeError.notReady }
         try await handler(taskID)

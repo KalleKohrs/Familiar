@@ -38,10 +38,8 @@ struct FamiliarApp: App {
             try await repository.complete(taskID: taskID, scope: .me)
             await tasks.reload()
             // Vor dem Ende des Intents: Danach lädt das System die Widgets neu (Apple, „Adding interactivity…“).
-            await MainActor.run {
-                if let userID = session.userID {
-                    WidgetSync.update(openTasks: tasks.tasks, families: session.families, userID: userID)
-                }
+            if let userID = session.userID {
+                WidgetSync.update(openTasks: tasks.tasks, families: session.families, userID: userID)
             }
         }
         // Siri und Kurzbefehle (ADR 0010) nutzen dieselben Datenquellen.
