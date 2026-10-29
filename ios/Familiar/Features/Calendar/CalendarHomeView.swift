@@ -276,6 +276,7 @@ struct CalendarHomeView: View {
                 .foregroundStyle(FamiliarColor.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, FamiliarSpacing.xxs)
+                .familiarFadeIn()
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(dayEntries.enumerated()), id: \.element.id) { index, entry in

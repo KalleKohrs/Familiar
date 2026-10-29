@@ -48,6 +48,7 @@ public struct FamiliarEmptyState: View {
         }
         .padding(FamiliarSpacing.xl)
         .frame(maxWidth: .infinity)
+        .familiarFadeIn()
     }
 }
 
@@ -78,6 +79,26 @@ public struct FamiliarErrorState: View {
         .padding(FamiliarSpacing.xl)
         .frame(maxWidth: .infinity)
     }
+}
+
+/// Blendet eine Ansicht beim Erscheinen sanft ein (nur Deckkraft, daher auch bei „Bewegung reduzieren“ ruhig).
+/// Für Leerzustände, die nach dem Laden erscheinen: kein hartes Umspringen.
+private struct FamiliarFadeIn: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isVisible = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isVisible ? 1 : 0)
+            .onAppear {
+                withAnimation(.easeOut(duration: reduceMotion ? 0.2 : 0.45).delay(0.1)) { isVisible = true }
+            }
+    }
+}
+
+extension View {
+    /// Sanftes Einblenden beim Erscheinen (Leerzustände, Hinweise nach dem Laden).
+    public func familiarFadeIn() -> some View { modifier(FamiliarFadeIn()) }
 }
 
 /// Platzhalterblock während des Ladens. Der Schimmer entfällt bei „Bewegung reduzieren“.

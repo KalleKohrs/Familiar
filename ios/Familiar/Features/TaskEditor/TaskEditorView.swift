@@ -658,9 +658,18 @@ struct TaskEditorView: View {
             }
             let remaining = TaskDraft.maxImages - draft.images.count
             PhotosPicker(selection: $pickerItems, maxSelectionCount: max(remaining, 1), matching: .images) {
-                Label("Fotos wählen", systemImage: "photo.on.rectangle")
+                HStack {
+                    Label("Fotos wählen", systemImage: "photo.on.rectangle")
+                    Spacer()
+                    // Zählt mit, damit die Höchstzahl vor dem Öffnen der Auswahl klar ist.
+                    Text("\(draft.images.count) von \(TaskDraft.maxImages)")
+                        .font(FamiliarFont.secondary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
+                        .monospacedDigit()
+                }
             }
             .disabled(remaining <= 0)
+            .accessibilityValue(String(localized: "\(draft.images.count) von \(TaskDraft.maxImages) Bildern gewählt"))
             if CameraPicker.isAvailable {
                 Button {
                     showsCamera = true
@@ -672,7 +681,12 @@ struct TaskEditorView: View {
         } header: {
             Text("Bilder")
         } footer: {
-            Text("Bis zu \(TaskDraft.maxImages) Bilder. Sichtbar nur für Personen, die die Aufgabe sehen dürfen.")
+            let remaining = TaskDraft.maxImages - draft.images.count
+            if remaining <= 0 {
+                Text("Mehr als \(TaskDraft.maxImages) Bilder sind nicht möglich. Entferne ein Bild, um ein anderes hinzuzufügen.")
+            } else {
+                Text("Höchstens \(TaskDraft.maxImages) Bilder pro Aufgabe, du kannst noch \(remaining) auswählen. Sichtbar nur für Personen, die die Aufgabe sehen dürfen.")
+            }
         }
         .listRowBackground(FamiliarColor.card)
     }
