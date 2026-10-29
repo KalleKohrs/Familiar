@@ -190,7 +190,9 @@ struct ProfileHeaderButton: View {
     }
 }
 
+#if DEBUG
 #Preview {
     TasksHomeView()
         .previewEnvironment(.ready)
 }
+#endif

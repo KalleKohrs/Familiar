@@ -413,7 +413,9 @@ private struct CalendarEntryRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
     CalendarHomeView()
         .previewEnvironment(.ready)
 }
+#endif

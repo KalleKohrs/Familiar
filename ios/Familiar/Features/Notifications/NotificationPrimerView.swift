@@ -93,7 +93,9 @@ struct NotificationPrimerView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     Color.clear.sheet(isPresented: .constant(true)) { NotificationPrimerView() }
         .previewEnvironment(.ready)
 }
+#endif

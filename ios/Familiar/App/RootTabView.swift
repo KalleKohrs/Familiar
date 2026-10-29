@@ -127,7 +127,9 @@ struct RootTabView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     RootTabView()
         .previewEnvironment(.ready)
 }
+#endif

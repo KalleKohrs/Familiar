@@ -965,7 +965,6 @@ extension View {
             .task { session.start() }
     }
 }
-#endif
 
 /// Geräte ohne Server: Mitteilungen gibt es im In-Memory-Backend nicht.
 struct InMemoryDevices: DeviceRepository {
@@ -976,3 +975,4 @@ struct InMemoryDevices: DeviceRepository {
                               updateToken: String) async throws(FamiliarError) {}
     func endLiveActivity(deviceToken: String, activityID: String) async throws(FamiliarError) {}
 }
+#endif
