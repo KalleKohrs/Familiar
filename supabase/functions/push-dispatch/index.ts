@@ -169,12 +169,16 @@ async function handle(job: Job, jwt: string, topic: string, startedActivity: Set
   const invalid: string[] = [];
   const ended: string[] = [];
   const failures: Send[] = [];
+  // Von Apple als ungültig gemeldete Tokens: im Ergebnis sichtbar machen (sonst nur „no_targets“).
+  const dead: string[] = [];
   let delivered = 0;
 
   const record = (r: Send, onDead: () => void) => {
     if (r.status === 200) delivered++;
-    else if (isDeadToken(r)) onDead();
-    else failures.push(r);
+    else if (isDeadToken(r)) {
+      dead.push(`${r.status} ${r.reason ?? ""}`.trim());
+      onDead();
+    } else failures.push(r);
   };
 
   // Wer die Familie verlassen hat, bekommt keine Inhalte mehr – nur das Ende einer Live Activity.
@@ -260,7 +264,9 @@ async function handle(job: Job, jwt: string, topic: string, startedActivity: Set
     return { ...base, status: "failed", error: failures.map((f) => f.reason).join(", ") };
   }
   if (delivered === 0) {
-    return { ...base, status: "skipped", error: failures.length ? failures.map((f) => f.reason).join(", ") : "no_targets" };
+    const error = failures.length ? failures.map((f) => f.reason).join(", ")
+      : dead.length ? `token_dead: ${dead.join(", ")}` : "no_targets";
+    return { ...base, status: "skipped", error };
   }
   return { ...base, status: "sent", error: failures.length ? failures.map((f) => f.reason).join(", ") : undefined };
 }

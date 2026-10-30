@@ -66,13 +66,12 @@ final class NotificationStore {
     }()
 
     /// Ob dies ein Test-Build ist (Xcode oder TestFlight): dort zeigt das Profil die Diagnose.
+    /// Nur der App Store legt eine Quittung namens „receipt“ ab; Xcode und TestFlight „sandboxReceipt“.
     static let isTestBuild: Bool = {
         #if DEBUG
         return true
         #else
-        // TestFlight legt eine „sandboxReceipt“ ins Paket, der App Store eine „receipt“.
-        return FileManager.default.fileExists(atPath: Bundle.main.bundleURL.appending(path: "StoreKit/sandboxReceipt").path)
-            || Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision") != nil
+        return Bundle.main.appStoreReceiptURL?.lastPathComponent != "receipt"
         #endif
     }()
 
