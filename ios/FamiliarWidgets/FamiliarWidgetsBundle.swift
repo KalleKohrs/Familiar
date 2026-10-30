@@ -10,8 +10,3 @@ struct FamiliarWidgetsBundle: WidgetBundle {
         TodayWidget()
     }
 }
-
-/// Bindet die App Intents aus FamiliarActivity (Abhak-Knopf) in die Extension ein.
-struct FamiliarWidgetIntents: AppIntentsPackage {
-    static var includedPackages: [any AppIntentsPackage.Type] { [FamiliarActivityIntents.self] }
-}

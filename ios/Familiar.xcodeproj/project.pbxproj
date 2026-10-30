@@ -81,6 +81,11 @@
 			path = FamiliarWidgets;
 			sourceTree = "<group>";
 		};
+		F0000000000000000000A034 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		F0000000000000000000A032 /* FamiliarTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = FamiliarTests;
@@ -137,6 +142,7 @@
 				F0000000000000000000A004 /* Config */,
 				F0000000000000000000A030 /* Familiar */,
 				F0000000000000000000A031 /* FamiliarWidgets */,
+				F0000000000000000000A034 /* Shared */,
 				F0000000000000000000A032 /* FamiliarTests */,
 				F0000000000000000000A033 /* FamiliarUITests */,
 				F0000000000000000000A005 /* FamiliarKit */,
@@ -189,6 +195,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				F0000000000000000000A030 /* Familiar */,
+				F0000000000000000000A034 /* Shared */,
 			);
 			name = Familiar;
 			packageProductDependencies = (
@@ -215,6 +222,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				F0000000000000000000A031 /* FamiliarWidgets */,
+				F0000000000000000000A034 /* Shared */,
 			);
 			name = FamiliarWidgets;
 			packageProductDependencies = (

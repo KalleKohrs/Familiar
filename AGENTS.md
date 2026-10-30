@@ -91,6 +91,8 @@ swiftc -O tools/render-app-icon.swift -o /tmp/render && /tmp/render ios/Familiar
 
 ## Stolpersteine
 
+- **App Intents nie in ein Swift-Paket legen:** `CompleteTaskIntent` liegt in `ios/Shared/` (gehört zu App **und** Widget-Extension). Liegt eine Aktion in einem Paket, meldet iOS in TestFlight/App Store „There is no metadata for … in de.kohrs.familiar“ und der Haken in der Live Activity tut nichts – in Xcode-Builds fällt das nicht auf. Gilt auch für neue Intents, die aus Widgets oder Live Activities aufgerufen werden. Prüfen mit Archive: `Metadata.appintents/extract.actionsdata` der App muss den Intent mit Modulnamen `Familiar` enthalten.
+- **Diagnose:** Profil › „Diagnose (Testversion)“ (nur Xcode/TestFlight) zeigt das Protokoll `FamiliarDiagnostics` (Haken, Geräte-Anmeldung). iOS-Systemmeldungen zu Intents: Mac-App „Konsole“ › Gerät wählen › Suche „intent“.
 - **Apple-Konto:** Das Developer-Programm läuft auf **Sven Olaf Kohrs** (neue Apple-ID). Nach der Freischaltung die neue Team-ID in `Local.xcconfig` und `website/.well-known/apple-app-site-association` eintragen; Bundle-ID `de.kohrs.familiar` und App Group `group.de.kohrs.familiar` beim ersten Signieren prüfen.
 - **Simulator:** Taps und Screenshots hängen manchmal einige Sekunden hinterher – lieber kurz warten als doppelt tippen. Text per Zwischenablage einfügen kann Umlaute verfälschen.
 - **Speicherplatz** auf dem Entwicklungs-Mac ist knapp: Build-Ordner und große Simulatoren nach Gebrauch löschen bzw. zurücksetzen.

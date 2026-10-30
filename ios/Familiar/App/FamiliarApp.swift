@@ -77,8 +77,3 @@ struct FamiliarApp: App {
         }
     }
 }
-
-/// Bindet die App Intents aus FamiliarActivity (Abhaken in der Live Activity) in die App ein.
-struct FamiliarAppIntents: AppIntentsPackage {
-    static var includedPackages: [any AppIntentsPackage.Type] { [FamiliarActivityIntents.self] }
-}
