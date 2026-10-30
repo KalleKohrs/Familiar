@@ -30,3 +30,14 @@ Grundsatz (2026-10-21): Familiar wird von Anfang an so gebaut, wie es zum App-St
 - Phase 10: Qualität (VoiceOver, Dynamic Type bis zur größten Stufe, kleine Displays, Leistung), Privacy Manifest.
 - Hinweis zu Punkt 1: Widgets nutzen eine App Group (`group.<Bundle-ID>`); Xcode legt sie mit automatischer Signierung im Developer-Portal an. Vorbereitung Phase 7 (Mitteilungen & Live Activities) so weit, wie es ohne Apple-Schlüssel geht: Datenmodell, Versand-Warteschlange, Live-Activity-Oberfläche, Tests.
 - Texte für Datenschutzerklärung, Impressum und App-Store-Eintrag als Entwürfe (erledigt, siehe `docs/legal/`); Screenshots nach dem Design-Durchgang.
+
+
+## Stand 2026-10-30: bei Apple zur Prüfung
+
+Version 0.1.0 (Build 5) ist eingereicht. Nach der Freigabe:
+
+1. **Secret `REVIEW_CODE` löschen** (Supabase › Edge Functions › Secrets, Projekt „Familiar“), damit der Prüf-Zugang aus ist.
+2. **Website** (`website/`) bei Netlify neu hochladen (Irland-Text) und `website/_redirects` auf die Apple-ID der App umstellen (Punkt 11).
+3. **Prüf-Konto** und seine Beispiel-Familie bleiben nur, solange Apple sie braucht; danach löschen.
+4. Offen bleiben die Punkte 13 (Auftragsverarbeitungsverträge), 14 (Markenrecherche), 15 (Netlify-Formular), 17 (Anwaltsprüfung) und der Backup-Bucket für die Produktion (Punkt 10).
+5. Bekannte Einschränkung: Live-Activity-Updates laufen im Minutentakt des Servers; das Abhaken auf dem Sperrbildschirm beendet die Activity sofort in der App.

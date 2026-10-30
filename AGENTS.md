@@ -1,6 +1,6 @@
 # AGENTS.md – Arbeitsanleitung für KI-Assistenten (und Menschen)
 
-Familiar ist ein deutschsprachiger Familienplaner für iOS: Aufgaben anlegen, zuweisen (auch reihum), abhaken, erinnern, Bilder, Wiederholungen, Kalender, Verlauf, mehrere Familien, Widgets, Siri, Live Activities, optional Outlook-Termine. Backend: Supabase. Stand: 2026-10-24, noch nicht im App Store.
+Familiar ist ein deutschsprachiger Familienplaner für iOS: Aufgaben anlegen, zuweisen (auch reihum), abhaken, erinnern, Bilder, Wiederholungen, Kalender, Verlauf, mehrere Familien, Widgets, Siri, Live Activities, optional Outlook-Termine. Backend: Supabase. Stand: 2026-10-30, Version 0.1.0 (Build 5) bei Apple zur Prüfung eingereicht.
 
 **Lies zuerst:** [docs/architecture.md](docs/architecture.md) (Aufbau), [docs/LAUNCH-TODO.md](docs/LAUNCH-TODO.md) (was offen ist), die ADRs in [docs/decisions/](docs/decisions/) für das Thema, an dem du arbeitest.
 
@@ -54,9 +54,11 @@ swiftc -O tools/render-app-icon.swift -o /tmp/render && /tmp/render ios/Familiar
 
 ## Datenbank (Supabase, Projekt `ldeouecoaqyfvubhrjei`)
 
+**Rollen der Projekte (seit 2026-10-29):** `ldeouecoaqyfvubhrjei` („Familiar“) ist die **Produktion** (App-Config `ios/Config/Supabase.xcconfig`, TestFlight, App Store; Prüf-Konto dort). `fhyfjxzctemxqewedqiy` („familiar-prod") ist trotz des Namens die **Entwicklung** (Schema und Functions, sonst unkonfiguriert). Der Supabase-MCP erreicht nur die Produktion – Tests nur in `begin … rollback`.
+
 - **Migrationen** in `supabase/migrations/NNNN_name.sql`, fortlaufend nummeriert. Eingespielte Migrationen nie ändern – neue anlegen. Stand und Art der Einspielung: Tabelle oben in [docs/data-model.md](docs/data-model.md).
 - **Einspielen:** Ohne `delete`/`drop` geht es über das Supabase-MCP-Werkzeug `apply_migration`. **Mit `delete` oder `drop`** (auch in Funktionsrümpfen) lehnt das Werkzeug ab: Dann legt der Inhaber die Datei im Supabase-SQL-Editor ein und führt sie aus; danach Zeile in `supabase_migrations.schema_migrations` nachtragen und in `docs/data-model.md` vermerken. Nie mit Platzhalter-SQL „ausprobieren“.
-- **Stand:** Migrationen bis `0019_clear_history.sql` sind eingespielt (0019: „Verlauf löschen“ für Admins, `clear_history()`; Tests `supabase/tests/0011_clear_history.sql` grün). `review-sign-in` und `push-dispatch` sind neu deployt.
+- **Stand:** Migrationen bis `0020_activity_end_race.sql` sind eingespielt (0020: Ende einer Live Activity nach Terminänderung trifft keine neuere Activity); davor `0019_clear_history.sql` (0019: „Verlauf löschen“ für Admins, `clear_history()`; Tests `supabase/tests/0011_clear_history.sql` grün). `review-sign-in` und `push-dispatch` sind neu deployt.
 - **SQL-Tests** in `supabase/tests/*.sql` laufen in `begin … rollback` (nichts bleibt zurück) und geben eine Ergebniszeile „alle grün“ bzw. die Fehler aus – im SQL-Editor oder per MCP `execute_sql`.
 - **Regeln:** RLS auf jeder Tabelle; Schreiben nur über RPCs mit `security definer`, `set search_path = ''`, `private.require_uid()` und Rechteprüfung; Fehler über `private.raise_app_error('<schluessel>')` – neue Schlüssel auch in `AppErrorKey` (`FamiliarCore/FamiliarError.swift`) eintragen. Nach Schemaänderungen die Supabase-Advisors (Sicherheit, Leistung) prüfen.
 - **Mitteilungen:** Alle Aufträge laufen über `private.enqueue_notification` (legt nur für bestehende Profile an – wichtig für die Kontolöschung). Sammeländerungen (viele Zuweisungen auf einmal) setzen `set_config('familiar.bulk_change', 'on', true)`, stellen den vorherigen Wert danach wieder her und melden selbst gesammelt; die Trigger senden dann keine Einzelmitteilungen. Inhalte nur an aktuelle Mitglieder (`push_claim_jobs.is_member`).
