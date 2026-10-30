@@ -27,6 +27,9 @@ final class NotificationStore {
     private var pushToStartToken: String?
     private var observers: [Task<Void, Never>] = []
     private var observedActivityIDs: Set<String> = []
+    /// Zuletzt beim Server angemeldeter Stand (Token, Push-to-Start-Token, Konto) und wann – verhindert Dutzende
+    /// gleiche Anmeldungen pro Sekunde (jedes Öffnen und jede Token-Meldung löste eine aus).
+    private var lastRegistration: (key: String, at: Date)?
 
     private static let tokenKey = "push.deviceToken"
 
@@ -91,6 +94,7 @@ final class NotificationStore {
         observers.forEach { $0.cancel() }
         observers = []
         observedActivityIDs = []
+        lastRegistration = nil
         userID = nil
     }
 
@@ -142,14 +146,24 @@ final class NotificationStore {
     private func register(token: String) async {
         guard userID != nil else { return }
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let key = "\(userID?.uuidString ?? "")|\(token)|\(pushToStartToken ?? "")|\(environment.rawValue)"
+        if let last = lastRegistration, last.key == key, Date.now.timeIntervalSince(last.at) < 5 * 60 {
+            await registerRunningActivities()
+            return
+        }
         do {
             try await devices.registerDevice(token: token, environment: environment, pushToStartToken: pushToStartToken,
                                              appVersion: version, timezone: TimeZone.current.identifier)
+            lastRegistration = (key, .now)
             FamiliarDiagnostics.record("Gerät angemeldet (\(environment.rawValue), Push-to-Start: \(pushToStartToken == nil ? "nein" : "ja"))")
         } catch {
             FamiliarDiagnostics.record("Geräte-Anmeldung fehlgeschlagen: \(error)")
         }
-        // Activities, die vor dem Geräte-Token entstanden sind, jetzt melden.
+        await registerRunningActivities()
+    }
+
+    /// Activities, die vor dem Geräte-Token entstanden sind, jetzt melden.
+    private func registerRunningActivities() async {
         for activity in Activity<TaskActivityAttributes>.activities {
             if let updateToken = activity.pushToken {
                 await registerActivity(activity, updateToken: updateToken.hexString)

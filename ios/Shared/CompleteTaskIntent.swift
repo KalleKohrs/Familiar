@@ -31,6 +31,8 @@ struct CompleteTaskIntent: LiveActivityIntent {
         log.notice("Abhaken aus Live Activity gestartet")
         do {
             try await TaskCompletionBridge.shared.completeWithRetry(id)
+            // Sofort vom Sperrbildschirm nehmen, nicht erst auf den Server-Push warten.
+            await LiveActivityEnding.end(taskID: id)
             FamiliarDiagnostics.record("Abhaken erledigt")
             log.notice("Abhaken aus Live Activity erledigt")
         } catch {
