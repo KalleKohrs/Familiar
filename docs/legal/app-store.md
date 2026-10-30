@@ -86,7 +86,8 @@ Erstellt mit `-FamiliarInMemoryBackend -FamiliarInMemoryScenario showcase` (Vorf
 
 ## Prüfhinweise für Apple (App Review)
 
-- Anmeldung: Prüf-Adresse (`REVIEW_EMAIL`) eingeben, „Code senden“, dann statt des E-Mail-Codes den 10-stelligen Prüf-Code (`REVIEW_CODE`) eingeben. Das Prüf-Konto vorher mit einer Beispiel-Familie und Aufgaben füllen.
+- Anmeldung: Prüf-Adresse (`REVIEW_EMAIL`) eingeben, „Weiter“ tippen (die App verschickt dabei einen normalen E-Mail-Code, der nicht gebraucht wird), dann im Feld „Code“ **sofort den 10-stelligen Zahlen-Prüf-Code** (`REVIEW_CODE`, nur Ziffern: das Codefeld nimmt keine Buchstaben an) eingeben. Das Prüf-Konto vorher mit einer Beispiel-Familie und Aufgaben füllen und den Verlauf von Testeinträgen leeren.
+- Englischer Text für das Feld „Hinweise“ in App Store Connect: *„Sign-in: enter the demo e-mail address and tap ‘Weiter’ (an e-mail code is sent to that address and can be ignored). In the ‘Code’ field enter the 10-digit demo access code instead. The demo account already contains a sample family with tasks. Live Activities and push notifications start shortly before a task is due; they need an installed build with notifications allowed.“*
 - Konto löschen: Profil › Konto löschen (bei „Mit Apple anmelden“ inklusive Widerruf bei Apple).
 - „Mit Apple anmelden“ wird angeboten, weil auch „Mit Google anmelden“ angeboten wird (Richtlinie 4.8).
 - Outlook ist optional und nur lesend.
