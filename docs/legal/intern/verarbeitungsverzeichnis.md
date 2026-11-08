@@ -28,7 +28,7 @@
 
 | Anbieter | AV-Vertrag | Erledigt |
 |---|---|---|
-| Supabase | DPA im Dashboard anfordern/unterzeichnen (Organization › Legal Documents) | offen |
-| Resend | DPA in den Resend-Einstellungen bzw. per Anfrage | offen |
-| Netlify | DPA (Teil der Bedingungen, ggf. gesondert anfordern) | offen |
-| Backblaze | DPA im Konto akzeptieren | offen |
+| Supabase | DPA gilt mit Annahme der Nutzungsbedingungen (supabase.com/legal/dpa); PDF abgelegt | 2026-11-08 (PDF abgelegt) |
+| Resend | Von Resend vorunterzeichnete DPA (Settings › Documents); PDF abgelegt | 2026-11-08 (PDF abgelegt) |
+| Netlify | DPA aus dem Netlify Trust Center, Teil der Bedingungen; PDF abgelegt | 2026-11-08 (PDF abgelegt) |
+| Backblaze | DPA ist Teil der Nutzungsbedingungen (EU-Fassung); PDF abgelegt | 2026-11-08 (PDF abgelegt) |
