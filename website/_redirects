@@ -6,4 +6,4 @@
 # App Store: Alle Download-Links der Website zeigen auf /app/. Bis zum Start erscheint die Seite
 # app/index.html („Bald im App Store“). Zum Start die Zeile darunter einkommentieren und die
 # Apple-ID der App (App Store Connect › App-Informationen) eintragen; „!“ = gilt trotz app/index.html.
-# /app  https://apps.apple.com/de/app/idXXXXXXXXXX  302!
+/app  https://apps.apple.com/de/app/id6828540894  302!

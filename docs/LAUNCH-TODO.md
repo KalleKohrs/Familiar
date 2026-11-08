@@ -41,3 +41,7 @@ Version 0.1.0 (Build 5) ist eingereicht. Nach der Freigabe:
 3. **Prüf-Konto** und seine Beispiel-Familie bleiben nur, solange Apple sie braucht; danach löschen.
 4. Offen bleiben die Punkte 13 (Auftragsverarbeitungsverträge), 14 (Markenrecherche), 15 (Netlify-Formular), 17 (Anwaltsprüfung) und der Backup-Bucket für die Produktion (Punkt 10).
 5. Bekannte Einschränkung: Live-Activity-Updates laufen im Minutentakt des Servers; das Abhaken auf dem Sperrbildschirm beendet die Activity sofort in der App.
+
+## Stand 2026-11-08: im App Store
+
+Die App ist veröffentlicht (Apple-ID `6828540894`, <https://apps.apple.com/de/app/id6828540894>). `website/_redirects` leitet `/app` dorthin (Punkt 11 erledigt, Ordner `website` noch bei Netlify hochladen). Offen: `REVIEW_CODE` löschen, Punkte 13, 14, 15, 17 und der Backup-Bucket (Punkt 10).

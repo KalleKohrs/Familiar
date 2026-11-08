@@ -1,6 +1,6 @@
 # AGENTS.md – Arbeitsanleitung für KI-Assistenten (und Menschen)
 
-Familiar ist ein deutschsprachiger Familienplaner für iOS: Aufgaben anlegen, zuweisen (auch reihum), abhaken, erinnern, Bilder, Wiederholungen, Kalender, Verlauf, mehrere Familien, Widgets, Siri, Live Activities, optional Outlook-Termine. Backend: Supabase. Stand: 2026-10-30, Version 0.1.0 (Build 5) bei Apple zur Prüfung eingereicht.
+Familiar ist ein deutschsprachiger Familienplaner für iOS: Aufgaben anlegen, zuweisen (auch reihum), abhaken, erinnern, Bilder, Wiederholungen, Kalender, Verlauf, mehrere Familien, Widgets, Siri, Live Activities, optional Outlook-Termine. Backend: Supabase. Stand: 2026-11-08, Version 1.0 (Build 5) im App Store (Apple-ID 6828540894).
 
 **Lies zuerst:** [docs/architecture.md](docs/architecture.md) (Aufbau), [docs/LAUNCH-TODO.md](docs/LAUNCH-TODO.md) (was offen ist), die ADRs in [docs/decisions/](docs/decisions/) für das Thema, an dem du arbeitest.
 
