@@ -45,3 +45,5 @@ Version 0.1.0 (Build 5) ist eingereicht. Nach der Freigabe:
 ## Stand 2026-11-08: im App Store
 
 Die App ist veröffentlicht (Apple-ID `6828540894`, <https://apps.apple.com/de/app/id6828540894>). `website/_redirects` leitet `/app` dorthin (Punkt 11 erledigt, Ordner `website` noch bei Netlify hochladen). Offen: `REVIEW_CODE` löschen, Punkte 13, 14, 17 und der Backup-Bucket (Punkt 10). Punkt 15 (Netlify-Formular „meldung“) ist erledigt.
+
+Stand 2026-11-08 (später): Markenrecherche (14) und anwaltliche Prüfung (17) hat der Inhaber erledigt. Die nächtliche Sicherung läuft im Produktionsprojekt (`private.backup_runs`, letzter Lauf 2026-11-08 ok; Cron `familiar-backup`, `familiar-backup-check`); ein getrennter Bucket ist nicht nötig, solange nur dieses Projekt schreibt. Offen: nur noch die Auftragsverarbeitungsverträge (13) und ein Wiederherstellungs-Test (optional).
