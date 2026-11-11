@@ -13,6 +13,7 @@ struct TaskDetailView: View {
     @State private var fetched: TaskItem?
     @State private var loadError: String?
     @State private var editing: TaskItem?
+    @State private var duplicating: TaskItem?
     @State private var gallery: GalleryState?
     @State private var confirmDelete = false
 
@@ -40,6 +41,9 @@ struct TaskDetailView: View {
         .task { if store.task(taskID) == nil { await load() } }
         .sheet(item: $editing) { task in
             TaskEditorView(mode: .edit(task))
+        }
+        .sheet(item: $duplicating) { task in
+            TaskEditorView(mode: .duplicate(task))
         }
         .fullScreenCover(item: $gallery) { state in
             ImageGalleryView(images: state.images, startIndex: state.index)
@@ -72,6 +76,17 @@ struct TaskDetailView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Bearbeiten") { editing = task }
                         .accessibilityIdentifier("task.edit")
+                }
+            }
+            if TaskQuickActionButtons.hasActions(for: task, in: session) {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        TaskQuickActionButtons(task: task) { duplicating = task }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityLabel("Weitere Aktionen")
+                    .accessibilityIdentifier("task.more")
                 }
             }
         }

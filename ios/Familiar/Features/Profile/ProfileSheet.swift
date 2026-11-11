@@ -136,6 +136,8 @@ struct ProfileSheet: View {
                         }
                     }
 
+                    supportSection
+
                     if NotificationStore.isTestBuild, notifications.isAvailable {
                         DiagnosticsSection()
                     }
@@ -255,6 +257,58 @@ struct ProfileSheet: View {
 
     private var notificationsOn: Bool {
         notifications.authorization == .authorized || notifications.authorization == .provisional
+    }
+
+    /// Weiterempfehlen und bewerten: ruhig, ohne Aufdringlichkeit – nur ein Angebot im Profil.
+    private var supportSection: some View {
+        VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+            FamiliarSectionHeader("Gefällt dir Familiar?")
+            VStack(spacing: FamiliarSpacing.s) {
+                ShareLink(
+                    item: AppLinks.share,
+                    message: Text("Wir planen unseren Familienalltag mit Familiar – Aufgaben teilen, reihum verteilen, ohne Werbung und ohne Tracking.")
+                ) {
+                    supportRow(symbol: "heart", title: "Familiar weiterempfehlen",
+                               detail: "Link per Nachricht oder AirDrop teilen", trailing: "square.and.arrow.up")
+                }
+                .buttonStyle(.familiarCard)
+                .accessibilityIdentifier("profile.share")
+
+                Link(destination: AppLinks.writeReview) {
+                    supportRow(symbol: "star", title: "Im App Store bewerten",
+                               detail: "Eine Bewertung hilft anderen Familien, uns zu finden", trailing: "arrow.up.forward")
+                }
+                .buttonStyle(.familiarCard)
+                .accessibilityHint("Öffnet den App Store")
+                .accessibilityIdentifier("profile.review")
+            }
+        }
+    }
+
+    private func supportRow(symbol: String, title: LocalizedStringKey, detail: LocalizedStringKey, trailing: String) -> some View {
+        HStack(spacing: FamiliarSpacing.s) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .foregroundStyle(FamiliarColor.accent)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(FamiliarFont.cardTitle)
+                    .foregroundStyle(FamiliarColor.textPrimary)
+                Text(detail)
+                    .font(FamiliarFont.meta)
+                    .foregroundStyle(FamiliarColor.textSecondary)
+                    .multilineTextAlignment(.leading)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: trailing)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(FamiliarColor.textTertiary)
+                .accessibilityHidden(true)
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 
     /// Noch nie gefragt: System-Abfrage; sonst die Mitteilungs-Einstellungen von Familiar öffnen.
