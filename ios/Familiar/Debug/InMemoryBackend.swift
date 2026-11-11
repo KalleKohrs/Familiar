@@ -305,6 +305,7 @@ extension InMemoryBackend: AuthService {
 
 extension InMemoryBackend: ProfileRepository {
     func myProfile() async throws(FamiliarError) -> Profile {
+        await simulateLatency()
         let id = try requireUser()
         guard let profile = profiles[id] else { throw .app(key: .profileNotFound, message: "Profil nicht gefunden.") }
         return profile
@@ -346,6 +347,7 @@ extension InMemoryBackend: ProfileRepository {
 
 extension InMemoryBackend: FamilyRepository {
     func myFamilies() async throws(FamiliarError) -> [FamilyMembership] {
+        await simulateLatency()
         let id = try requireUser()
         return families.keys
             .compactMap { membership($0, for: id) }
