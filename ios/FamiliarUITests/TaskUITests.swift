@@ -91,6 +91,43 @@ final class TaskUITests: XCTestCase {
         XCTAssertTrue(app.buttons["banner.undo"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["task.open.Zimmer gründlich aufräumen"].exists)
     }
+
+    @MainActor
+    func testDuplicateTaskFromDetailMenu() {
+        let app = launch()
+        app.buttons["task.open.Müll rausbringen"].tap()
+
+        let more = app.buttons["task.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        more.tap()
+        let duplicate = app.buttons["Duplizieren"]
+        XCTAssertTrue(duplicate.waitForExistence(timeout: 5))
+        duplicate.tap()
+
+        // Der Editor ist mit den Angaben der Aufgabe vorbelegt und lässt sich direkt speichern.
+        let title = app.textFields["editor.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.value as? String, "Müll rausbringen")
+        app.buttons["editor.save"].tap()
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons.matching(identifier: "task.open.Müll rausbringen").element(boundBy: 1).waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testPostponeAppointmentByOneDay() {
+        let app = launch()
+        app.buttons["task.open.Arzttermin Anna"].tap()
+
+        let more = app.buttons["task.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        more.tap()
+        let later = app.buttons["Einen Tag später"]
+        XCTAssertTrue(later.waitForExistence(timeout: 5))
+        later.tap()
+
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Verschoben auf'")).firstMatch.waitForExistence(timeout: 5))
+    }
 }
 
 /// Verlauf: Erledigtes erscheint dort und lässt sich wiederherstellen.

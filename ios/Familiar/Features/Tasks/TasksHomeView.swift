@@ -13,6 +13,7 @@ struct TasksHomeView: View {
     @Namespace private var transition
     @State private var path: [UUID] = []
     @State private var gallery: GalleryState?
+    @State private var duplicating: TaskItem?
     @State private var showsFamilies = false
     @State private var showsProfile = false
 
@@ -56,6 +57,9 @@ struct TasksHomeView: View {
             }
             .sheet(isPresented: $showsFamilies) { FamiliesSheet() }
             .sheet(isPresented: $showsProfile) { ProfileSheet() }
+            .sheet(item: $duplicating) { task in
+                TaskEditorView(mode: .duplicate(task))
+            }
             .fullScreenCover(item: $gallery) { state in
                 ImageGalleryView(images: state.images, startIndex: state.index)
             }
@@ -136,7 +140,8 @@ struct TasksHomeView: View {
                             TaskCard(
                                 task: task,
                                 onOpen: { path.append(task.id) },
-                                onOpenImages: { gallery = GalleryState(images: task.images, index: 0) }
+                                onOpenImages: { gallery = GalleryState(images: task.images, index: 0) },
+                                onDuplicate: { duplicating = task }
                             )
                             .matchedTransitionSource(id: task.id, in: transition)
                             .transition(.asymmetric(insertion: .opacity,
