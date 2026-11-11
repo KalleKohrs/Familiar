@@ -20,6 +20,7 @@ struct TasksHomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
                     header
+                    InviteHintSection()
                     content
                 }
                 // Ein Zustandswert steuert den Wechsel Platzhalter ↔ Leerzustand ↔ Liste: nur Überblendung.

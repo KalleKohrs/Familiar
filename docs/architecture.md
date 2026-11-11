@@ -25,7 +25,8 @@ Familiar (App, SwiftUI, iOS 27, Swift 6, MainActor als Standard-Isolation)
 
 FamiliarWidgets (Widget-Extension)
 ├── TaskLiveActivityWidget   Live Activity (Sperrbildschirm, Dynamic Island), Abhaken per Intent
-└── TodayWidget              „Heute“ (Homescreen S/M/L, Sperrbildschirm), liest App-Group-Schnappschuss
+├── TodayWidget              „Heute“ (Homescreen S/M/L, Sperrbildschirm), liest App-Group-Schnappschuss
+└── FamiliarControls         Steuerelemente „Neue Aufgabe“ und „Heute offen“ (Kontrollzentrum, Sperrbildschirm-Tasten)
 
 FamiliarKit (lokales Swift-Paket)
 ├── FamiliarCore      UI-freie Domänenlogik und Modelle: Aufgaben-/Serien-/Reihum-Regeln, Kalender,
@@ -37,6 +38,7 @@ FamiliarKit (lokales Swift-Paket)
 
 - **Daten in der App:** Stores (`@Observable`) im SwiftUI-Environment; Repositories über `AppDependencies` (Supabase oder `-FamiliarInMemoryBackend`).
 - **Widgets:** Die App schreibt nach jedem Laden einen kleinen Schnappschuss in die App Group (`group.<Bundle-ID>`), das Widget liest nur. Abhaken über `CompleteTaskIntent` (`LiveActivityIntent` → App-Prozess).
+- **Steuerelemente:** Intents in `ios/Shared/ControlIntents.swift` (App **und** Extension); „Neue Aufgabe“ läuft über `AppLaunchRequests` (FamiliarActivity) in die App, die Anzahl liest der App-Group-Schnappschuss (ADR 0011).
 - **Siri:** App Intents im App-Target (`FamiliarShortcuts.swift`), Zugriff über `IntentEnvironment`, nur bei entsperrtem Gerät.
 - **Erscheinungsbild:** hell und dunkel; Farben nur über `FamiliarColor`-Tokens (`accent` = orange Schrift, `accentFill` = orange Fläche).
 - **Projektdatei:** synchronisierte Ordner – neue Dateien im Ordner gehören automatisch zum Target.
