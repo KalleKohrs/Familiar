@@ -32,11 +32,11 @@ ZUR RICHTIGEN ZEIT
 • Mitteilung, wenn dir etwas zugewiesen wird und wenn es losgeht
 • Live-Anzeige auf dem Sperrbildschirm und in der Dynamic Island – mit Abhaken ohne die App zu öffnen
 • Erinnerungen, solange etwas offen ist – und „Erinnern“ per Tipp, nachts erst morgens
-• Widgets für Homescreen und Sperrbildschirm, Siri: „Müll rausbringen in Familiar erledigen“
+• Widgets für Homescreen und Sperrbildschirm, Steuerelemente im Kontrollzentrum („Neue Aufgabe“, „Heute offen“), Siri: „Müll rausbringen in Familiar erledigen“
 
 MEHRERE FAMILIEN, EINE LISTE
 • Familie, WG, Großeltern: Familiar zeigt alle Aufgaben in einer Liste, jede Familie in ihrer Farbe
-• Einladen per Code
+• Einladen per Link oder Code – gleich nach dem Anlegen der Familie
 • Admins legen fest, was Mitglieder dürfen
 
 DEIN KALENDER

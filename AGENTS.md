@@ -84,7 +84,7 @@ swiftc -O tools/render-app-icon.swift -o /tmp/render && /tmp/render ios/Familiar
 |---|---|
 | Ursprüngliche fachliche Vorgaben | [docs/guide.txt](docs/guide.txt) |
 | Datenmodell, Migrationsstand | [docs/data-model.md](docs/data-model.md), [docs/rls-matrix.md](docs/rls-matrix.md) |
-| Entscheidungen | [docs/decisions/](docs/decisions/) (u. a. 0003 Schreiben per RPC, 0005 Push, 0007 Erledigungsregeln, 0008 Wiederholung, 0009 Sicherung, 0010 Reihum/Widgets/Erinnern/Siri) |
+| Entscheidungen | [docs/decisions/](docs/decisions/) (u. a. 0003 Schreiben per RPC, 0005 Push, 0007 Erledigungsregeln, 0008 Wiederholung, 0009 Sicherung, 0010 Reihum/Widgets/Erinnern/Siri, 0011 Einladen beim Start/Steuerelemente) |
 | Design | [docs/design-system.md](docs/design-system.md), [docs/design/light-mode.md](docs/design/light-mode.md) |
 | Einrichtung externer Dienste | [docs/setup/](docs/setup/) |
 | Rechtstexte und Prüfbericht | [docs/legal/](docs/legal/) (`rechtscheck.md`, `intern/verarbeitungsverzeichnis.md`) |
