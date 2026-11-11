@@ -9,6 +9,8 @@ struct TaskEditorView: View {
     enum Mode {
         case create
         case edit(TaskItem)
+        /// Neue, einzelne Aufgabe nach dem Vorbild einer bestehenden.
+        case duplicate(TaskItem)
     }
 
     @Environment(SessionStore.self) private var session
@@ -48,6 +50,7 @@ struct TaskEditorView: View {
         switch mode {
         case .create: draft = TaskDraft(familyID: defaultFamilyID)
         case .edit(let task): draft = TaskDraft(task: task)
+        case .duplicate(let task): draft = TaskDraft(duplicating: task)
         }
         _draft = State(initialValue: draft)
         _original = State(initialValue: draft)

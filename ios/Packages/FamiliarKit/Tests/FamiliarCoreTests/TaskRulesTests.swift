@@ -189,3 +189,80 @@ struct TaskDraftTests {
         #expect(TaskRules.actions(for: item, userID: me) == [.completeForMe])
     }
 }
+
+// MARK: Schnellaktionen: Verschieben und Duplizieren
+
+struct TaskQuickActionsTests {
+    let berlin = TimeZone(identifier: "Europe/Berlin")!
+    /// 2026-11-11 12:00 in Berlin.
+    var now: Date { LocalDate(year: 2026, month: 11, day: 11).date(at: LocalTime(hour: 12, minute: 0), in: berlin) }
+
+    func task(date: LocalDate?, time: LocalTime? = nil, open: Bool = true) -> TaskItem {
+        TaskItem(
+            id: UUID(), familyID: UUID(), createdBy: UUID(), title: "Müll rausbringen", description: "Biotonne nicht vergessen",
+            startDate: date, startTime: time, timezone: "Europe/Berlin",
+            startsAt: date?.date(at: time, in: berlin),
+            completionMode: .each,
+            completedAt: open ? nil : now, completionSource: open ? nil : .assignee,
+            createdAt: now, assignees: [TaskAssignee(userID: UUID()), TaskAssignee(userID: UUID())],
+            images: [TaskImage(id: UUID(), path: "a", thumbPath: "b", width: 10, height: 10)]
+        )
+    }
+
+    @Test func overdueTaskMovesFromToday() {
+        let item = task(date: LocalDate(year: 2026, month: 11, day: 3))
+        #expect(TaskRules.postponedDate(for: item, by: .oneDay, now: now) == LocalDate(year: 2026, month: 11, day: 12))
+        #expect(TaskRules.postponedDate(for: item, by: .oneWeek, now: now) == LocalDate(year: 2026, month: 11, day: 18))
+    }
+
+    @Test func futureTaskMovesFromItsOwnDate() {
+        let item = task(date: LocalDate(year: 2026, month: 11, day: 20))
+        #expect(TaskRules.postponedDate(for: item, by: .oneDay, now: now) == LocalDate(year: 2026, month: 11, day: 21))
+    }
+
+    @Test func monthAndYearBoundariesAreHandled() {
+        let item = task(date: LocalDate(year: 2026, month: 12, day: 30))
+        #expect(TaskRules.postponedDate(for: item, by: .oneWeek, now: now) == LocalDate(year: 2027, month: 1, day: 6))
+    }
+
+    @Test func todayUsesTheTaskTimeZone() {
+        // 2026-11-11 23:30 in Berlin ist in Tokio schon der 12.
+        let lateEvening = LocalDate(year: 2026, month: 11, day: 11).date(at: LocalTime(hour: 23, minute: 30), in: berlin)
+        var item = task(date: LocalDate(year: 2026, month: 11, day: 1))
+        item.timezone = "Asia/Tokyo"
+        #expect(TaskRules.postponedDate(for: item, by: .oneDay, now: lateEvening) == LocalDate(year: 2026, month: 11, day: 13))
+    }
+
+    @Test func undatedClosedOrDeletedTasksCannotBePostponed() {
+        #expect(!TaskRules.canPostpone(task(date: nil)))
+        #expect(!TaskRules.canPostpone(task(date: LocalDate(year: 2026, month: 11, day: 12), open: false)))
+        #expect(TaskRules.postponedDate(for: task(date: nil), by: .oneDay, now: now) == nil)
+        #expect(TaskRules.canPostpone(task(date: LocalDate(year: 2026, month: 11, day: 12))))
+    }
+
+    @Test func duplicateKeepsContentButNotImagesOrRecurrence() {
+        let item = task(date: LocalDate(year: 2026, month: 11, day: 20), time: LocalTime(hour: 18, minute: 30))
+        let draft = TaskDraft(duplicating: item, now: now)
+        #expect(draft.title == "Müll rausbringen")
+        #expect(draft.description == "Biotonne nicht vergessen")
+        #expect(draft.familyID == item.familyID)
+        #expect(draft.assigneeIDs == item.assignees.map(\.userID))
+        #expect(draft.completionMode == .each)
+        #expect(draft.hasDate && draft.date == LocalDate(year: 2026, month: 11, day: 20))
+        #expect(draft.hasTime && draft.time == LocalTime(hour: 18, minute: 30))
+        #expect(draft.images.isEmpty)
+        #expect(draft.recurrence == nil)
+        #expect(draft.assignmentMode == .together)
+        #expect(draft.isValid)
+    }
+
+    @Test func duplicateOfPastTaskStartsToday() {
+        let item = task(date: LocalDate(year: 2026, month: 11, day: 3))
+        #expect(TaskDraft(duplicating: item, now: now).date == LocalDate(year: 2026, month: 11, day: 11))
+    }
+
+    @Test func duplicateOfUndatedTaskStaysUndated() {
+        let draft = TaskDraft(duplicating: task(date: nil), now: now)
+        #expect(!draft.hasDate && !draft.hasTime)
+    }
+}

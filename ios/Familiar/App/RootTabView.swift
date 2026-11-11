@@ -13,6 +13,7 @@ struct RootTabView: View {
     @State private var tabBarHeight: CGFloat = 0
     @State private var bottomSafeArea: CGFloat = 0
     @State private var showsNotificationPrimer = false
+    @State private var tabSwitches = 0
 
     /// Abstand der Leiste zur Bildschirmunterkante: auf Geräten mit Home-Indikator wie Apples
     /// Leiste (konzentrisch zu den Displayecken), sonst etwas knapper.
@@ -42,6 +43,7 @@ struct RootTabView: View {
                         // Verschachtelte horizontale Scroll-Ansichten setzen den Rand auf 0 zurück.
                         .contentMargins(.bottom, contentInset)
                         .environment(\.floatingTabBarHeight, contentInset)
+                        .environment(\.tabSelection, TabSelection(tab: selection, switches: tabSwitches))
                         .environment(\.openNewTask, OpenNewTaskAction(action: openNewTask))
                 } label: {
                     Label(tab.title, systemImage: tab.systemImage)
@@ -114,6 +116,7 @@ struct RootTabView: View {
                 if !isCreatingTask && !showsNotificationPrimer { requestReview() }
             }
         }
+        .onChange(of: selection) { tabSwitches += 1 }
         // Die Tastatur gehört dem Blatt „Neue Aufgabe“, nicht dieser Ansicht. Ohne diese Zeile meldet
         // sie sich hier als untere Safe Area (gemessen: 34 → 328 → 410 → 342 pt, beim Schließen
         // 362 → 48 → 34 pt): Die schwebende Leiste fuhr mit der Tastatur nach oben und beim

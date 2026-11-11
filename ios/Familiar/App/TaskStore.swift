@@ -309,6 +309,31 @@ final class TaskStore {
         }
     }
 
+    /// „Einen Tag später“ / „Eine Woche später“: verschiebt nur diesen Termin (bei Serien wie „Nur dieser Termin“).
+    func postpone(_ task: TaskItem, by postponement: TaskPostponement) async {
+        guard !busyTaskIDs.contains(task.id),
+              let newDate = TaskRules.postponedDate(for: task, by: postponement) else { return }
+        busyTaskIDs.insert(task.id)
+        defer { busyTaskIDs.remove(task.id) }
+        var draft = TaskDraft(task: task)
+        draft.date = newDate
+        // Nur dieser Termin: keine Serienregel, Zuweisung genau so, wie sie jetzt ist (auch bei Reihum).
+        draft.recurrence = nil
+        draft.assignmentMode = .together
+        draft.assigneeIDs = task.assignees.map(\.userID)
+        draft.completionMode = task.completionMode
+        do throws(FamiliarError) {
+            try await save(draft, editing: task, scope: .thisOccurrence)
+            var style = Date.FormatStyle().weekday(.abbreviated).day().month(.abbreviated)
+            style.timeZone = task.timeZone
+            let text = newDate.startOfDay(in: task.timeZone).formatted(style)
+            showInfo(String(localized: "Verschoben auf \(text)"))
+        } catch {
+            showError(error.message)
+        }
+        await refreshAll()
+    }
+
     func performUndo() async {
         guard let offer = undo else { return }
         undo = nil

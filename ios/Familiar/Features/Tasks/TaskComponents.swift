@@ -275,6 +275,7 @@ struct TaskCard: View {
     let task: TaskItem
     let onOpen: () -> Void
     let onOpenImages: () -> Void
+    let onDuplicate: () -> Void
     /// Sofortige Rückmeldung beim Abhaken, bevor der Server antwortet.
     @State private var pendingDone: Bool?
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -313,6 +314,7 @@ struct TaskCard: View {
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
                 .accessibilityHint("Öffnet die Details")
+                .accessibilityActions { TaskQuickActionButtons(task: task, onDuplicate: onDuplicate) }
                 .accessibilityIdentifier("task.open.\(task.title)")
 
                 if let first = task.images.first {
@@ -370,6 +372,8 @@ struct TaskCard: View {
         .animation(FamiliarMotion.fade, value: busy)
         .sensoryFeedback(.success, trigger: pendingDone) { _, new in new == true }
         .onChange(of: task.version) { _, _ in pendingDone = nil }
+        // Gedrückt halten: Duplizieren und Verschieben (für VoiceOver als Aktionen am Titel der Karte).
+        .contextMenu { TaskQuickActionButtons(task: task, onDuplicate: onDuplicate) }
     }
 
     /// Haken sofort zeigen (Feder-Animation), kurz stehen lassen, Karte ausblenden, dann speichern.
@@ -409,6 +413,40 @@ struct TaskCard: View {
         case .completeForAll: String(localized: "\(task.title) für alle erledigen")
         case .undoMine: String(localized: "Haken bei \(task.title) zurücknehmen")
         }
+    }
+}
+
+/// Schnellaktionen für eine Aufgabe: Duplizieren und Verschieben. Genutzt im Kontextmenü der Liste
+/// und im Menü der Detailansicht; zeigt nur, was die Person laut Familien-Rechten darf.
+struct TaskQuickActionButtons: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(TaskStore.self) private var store
+    let task: TaskItem
+    let onDuplicate: () -> Void
+
+    var body: some View {
+        if session.allows(.createTasks, in: task.familyID) {
+            Button(action: onDuplicate) {
+                Label("Duplizieren", systemImage: "plus.square.on.square")
+            }
+            .accessibilityIdentifier("task.duplicate")
+        }
+        if TaskRules.canPostpone(task) && session.allows(.editTasks, in: task.familyID) {
+            Button { Task { await store.postpone(task, by: .oneDay) } } label: {
+                Label("Einen Tag später", systemImage: "calendar.badge.clock")
+            }
+            .accessibilityIdentifier("task.postponeDay")
+            Button { Task { await store.postpone(task, by: .oneWeek) } } label: {
+                Label("Eine Woche später", systemImage: "calendar.badge.plus")
+            }
+            .accessibilityIdentifier("task.postponeWeek")
+        }
+    }
+
+    /// Gibt es überhaupt etwas anzubieten?
+    static func hasActions(for task: TaskItem, in session: SessionStore) -> Bool {
+        session.allows(.createTasks, in: task.familyID)
+            || (TaskRules.canPostpone(task) && session.allows(.editTasks, in: task.familyID))
     }
 }
 

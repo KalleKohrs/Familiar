@@ -12,8 +12,15 @@ struct TasksHomeView: View {
     @Namespace private var transition
     @State private var path: [UUID] = []
     @State private var gallery: GalleryState?
+    @State private var duplicating: TaskItem?
     @State private var showsFamilies = false
     @State private var showsProfile = false
+    @State private var searchText = ""
+
+    /// Offene Aufgaben, gefiltert nach der Suche (ohne Suche: alle).
+    private var visibleTasks: [TaskItem] {
+        TaskSearch.filter(store.tasks, query: searchText, nameOf: session.searchNames)
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -32,6 +39,8 @@ struct TasksHomeView: View {
             .familiarScreenBackground()
             .navigationTitle("Aufgaben")
             .navigationBarTitleDisplayMode(.inline)
+            .familiarSearch(text: $searchText, tab: .tasks, resultCount: visibleTasks.count,
+                            prompt: "Titel, Beschreibung oder Person")
             .toolbar(removing: .title)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -56,6 +65,9 @@ struct TasksHomeView: View {
             }
             .sheet(isPresented: $showsFamilies) { FamiliesSheet() }
             .sheet(isPresented: $showsProfile) { ProfileSheet() }
+            .sheet(item: $duplicating) { task in
+                TaskEditorView(mode: .duplicate(task))
+            }
             .fullScreenCover(item: $gallery) { state in
                 ImageGalleryView(images: state.images, startIndex: state.index)
             }
@@ -152,14 +164,24 @@ struct TasksHomeView: View {
             // Normaler VStack statt LazyVStack: Familienlisten sind kurz, und Ein-/Ausblenden
             // bleibt sauber (LazyVStack ließ ausgeblendete Karten kurz über Überschriften stehen).
             VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
-                ForEach(TaskRules.homeSections(store.tasks), id: \.section) { group in
+                if TaskSearch.isActive(searchText) {
+                    SearchResultsSummary(count: visibleTasks.count)
+                    if visibleTasks.isEmpty {
+                        NoSearchResultsView(
+                            query: searchText,
+                            hint: "Gesucht wird in Titel, Beschreibung und Namen der Personen."
+                        )
+                    }
+                }
+                ForEach(TaskRules.homeSections(visibleTasks), id: \.section) { group in
                     sectionTitle(group.section, count: group.tasks.count)
                         .transition(.opacity)
                     ForEach(group.tasks) { task in
                         TaskCard(
                             task: task,
                             onOpen: { path.append(task.id) },
-                            onOpenImages: { gallery = GalleryState(images: task.images, index: 0) }
+                            onOpenImages: { gallery = GalleryState(images: task.images, index: 0) },
+                            onDuplicate: { duplicating = task }
                         )
                         .matchedTransitionSource(id: task.id, in: transition)
                         .transition(.asymmetric(insertion: .opacity,
@@ -167,7 +189,7 @@ struct TasksHomeView: View {
                     }
                 }
             }
-            .familiarAnimation(value: store.tasks.map(\.id))
+            .familiarAnimation(value: visibleTasks.map(\.id))
             .transition(.opacity)
         }
     }

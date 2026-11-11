@@ -71,6 +71,31 @@ final class AccessibilityAuditUITests: XCTestCase {
         audit(app, "Profil (\(appearance))")
     }
 
+    /// Suche in „Aufgaben“ mit Treffern und ohne Treffer. Eigener Test: Die Prüfung bei geöffneter Suche und
+    /// anschließender Tab-Wechsel haben in Läufen mit mehreren Prüfungen gelegentlich den Bedienungshilfen-Dienst
+    /// des Simulators hängen lassen (die App selbst reagiert, siehe Schleifentest im Übergabevermerk).
+    @MainActor
+    private func auditSearch(appearance: String) {
+        let app = launch(appearance: appearance)
+        XCTAssertTrue(app.buttons["tab.tasks"].waitForExistence(timeout: 10))
+        app.buttons["search.open"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        // Return schließt die Tastatur (sie verdeckt sonst die Tab-Leiste).
+        field.typeText("e\n")
+        audit(app, "Suche mit Treffern (\(appearance))")
+        field.buttons["Text löschen"].tap()
+        field.typeText("qqq\n")
+        XCTAssertTrue(app.staticTexts.matching(identifier: "search.empty").firstMatch.waitForExistence(timeout: 5))
+        audit(app, "Suche ohne Treffer (\(appearance))")
+    }
+
+    @MainActor
+    func testAuditSearchLight() { auditSearch(appearance: "light") }
+
+    @MainActor
+    func testAuditSearchDark() { auditSearch(appearance: "dark") }
+
     @MainActor
     func testAuditLight() { auditAllScreens(appearance: "light") }
 
