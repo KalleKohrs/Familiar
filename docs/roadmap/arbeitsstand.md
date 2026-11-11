@@ -20,7 +20,13 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 - Komfort und Suche ist in `main` zusammengeführt (Merge `bd5d460`; vorher `main` in den Branch eingearbeitet, Paket-Tests 107 grün, TaskUITests 10 grün, PlusTab grün, Audit hell/dunkel grün nach Einzelwiederholung, Release-Build erfolgreich).
 - Offen ist nur noch **Private Aufgaben** (Branch `claude/private-aufgaben-856bd5`): Der Branch muss `main` (bd5d460) einarbeiten (Konflikte im Erstellen-Blatt wahrscheinlich), gezielt testen, dann in `main` zusammenführen; danach die Gesamtprüfung (Schritt 3 unten).
 
-## Offene Pakete (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
+## Nachtrag 00:55 – alles in main, Gesamtprüfung grün
+
+- Alle vier Pakete sind in `main` (Merge `58c0b58`; Version 1.1.0, Build 7 in `98c097e`). Nichts gepusht.
+- Gesamtprüfung auf diesem Stand: Paket-Tests 118 (+7) grün, **alle 28 UI-Tests grün** (inkl. Barrierefreiheit hell/dunkel/Suche, Private Aufgaben, Komfort, Wiederholung), Release-Build und Archive erfolgreich, `Metadata.appintents` der App enthält `CompleteTaskIntent`, `OpenNewTaskIntent`, `OpenTodayIntent` mit Modulname `Familiar`.
+- **Offen:** (1) Migration `0021_private_tasks.sql` ist **nicht** auf dem Server eingespielt; sie muss vor dem Testen/Veröffentlichen von Build 7 eingespielt werden (neue Parameter in `create_task`/Serien-RPCs; SQL-Tests 48/48 grün in Rollback). (2) Push in GitHub Desktop, Archive und Upload in Xcode, TestFlight, Prüfung auf dem iPhone. (3) Neu und nur durch Code-Lesen geprüft: Der Plus-Knopf öffnet das Formular immer; ohne Anlegerecht in irgendeiner Familie bietet es nur „Nur für mich“ an.
+
+## Offene Pakete (Stand davor, erledigt) (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
 
 | Paket | Branch | Stand | Nächster Schritt |
 |---|---|---|---|
