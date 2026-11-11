@@ -136,11 +136,8 @@ struct RootTabView: View {
 
     private func openNewTask() {
         createTaskRequests += 1
-        // Ohne Recht in allen Familien: erklären statt ein Formular zeigen, das nicht speichern kann.
-        if !session.families.isEmpty && !session.canCreateTasksAnywhere {
-            tasks.notify(String(localized: "In deinen Familien dürfen nur Admins Aufgaben anlegen."))
-            return
-        }
+        // Auch ohne Recht zum Anlegen in allen Familien öffnet das Formular: Private Aufgaben (nur für dich)
+        // brauchen dieses Recht nicht, das Formular bietet dann nur „Nur für mich“ an (ADR 0012).
         isCreatingTask = true
     }
 

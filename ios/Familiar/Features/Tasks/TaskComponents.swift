@@ -431,13 +431,13 @@ struct TaskQuickActionButtons: View {
     let onDuplicate: () -> Void
 
     var body: some View {
-        if session.allows(.createTasks, in: task.familyID) {
+        if task.isPrivate || session.allows(.createTasks, in: task.familyID) {
             Button(action: onDuplicate) {
                 Label("Duplizieren", systemImage: "plus.square.on.square")
             }
             .accessibilityIdentifier("task.duplicate")
         }
-        if TaskRules.canPostpone(task) && session.allows(.editTasks, in: task.familyID) {
+        if TaskRules.canPostpone(task) && (task.isPrivate || session.allows(.editTasks, in: task.familyID)) {
             Button { Task { await store.postpone(task, by: .oneDay) } } label: {
                 Label("Einen Tag später", systemImage: "calendar.badge.clock")
             }

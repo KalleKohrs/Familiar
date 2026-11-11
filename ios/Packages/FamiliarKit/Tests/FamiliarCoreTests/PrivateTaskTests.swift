@@ -61,6 +61,16 @@ struct PrivateTaskTests {
         #expect(TaskDraft(task: task).isPrivate)
     }
 
+    @Test func duplicateOfPrivateTaskIsPrivate() {
+        let family = UUID()
+        let task = TaskItem(id: UUID(), familyID: family, createdBy: me, title: "Geheim", completionMode: .anyOne,
+                            assignees: [TaskAssignee(userID: me)], isPrivate: true)
+        let copy = TaskDraft(duplicating: task)
+        #expect(copy.isPrivate)
+        #expect(copy.familyID == family)
+        #expect(copy.isValid)
+    }
+
     @Test func decodesIsPrivateWithDefaultFalse() throws {
         func json(_ extra: String) -> Data {
             Data("""

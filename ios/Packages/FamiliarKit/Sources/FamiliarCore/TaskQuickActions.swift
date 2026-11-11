@@ -49,5 +49,7 @@ extension TaskDraft {
         }
         completionMode = task.completionMode
         assigneeIDs = task.assignees.map(\.userID)
+        // Das Duplikat einer privaten Aufgabe ist wieder privat (und bleibt in derselben Familie).
+        isPrivate = task.isPrivate
     }
 }

@@ -208,7 +208,13 @@ struct TaskEditorView: View {
                 if draft.familyID == nil {
                     draft.familyID = LastTaskFamily().preferred(for: session.userID, among: creatableFamilies.map(\.id))
                 }
+                // Ohne Recht zum Anlegen in irgendeiner Familie bleibt nur „Nur für mich“.
+                if draft.familyID == nil, editingTask == nil, let first = session.families.first {
+                    draft.familyID = first.id
+                    draft.isPrivate = true
+                }
                 original.familyID = draft.familyID
+                original.isPrivate = draft.isPrivate
                 // Ausgetretene Personen fallen weg (sonst ließe sich nicht speichern).
                 let memberIDs = Set(members.map(\.userID))
                 if !memberIDs.isEmpty {
@@ -333,6 +339,8 @@ struct TaskEditorView: View {
         Binding {
             draft.isPrivate
         } set: { isPrivate in
+            // Ohne Anlege-Recht in irgendeiner Familie bleibt es privat.
+            guard isPrivate || !creatableFamilies.isEmpty else { return }
             withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) {
                 draft.isPrivate = isPrivate
                 // Zurück zu „Familie“: Ohne Anlege-Recht in dieser Familie auf eine andere wechseln.
