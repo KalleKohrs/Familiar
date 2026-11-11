@@ -32,6 +32,7 @@ struct TaskDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .familiarContentSwap(value: task == nil)
         .familiarScreenBackground()
         // Rückmeldungen (Erinnert, Fehler) auch hier sichtbar, nicht nur auf den Hauptbildschirmen.
         .overlay(alignment: .bottom) { TaskBanner() }

@@ -47,8 +47,8 @@ struct RootTabView: View {
                 }
             }
         }
-        // Beim Einblenden eines Sheets meldet die Ansicht kurz 0: Die Leiste sprang dann nach oben.
-        // Der Home-Indikator-Abstand ändert sich im Betrieb nicht, daher kurzzeitige Nullen ignorieren.
+        // Beim Einblenden eines Sheets meldet die Ansicht kurz 0. Der Home-Indikator-Abstand ändert sich
+        // im Betrieb nicht, daher kurzzeitige Nullen ignorieren (die Tastatur ist unten ausgeschlossen).
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { value in
             if value > 0 || bottomSafeArea == 0 { bottomSafeArea = value }
         }
@@ -110,6 +110,11 @@ struct RootTabView: View {
                 if !isCreatingTask && !showsNotificationPrimer { requestReview() }
             }
         }
+        // Die Tastatur gehört dem Blatt „Neue Aufgabe“, nicht dieser Ansicht. Ohne diese Zeile meldet
+        // sie sich hier als untere Safe Area (gemessen: 34 → 328 → 410 → 342 pt, beim Schließen
+        // 362 → 48 → 34 pt): Die schwebende Leiste fuhr mit der Tastatur nach oben und beim
+        // Schließen wieder herunter, und der Rand der Listen sprang mit.
+        .ignoresSafeArea(.keyboard)
     }
 
     /// Nur mit geladener Liste abgleichen – sonst würden laufende Activities fälschlich beendet.

@@ -29,6 +29,8 @@ struct HistoryHomeView: View {
                         .padding(.bottom, FamiliarSpacing.xs)
                     content
                 }
+                // Platzhalter ↔ Leerzustand ↔ Liste: gleiche Überblendung wie bei den Aufgaben.
+                .familiarContentSwap(value: phase)
                 .padding(.horizontal, FamiliarSpacing.m)
                 .padding(.top, FamiliarSpacing.s)
             }
@@ -64,37 +66,60 @@ struct HistoryHomeView: View {
         }
     }
 
+    private enum Phase: Equatable {
+        case loading
+        case failed
+        case empty
+        case list
+    }
+
+    private var phase: Phase {
+        if store.history.isEmpty {
+            switch store.historyState {
+            case .idle, .loading: return .loading
+            case .failed: return .failed
+            case .loaded: return .empty
+            }
+        }
+        return .list
+    }
+
     @ViewBuilder
     private var content: some View {
-        if store.history.isEmpty && (store.historyState == .idle || store.historyState == .loading) {
-            ForEach(0..<3, id: \.self) { _ in FamiliarSkeleton(height: 88) }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Verlauf wird geladen")
-        } else if store.history.isEmpty, case .failed(let error) = store.historyState {
-            FamiliarErrorState(message: error.message) {
-                Task { await store.reloadHistory() }
+        switch phase {
+        case .loading:
+            VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                ForEach(0..<3, id: \.self) { _ in FamiliarSkeleton(height: 88) }
             }
-            .familiarCard()
-        } else {
-            if store.history.isEmpty {
-                FamiliarEmptyState(
-                    systemImage: "clock.arrow.circlepath",
-                    title: "Noch kein Verlauf",
-                    message: "Erledigte und gelöschte Aufgaben bleiben hier 30 Tage und lassen sich wiederherstellen."
-                )
-                .padding(.vertical, FamiliarSpacing.xl)
-            } else {
-                ForEach(sections, id: \.day) { section in
-                    FamiliarSectionHeader(section.title)
-                        .padding(.top, FamiliarSpacing.s)
-                    ForEach(section.entries) { entry in
-                        switch entry {
-                        case .task(let task):
-                            HistoryRow(task: task) { path.append(task.id) }
-                                .matchedTransitionSource(id: task.id, in: transition)
-                        case .seriesDeletion(let deletion):
-                            SeriesDeletionRow(deletion: deletion, entry: entry)
-                        }
+            .transition(FamiliarMotion.contentTransition)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Verlauf wird geladen")
+        case .failed:
+            if case .failed(let error) = store.historyState {
+                FamiliarErrorState(message: error.message) {
+                    Task { await store.reloadHistory() }
+                }
+                .familiarCard()
+                .transition(FamiliarMotion.contentTransition)
+            }
+        case .empty:
+            FamiliarEmptyState(
+                systemImage: "clock.arrow.circlepath",
+                title: "Noch kein Verlauf",
+                message: "Erledigte und gelöschte Aufgaben bleiben hier 30 Tage und lassen sich wiederherstellen."
+            )
+            .padding(.vertical, FamiliarSpacing.xl)
+        case .list:
+            ForEach(sections, id: \.day) { section in
+                FamiliarSectionHeader(section.title)
+                    .padding(.top, FamiliarSpacing.s)
+                ForEach(section.entries) { entry in
+                    switch entry {
+                    case .task(let task):
+                        HistoryRow(task: task) { path.append(task.id) }
+                            .matchedTransitionSource(id: task.id, in: transition)
+                    case .seriesDeletion(let deletion):
+                        SeriesDeletionRow(deletion: deletion, entry: entry)
                     }
                 }
             }

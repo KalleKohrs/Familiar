@@ -99,7 +99,9 @@ final class TaskStore {
 
     func reloadHistory() async {
         let requestedFor = userID
-        if history.isEmpty { historyState = .loading }
+        // Ladeanzeige nur beim ersten Laden: Bei jedem Tabwechsel neu zu laden darf die Anzeige nicht
+        // zwischen „Noch kein Verlauf“ und Platzhalter hin- und herspringen lassen.
+        if historyState == .idle { historyState = .loading }
         do throws(FamiliarError) {
             let tasks = try await repository.historyTasks()
             let deletions = try await repository.seriesDeletions()
@@ -159,11 +161,13 @@ final class TaskStore {
             let loaded = try await repository.openTasks()
             // Inzwischen abgemeldet oder Konto gewechselt: keine Aufgaben der vorigen Person übernehmen.
             guard userID == requestedFor else { return }
+            // Leere Liste: am Verlauf erkennen, ob „Alles erledigt“ oder „Noch keine Aufgaben“ passt.
+            // Der Verlauf kommt **vor** dem Zustand „geladen“, sonst steht kurz der falsche Leerzustand da.
+            if loaded.isEmpty && historyState == .idle { await reloadHistory() }
+            guard userID == requestedFor else { return }
             tasks = TaskRules.homeOrder(loaded)
             if !tasks.isEmpty { hadOpenTasks = true }
             state = .loaded
-            // Leere Liste: am Verlauf erkennen, ob „Alles erledigt“ oder „Noch keine Aufgaben“ passt.
-            if tasks.isEmpty && historyState == .idle { await reloadHistory() }
         } catch {
             // Beim Aktualisieren bleibt die bisherige Liste stehen.
             if tasks.isEmpty { state = .failed(error) } else { showError(error.message) }

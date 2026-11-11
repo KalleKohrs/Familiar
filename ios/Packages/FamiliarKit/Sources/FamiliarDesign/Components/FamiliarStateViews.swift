@@ -48,7 +48,7 @@ public struct FamiliarEmptyState: View {
         }
         .padding(FamiliarSpacing.xl)
         .frame(maxWidth: .infinity)
-        .familiarFadeIn()
+        .transition(FamiliarMotion.contentTransition)
     }
 }
 
@@ -81,33 +81,15 @@ public struct FamiliarErrorState: View {
     }
 }
 
-/// Blendet eine Ansicht beim Erscheinen sanft ein (nur Deckkraft, daher auch bei „Bewegung reduzieren“ ruhig).
-/// Für Leerzustände, die nach dem Laden erscheinen: kein hartes Umspringen.
-private struct FamiliarFadeIn: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isVisible = false
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(isVisible ? 1 : 0)
-            .onAppear {
-                withAnimation(.easeOut(duration: reduceMotion ? 0.2 : 0.45).delay(0.1)) { isVisible = true }
-            }
-    }
-}
-
-extension View {
-    /// Sanftes Einblenden beim Erscheinen (Leerzustände, Hinweise nach dem Laden).
-    public func familiarFadeIn() -> some View { modifier(FamiliarFadeIn()) }
-}
-
 /// Platzhalterblock während des Ladens. Der Schimmer entfällt bei „Bewegung reduzieren“.
-/// Er blendet erst nach kurzer Verzögerung ein: Ist alles sofort da (Tabwechsel, Monatswechsel),
-/// würde sonst eine helle Fläche kurz aufblitzen. Der Platz bleibt von Anfang an reserviert.
+///
+/// Erscheint sofort (keine Verzögerung): Der Platz ist von Anfang an belegt, und der Wechsel zum
+/// Inhalt ist eine Überblendung, die der umgebende Bereich mit `familiarContentSwap(value:)`
+/// steuert. Liegen die Daten schon vor (Tabwechsel), wird der Platzhalter gar nicht erst gezeigt –
+/// das entscheidet der Ladezustand, nicht ein Zeitgeber.
 public struct FamiliarSkeleton: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase: CGFloat = -1
-    @State private var isVisible = false
     let height: CGFloat
 
     public init(height: CGFloat = 88) {
@@ -129,20 +111,18 @@ public struct FamiliarSkeleton: View {
                         )
                         .frame(width: proxy.size.width * 0.6)
                         .offset(x: phase * proxy.size.width)
+                        // Nur der Schimmer läuft endlos – an den Wert gebunden, damit die
+                        // Endlos-Animation nie auf andere Änderungen im selben Durchlauf übergreift.
+                        .animation(.linear(duration: 1.4).repeatForever(autoreverses: false), value: phase)
                     }
                     .clipShape(shape)
                 }
             }
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) { phase = 1.4 }
+                phase = 1.4
             }
-            .opacity(isVisible ? 1 : 0)
-            .animation(.easeOut(duration: 0.2), value: isVisible)
-            .task {
-                try? await Task.sleep(for: .milliseconds(400))
-                isVisible = true
-            }
+            .transition(FamiliarMotion.contentTransition)
             .accessibilityHidden(true)
     }
 }
