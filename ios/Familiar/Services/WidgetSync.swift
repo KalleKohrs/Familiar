@@ -21,6 +21,7 @@ enum WidgetSync {
         let snapshot = WidgetSnapshot(openTasks: openTasks, families: families, userID: userID)
         if WidgetSnapshotStore.write(snapshot) {
             WidgetCenter.shared.reloadTimelines(ofKind: kind)
+            ControlCenter.shared.reloadControls(ofKind: ControlKind.openToday)
             // Siri kennt die aktuellen Aufgabentitel für „… in Familiar erledigen“.
             FamiliarShortcuts.updateAppShortcutParameters()
         }
@@ -31,5 +32,6 @@ enum WidgetSync {
         activeUserID = nil
         WidgetSnapshotStore.clear()
         WidgetCenter.shared.reloadTimelines(ofKind: kind)
+        ControlCenter.shared.reloadControls(ofKind: ControlKind.openToday)
     }
 }

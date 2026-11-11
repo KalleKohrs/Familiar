@@ -1,3 +1,4 @@
+import FamiliarActivity
 import FamiliarCore
 import FamiliarDesign
 import StoreKit
@@ -93,6 +94,9 @@ struct RootTabView: View {
             }
         }
         .task(id: tasks.changeToken) { await reconcileLiveActivities() }
+        // Steuerelement „Neue Aufgabe“ (Kontrollzentrum): öffnet das Formular, sobald die Hauptansicht steht.
+        .onAppear { AppLaunchRequests.shared.setNewTaskHandler { openNewTask() } }
+        .onDisappear { AppLaunchRequests.shared.setNewTaskHandler(nil) }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await reconcileLiveActivities() } }
         }
