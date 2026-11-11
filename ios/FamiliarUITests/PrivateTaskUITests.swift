@@ -7,12 +7,22 @@ final class PrivateTaskUITests: XCTestCase {
     }
 
     @MainActor
-    private func launch(scenario: String) -> XCUIApplication {
+    private func launch(scenario: String, appearance: String = "light") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-FamiliarInMemoryBackend", "-FamiliarInMemoryScenario", scenario]
+        app.launchArguments = ["-FamiliarInMemoryBackend", "-FamiliarInMemoryScenario", scenario,
+                               "-appearance", appearance]
         app.launch()
         XCTAssertTrue(app.buttons["tab.tasks"].waitForExistence(timeout: 10))
         return app
+    }
+
+    /// Bild für die Sichtprüfung (bleibt im Testergebnis).
+    @MainActor
+    private func shot(_ app: XCUIApplication, _ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     /// Menüeintrag (Knopf, Schalter oder Auswahl – je nach Darstellung des Systemmenüs).
@@ -63,6 +73,7 @@ final class PrivateTaskUITests: XCTestCase {
 
         title.tap()
         title.typeText("Geschenk für Papa")
+        shot(app, "10-formular-privat")
         app.buttons["editor.save"].tap()
 
         // Ohne Person und Erledigungsart gespeichert; in der Liste mit Schloss („Privat“).
@@ -70,8 +81,10 @@ final class PrivateTaskUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         XCTAssertTrue(row.images["Privat"].exists || row.descendants(matching: .any)["Privat"].exists)
 
+        shot(app, "11-liste-mit-schloss")
         row.tap()
         XCTAssertTrue(app.descendants(matching: .any)["task.private"].waitForExistence(timeout: 5))
+        shot(app, "12-details-privat")
         // Beim Bearbeiten ist „Privat“ nur Anzeige.
         app.buttons["task.edit"].tap()
         XCTAssertTrue(app.textFields["editor.title"].waitForExistence(timeout: 5))
@@ -104,5 +117,24 @@ final class PrivateTaskUITests: XCTestCase {
         let again = app.buttons["editor.scope"]
         XCTAssertTrue(again.waitForExistence(timeout: 5))
         assertScope(app, "Familie: \(other)")
+    }
+
+    @MainActor
+    func testScreenshotsDark() {
+        let app = launch(scenario: "showcase", appearance: "dark")
+        app.buttons["createTask"].tap()
+        XCTAssertTrue(app.buttons["editor.scope"].waitForExistence(timeout: 5))
+        shot(app, "20-formular-dunkel")
+        app.buttons["editor.scope"].tap()
+        XCTAssertTrue(menuItem(app, "Nur für mich (privat)").waitForExistence(timeout: 5))
+        shot(app, "21-menue-dunkel")
+        menuItem(app, "Nur für mich (privat)").tap()
+        assertScope(app, "Nur für mich, privat")
+        let title = app.textFields["editor.title"]
+        title.tap()
+        title.typeText("Geschenk für Papa")
+        app.buttons["editor.save"].tap()
+        XCTAssertTrue(app.buttons["task.open.Geschenk für Papa"].waitForExistence(timeout: 5))
+        shot(app, "22-liste-dunkel")
     }
 }
