@@ -15,6 +15,11 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 3. Merge `0eb80df` (Branch `claude/neue-funktionen-e0e9e4`): Einladen beim Start (`InviteFamilySheet`, Hinweiskarte), Steuerelemente „Neue Aufgabe“ und „Heute offen“ (`ios/Shared/ControlIntents.swift`, `FamiliarControls.swift`, ADR 0011).
    Der Release-Build des zusammengeführten Stands war erfolgreich. Der vollständige Testlauf auf diesem Stand steht noch aus.
 
+## Nachtrag 23:25
+
+- Komfort und Suche ist in `main` zusammengeführt (Merge `bd5d460`; vorher `main` in den Branch eingearbeitet, Paket-Tests 107 grün, TaskUITests 10 grün, PlusTab grün, Audit hell/dunkel grün nach Einzelwiederholung, Release-Build erfolgreich).
+- Offen ist nur noch **Private Aufgaben** (Branch `claude/private-aufgaben-856bd5`): Der Branch muss `main` (bd5d460) einarbeiten (Konflikte im Erstellen-Blatt wahrscheinlich), gezielt testen, dann in `main` zusammenführen; danach die Gesamtprüfung (Schritt 3 unten).
+
 ## Offene Pakete (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
 
 | Paket | Branch | Stand | Nächster Schritt |
