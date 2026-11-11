@@ -27,6 +27,26 @@ actor InMemoryBackend {
     /// `-FamiliarLiveActivities`: lokale Live Activities zur Sichtprüfung (ohne Server und Push).
     static let liveActivitiesDemo = ProcessInfo.processInfo.arguments.contains("-FamiliarLiveActivities")
     static let joinableCode = "TEST2345"
+    /// `-FamiliarInMemoryLatency <ms>`: künstliche Netzverzögerung beim Laden der Listen – damit lassen sich
+    /// Ladezustände und Übergänge (Platzhalter, Leerzustand) wie mit echtem Netz prüfen.
+    private static let latency: Duration = {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-FamiliarInMemoryLatency"), arguments.indices.contains(index + 1),
+              let milliseconds = Int(arguments[index + 1]) else { return .zero }
+        return .milliseconds(milliseconds)
+    }()
+
+    /// Beginn der ersten Anfrage: Nullpunkt für das Anfrage-Protokoll.
+    private static let origin = ContinuousClock.now
+
+    private func simulateLatency(_ name: String = #function) async {
+        guard Self.latency > .zero else { return }
+        // Protokoll für Messungen: zeigt, welche Anfragen nacheinander und welche gleichzeitig laufen.
+        func stamp() -> Int { Int((ContinuousClock.now - Self.origin) / .milliseconds(1)) }
+        NSLog("NETZ %@ Start %d ms", name, stamp())
+        try? await Task.sleep(for: Self.latency)
+        NSLog("NETZ %@ Ende %d ms", name, stamp())
+    }
 
     private var user: (id: UUID, email: String)?
     private var profiles: [UUID: Profile] = [:]
@@ -293,6 +313,7 @@ extension InMemoryBackend: AuthService {
 
 extension InMemoryBackend: ProfileRepository {
     func myProfile() async throws(FamiliarError) -> Profile {
+        await simulateLatency()
         let id = try requireUser()
         guard let profile = profiles[id] else { throw .app(key: .profileNotFound, message: "Profil nicht gefunden.") }
         return profile
@@ -334,6 +355,7 @@ extension InMemoryBackend: ProfileRepository {
 
 extension InMemoryBackend: FamilyRepository {
     func myFamilies() async throws(FamiliarError) -> [FamilyMembership] {
+        await simulateLatency()
         let id = try requireUser()
         return families.keys
             .compactMap { membership($0, for: id) }
@@ -495,6 +517,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func openTasks() async throws(FamiliarError) -> [TaskItem] {
+        await simulateLatency()
         let me = try requireUser()
         generateAll()
         return tasks.values.filter { $0.isOpen && membership($0.familyID, for: me) != nil }
@@ -505,6 +528,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func historyTasks() async throws(FamiliarError) -> [TaskItem] {
+        await simulateLatency()
         let me = try requireUser()
         return HistoryRules.entries(tasks.values.filter { !$0.isOpen && membership($0.familyID, for: me) != nil })
     }
@@ -704,6 +728,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func calendarTasks(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [TaskItem] {
+        await simulateLatency()
         let me = try requireUser()
         generateAll()
         return tasks.values.filter { task in
@@ -713,6 +738,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func projectedOccurrences(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [ProjectedOccurrence] {
+        await simulateLatency()
         let me = try requireUser()
         return seriesRecords.values.flatMap { record -> [ProjectedOccurrence] in
             guard record.info.deletedAt == nil, membership(record.input.familyID, for: me) != nil,
@@ -755,6 +781,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {
+        await simulateLatency()
         let me = try requireUser()
         return deletions.values.filter { $0.restoredAt == nil && membership($0.familyID, for: me) != nil }
     }

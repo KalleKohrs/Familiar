@@ -51,6 +51,8 @@ final class TaskStore {
     private var userID: UUID?
     private var changesTask: Task<Void, Never>?
     private var reloadTask: Task<Void, Never>?
+    private var startLoad: Task<Void, Never>?
+    private var prefetchedAt: Date?
     private var bannerTask: Task<Void, Never>?
 
     init(repository: any TaskRepository) {
@@ -59,17 +61,36 @@ final class TaskStore {
 
     /// Lädt die Aufgaben und hört auf Realtime-Hinweise für diesen Nutzer.
     func start(userID: UUID) async {
-        if self.userID != userID {
-            stop()
-            self.userID = userID
-            let changes = repository.changes(for: userID)
-            changesTask = Task { [weak self] in
-                for await _ in changes {
-                    self?.scheduleReload()
-                }
-            }
+        attach(userID: userID)
+        // Hat ``prefetch(userID:)`` gerade erst geladen, nicht gleich noch einmal anfragen. War die Person
+        // länger im Onboarding, ist der Stand alt – dann normal neu laden.
+        if let startLoad {
+            self.startLoad = nil
+            await startLoad.value
+            if let prefetchedAt, Date.now.timeIntervalSince(prefetchedAt) < 10 { return }
         }
         await reload()
+    }
+
+    /// Beginnt gleich nach der Anmeldung zu laden – parallel zu Profil und Familien, nicht erst, wenn
+    /// die Startseite erscheint. So liegen die Aufgaben beim ersten Bild meist schon vor.
+    func prefetch(userID: UUID) {
+        attach(userID: userID)
+        guard startLoad == nil, state == .idle else { return }
+        prefetchedAt = .now
+        startLoad = Task { [weak self] in await self?.reload() }
+    }
+
+    private func attach(userID: UUID) {
+        guard self.userID != userID else { return }
+        stop()
+        self.userID = userID
+        let changes = repository.changes(for: userID)
+        changesTask = Task { [weak self] in
+            for await _ in changes {
+                self?.scheduleReload()
+            }
+        }
     }
 
     func stop() {
@@ -77,6 +98,8 @@ final class TaskStore {
         changesTask = nil
         reloadTask?.cancel()
         reloadTask = nil
+        startLoad?.cancel()
+        startLoad = nil
         bannerTask?.cancel()
         bannerTask = nil
         userID = nil
@@ -99,10 +122,15 @@ final class TaskStore {
 
     func reloadHistory() async {
         let requestedFor = userID
-        if history.isEmpty { historyState = .loading }
+        // Ladeanzeige nur beim ersten Laden: Bei jedem Tabwechsel neu zu laden darf die Anzeige nicht
+        // zwischen „Noch kein Verlauf“ und Platzhalter hin- und herspringen lassen.
+        if historyState == .idle { historyState = .loading }
         do throws(FamiliarError) {
-            let tasks = try await repository.historyTasks()
-            let deletions = try await repository.seriesDeletions()
+            async let tasksRequest = captured { () async throws(FamiliarError) -> [TaskItem] in try await repository.historyTasks() }
+            async let deletionsRequest = captured { () async throws(FamiliarError) -> [SeriesDeletion] in try await repository.seriesDeletions() }
+            let (tasksResult, deletionsResult) = await (tasksRequest, deletionsRequest)
+            let tasks = try tasksResult.get()
+            let deletions = try deletionsResult.get()
             // Inzwischen abgemeldet oder Konto gewechselt: Ergebnis verwerfen.
             guard userID == requestedFor else { return }
             history = HistoryRules.entries(tasks, deletions: deletions)
@@ -156,18 +184,31 @@ final class TaskStore {
         let requestedFor = userID
         if state == .idle { state = .loading }
         do throws(FamiliarError) {
-            let loaded = try await repository.openTasks()
+            // Beim ersten Laden holt ein zweiter Auftrag gleichzeitig den Verlauf: Bei leerer Liste entscheidet
+            // er zwischen „Alles erledigt“ und „Noch keine Aufgaben“, und der Verlauf-Tab ist danach sofort da.
+            async let historyLoad: Void = loadHistoryIfFirstTime()
+            let loaded: [TaskItem]
+            do throws(FamiliarError) {
+                loaded = try await repository.openTasks()
+            } catch {
+                await historyLoad
+                throw error
+            }
+            // Der Verlauf kommt **vor** dem Zustand „geladen“, sonst steht kurz der falsche Leerzustand da.
+            await historyLoad
             // Inzwischen abgemeldet oder Konto gewechselt: keine Aufgaben der vorigen Person übernehmen.
             guard userID == requestedFor else { return }
             tasks = TaskRules.homeOrder(loaded)
             if !tasks.isEmpty { hadOpenTasks = true }
             state = .loaded
-            // Leere Liste: am Verlauf erkennen, ob „Alles erledigt“ oder „Noch keine Aufgaben“ passt.
-            if tasks.isEmpty && historyState == .idle { await reloadHistory() }
         } catch {
             // Beim Aktualisieren bleibt die bisherige Liste stehen.
             if tasks.isEmpty { state = .failed(error) } else { showError(error.message) }
         }
+    }
+
+    private func loadHistoryIfFirstTime() async {
+        if historyState == .idle { await reloadHistory() }
     }
 
     /// Mehrere Hinweise kurz hintereinander lösen nur ein Neuladen aus.

@@ -26,7 +26,13 @@ struct FamiliarApp: App {
         session.beforeAccountDeletion = { await GoogleSignInFlow.disconnect() }
         // Widgets zeigen nur Aufgaben des angemeldeten Kontos; nach jeder Abmeldung ist die Liste weg.
         session.onAccountChange = { userID in
-            if let userID { WidgetSync.activate(userID: userID) } else { WidgetSync.clear() }
+            if let userID {
+                WidgetSync.activate(userID: userID)
+                // Aufgaben schon jetzt laden, parallel zu Profil und Familien (spart einen Rundlauf).
+                tasks.prefetch(userID: userID)
+            } else {
+                WidgetSync.clear()
+            }
         }
         session.beforeSignOut = {
             WidgetSync.clear()
@@ -61,19 +67,34 @@ struct FamiliarApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(session)
-                .environment(avatars)
-                .environment(tasks)
-                .environment(taskImages)
-                .environment(outlook)
-                .environment(notifications)
-                .tint(FamiliarColor.accent)
-                .onChange(of: appearance, initial: true) { appearance.apply() }
-                .task {
-                    appDelegate.notifications = notifications
-                    session.start()
-                }
+            #if DEBUG
+            // Nur zum Messen: echte System-Tab-Leiste als Maßstab (siehe SystemTabBarReference).
+            if ProcessInfo.processInfo.arguments.contains("-FamiliarSystemTabBarReference") {
+                SystemTabBarReference()
+                    .tint(FamiliarColor.accent)
+                    .onChange(of: appearance, initial: true) { appearance.apply() }
+            } else {
+                appContent
+            }
+            #else
+            appContent
+            #endif
         }
+    }
+
+    private var appContent: some View {
+        RootView()
+            .environment(session)
+            .environment(avatars)
+            .environment(tasks)
+            .environment(taskImages)
+            .environment(outlook)
+            .environment(notifications)
+            .tint(FamiliarColor.accent)
+            .onChange(of: appearance, initial: true) { appearance.apply() }
+            .task {
+                appDelegate.notifications = notifications
+                session.start()
+            }
     }
 }

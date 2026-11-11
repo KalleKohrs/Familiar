@@ -68,8 +68,13 @@ final class SessionStore {
     func reload() async {
         let requestedFor = userID
         do throws(FamiliarError) {
-            let loadedProfile = try await dependencies.profiles.myProfile()
-            let loadedFamilies = try await dependencies.families.myFamilies()
+            // Beide Anfragen gleichzeitig: Sie hängen nicht voneinander ab, nacheinander kostete das einen
+            // zusätzlichen Netz-Rundlauf vor dem ersten Bild.
+            async let profileRequest = captured { () async throws(FamiliarError) -> Profile in try await dependencies.profiles.myProfile() }
+            async let familiesRequest = captured { () async throws(FamiliarError) -> [FamilyMembership] in try await dependencies.families.myFamilies() }
+            let (profileResult, familiesResult) = await (profileRequest, familiesRequest)
+            let loadedProfile = try profileResult.get()
+            let loadedFamilies = try familiesResult.get()
             // Während des Ladens abgemeldet oder Konto gewechselt: alten Stand nicht übernehmen.
             guard userID == requestedFor, userID != nil else { return }
             profile = loadedProfile
