@@ -223,7 +223,7 @@ struct TaskMetaLine: View {
     let task: TaskItem
 
     static func hasContent(_ task: TaskItem, familyCount: Int) -> Bool {
-        task.startDate != nil || task.series != nil || familyCount > 1
+        task.startDate != nil || task.series != nil || familyCount > 1 || task.isPrivate
     }
 
     var body: some View {
@@ -237,6 +237,12 @@ struct TaskMetaLine: View {
             if let rule = task.series?.rule {
                 Label(RecurrenceFormatting.summary(rule), systemImage: "repeat")
                     .accessibilityLabel(RecurrenceFormatting.spokenSummary(rule))
+            }
+            if task.isPrivate {
+                // Nur ein kleines Schloss; VoiceOver sagt „Privat“ (ADR 0012).
+                Image(systemName: "lock.fill")
+                    .accessibilityLabel("Privat")
+                    .accessibilityHint("Nur du siehst diese Aufgabe.")
             }
             if session.families.count > 1, let family = session.membership(task.familyID)?.family {
                 HStack(spacing: FamiliarSpacing.xxs) {
@@ -425,13 +431,13 @@ struct TaskQuickActionButtons: View {
     let onDuplicate: () -> Void
 
     var body: some View {
-        if session.allows(.createTasks, in: task.familyID) {
+        if task.isPrivate || session.allows(.createTasks, in: task.familyID) {
             Button(action: onDuplicate) {
                 Label("Duplizieren", systemImage: "plus.square.on.square")
             }
             .accessibilityIdentifier("task.duplicate")
         }
-        if TaskRules.canPostpone(task) && session.allows(.editTasks, in: task.familyID) {
+        if TaskRules.canPostpone(task) && (task.isPrivate || session.allows(.editTasks, in: task.familyID)) {
             Button { Task { await store.postpone(task, by: .oneDay) } } label: {
                 Label("Einen Tag später", systemImage: "calendar.badge.clock")
             }

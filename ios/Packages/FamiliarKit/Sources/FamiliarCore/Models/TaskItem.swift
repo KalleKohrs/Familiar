@@ -82,6 +82,8 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
     public var deletedBySeriesOp: UUID?
     /// Eingebettete Serie (Regel), sofern sichtbar.
     public var series: TaskSeries?
+    /// Private Aufgabe: nur der Ersteller sieht sie (ADR 0012). Nur dem Ersteller zugewiesen.
+    public var isPrivate: Bool
 
     public init(
         id: UUID,
@@ -107,7 +109,8 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         occurrenceDate: LocalDate? = nil,
         isDetached: Bool = false,
         deletedBySeriesOp: UUID? = nil,
-        series: TaskSeries? = nil
+        series: TaskSeries? = nil,
+        isPrivate: Bool = false
     ) {
         self.id = id
         self.familyID = familyID
@@ -133,6 +136,7 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         self.isDetached = isDetached
         self.deletedBySeriesOp = deletedBySeriesOp
         self.series = series
+        self.isPrivate = isPrivate
     }
 
     enum CodingKeys: String, CodingKey {
@@ -156,6 +160,7 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         case isDetached = "is_detached"
         case deletedBySeriesOp = "deleted_by_series_op"
         case series = "task_series"
+        case isPrivate = "is_private"
     }
 
     /// Eingebettete Verknüpfung `task_image_links(position, images(*))`.
@@ -192,6 +197,7 @@ public struct TaskItem: Decodable, Hashable, Identifiable, Sendable {
         isDetached = try container.decodeIfPresent(Bool.self, forKey: .isDetached) ?? false
         deletedBySeriesOp = try container.decodeIfPresent(UUID.self, forKey: .deletedBySeriesOp)
         series = try container.decodeIfPresent(TaskSeries.self, forKey: .series)
+        isPrivate = try container.decodeIfPresent(Bool.self, forKey: .isPrivate) ?? false
     }
 
     public var timeZone: TimeZone { TimeZone(identifier: timezone) ?? .current }

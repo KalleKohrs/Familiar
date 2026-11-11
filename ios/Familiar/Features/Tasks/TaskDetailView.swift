@@ -156,9 +156,15 @@ struct TaskDetailView: View {
                             systemImage: task.deletedAt != nil ? "trash" : "checkmark",
                             tone: task.deletedAt != nil ? .danger : .success)
             }
-            FamiliarTag(TaskFormatting.modeTitle(task.completionMode),
-                        systemImage: TaskFormatting.modeSymbol(task.completionMode), tone: .neutral)
-                .accessibilityHint(TaskFormatting.modeExplanation(task.completionMode))
+            if task.isPrivate {
+                FamiliarTag("Privat", systemImage: "lock.fill", tone: .neutral)
+                    .accessibilityHint("Nur du siehst diese Aufgabe.")
+                    .accessibilityIdentifier("task.private")
+            } else {
+                FamiliarTag(TaskFormatting.modeTitle(task.completionMode),
+                            systemImage: TaskFormatting.modeSymbol(task.completionMode), tone: .neutral)
+                    .accessibilityHint(TaskFormatting.modeExplanation(task.completionMode))
+            }
             if let creator = task.createdBy {
                 Text("Erstellt von \(session.displayName(of: creator, in: task.familyID))")
                     .font(FamiliarFont.meta)

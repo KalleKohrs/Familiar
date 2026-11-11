@@ -97,21 +97,22 @@ struct TaskEditorView: View {
                         .listRowBackground(FamiliarColor.card)
                         .accessibilityIdentifier("editor.missing")
                 }
+                scopeSection.id(Anchor.family)
                 titleSection.id(Anchor.title)
-                if editingTask == nil && creatableFamilies.count > 1 {
-                    familySection.id(Anchor.family)
-                }
                 if showsRepeat {
                     repeatSection.id(Anchor.repeating)
                 }
                 startSection
-                assigneesSection.id(Anchor.assignees)
-                // Sichtbar, solange „Reihum“ an ist – auch bei nur einer Person, damit es sich abschalten lässt.
-                if draft.recurrence != nil && (draft.assigneeIDs.count > 1 || draft.assignmentMode == .rotate) {
-                    rotationSection
-                }
-                if !draft.isRotating {
-                    modeSection.id(Anchor.mode)
+                // Private Aufgaben gehören nur dir: keine Zuweisung, kein Reihum, keine Erledigungsart.
+                if !draft.isPrivate {
+                    assigneesSection.id(Anchor.assignees)
+                    // Sichtbar, solange „Reihum“ an ist – auch bei nur einer Person, damit es sich abschalten lässt.
+                    if draft.recurrence != nil && (draft.assigneeIDs.count > 1 || draft.assignmentMode == .rotate) {
+                        rotationSection
+                    }
+                    if !draft.isRotating {
+                        modeSection.id(Anchor.mode)
+                    }
                 }
                 imagesSection.id(Anchor.images)
             }
@@ -192,13 +193,28 @@ struct TaskEditorView: View {
                     .ignoresSafeArea()
             }
             .sensoryFeedback(.selection, trigger: draft.completionMode)
+            .sensoryFeedback(.selection, trigger: draft.isPrivate)
+            .sensoryFeedback(.selection, trigger: draft.familyID)
             .sensoryFeedback(.error, trigger: invalidSaveAttempts)
             .onChange(of: draft.recurrence) { _, _ in focusedField = nil }
+            .onChange(of: draft.familyID) { old, _ in
+                // Zugewiesene Personen gehören zur Familie; bei einem Wechsel neu wählen.
+                if old != nil { draft.assigneeIDs = [] }
+            }
             .onChange(of: draft.hasDate) { _, _ in focusedField = nil }
             .announcesChanges(of: errorMessage)
             .onAppear {
-                if draft.familyID == nil { draft.familyID = creatableFamilies.first?.id }
+                // Neue Aufgabe: die Familie, in der zuletzt eine Aufgabe entstand (sonst die erste).
+                if draft.familyID == nil {
+                    draft.familyID = LastTaskFamily().preferred(for: session.userID, among: creatableFamilies.map(\.id))
+                }
+                // Ohne Recht zum Anlegen in irgendeiner Familie bleibt nur „Nur für mich“.
+                if draft.familyID == nil, editingTask == nil, let first = session.families.first {
+                    draft.familyID = first.id
+                    draft.isPrivate = true
+                }
                 original.familyID = draft.familyID
+                original.isPrivate = draft.isPrivate
                 // Ausgetretene Personen fallen weg (sonst ließe sich nicht speichern).
                 let memberIDs = Set(members.map(\.userID))
                 if !memberIDs.isEmpty {
@@ -237,19 +253,103 @@ struct TaskEditorView: View {
         .listRowBackground(FamiliarColor.card)
     }
 
-    private var familySection: some View {
-        Section("Familie") {
-            Picker("Familie", selection: $draft.familyID) {
-                ForEach(creatableFamilies) { membership in
-                    Text(membership.family.name).tag(Optional(membership.id))
+    /// Familien im Menü: für gemeinsame Aufgaben nur die, in denen man anlegen darf; private Aufgaben
+    /// brauchen dieses Recht nicht (Migration 0021).
+    private var menuFamilies: [FamilyMembership] {
+        draft.isPrivate ? session.families : creatableFamilies
+    }
+
+    private var familyName: String {
+        draft.familyID.flatMap { session.membership($0)?.family.name } ?? String(localized: "Familie")
+    }
+
+    /// „In Familie Berger“ bei mehreren Familien, sonst nur der Name; „Nur für mich“ bei privaten Aufgaben.
+    private var scopeTitle: String {
+        if draft.isPrivate { return String(localized: "Nur für mich") }
+        return session.families.count > 1 ? String(localized: "In \(familyName)") : familyName
+    }
+
+    /// Ein einziges kleines Menü am Kopf des Formulars statt eines eigenen Abschnitts: Familie wählen
+    /// (Häkchen bei der aktuellen) und, abgetrennt, „Nur für mich (privat)“. Beim Bearbeiten nur Anzeige.
+    @ViewBuilder
+    private var scopeSection: some View {
+        if let task = editingTask {
+            if task.isPrivate {
+                Section {
+                    scopeLabel
+                        .accessibilityLabel("Privat")
+                        .accessibilityHint("Nur du siehst diese Aufgabe.")
                 }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
             }
-            .onChange(of: draft.familyID) { _, _ in
-                // Zugewiesene Personen gehören zur Familie; bei einem Wechsel neu wählen.
-                draft.assigneeIDs = []
+        } else if !menuFamilies.isEmpty {
+            Section {
+                Menu {
+                    ForEach(menuFamilies) { membership in
+                        Button {
+                            draft.familyID = membership.id
+                        } label: {
+                            if membership.id == draft.familyID {
+                                Label(membership.family.name, systemImage: "checkmark")
+                            } else {
+                                Text(membership.family.name)
+                            }
+                        }
+                    }
+                    Divider()
+                    Toggle(isOn: privateBinding) {
+                        Label("Nur für mich (privat)", systemImage: "lock")
+                    }
+                } label: {
+                    scopeLabel
+                }
+                .accessibilityLabel(draft.isPrivate ? String(localized: "Nur für mich, privat") : String(localized: "Familie: \(familyName)"))
+                .accessibilityHint("Öffnet ein Menü, um die Familie zu wechseln oder die Aufgabe privat zu machen.")
+                .accessibilityIdentifier("editor.scope")
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+            .listSectionSpacing(.compact)
+        }
+    }
+
+    private var scopeLabel: some View {
+        HStack(spacing: FamiliarSpacing.xxs) {
+            if draft.isPrivate {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(FamiliarColor.accent)
+                    .accessibilityHidden(true)
+            }
+            Text(scopeTitle)
+            if editingTask == nil {
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .accessibilityHidden(true)
             }
         }
-        .listRowBackground(FamiliarColor.card)
+        .font(FamiliarFont.secondary.weight(.semibold))
+        .foregroundStyle(FamiliarColor.textSecondary)
+        .padding(.horizontal, FamiliarSpacing.xs)
+        .frame(maxWidth: .infinity, minHeight: FamiliarSize.minimumTouchTarget, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    private var privateBinding: Binding<Bool> {
+        Binding {
+            draft.isPrivate
+        } set: { isPrivate in
+            // Ohne Anlege-Recht in irgendeiner Familie bleibt es privat.
+            guard isPrivate || !creatableFamilies.isEmpty else { return }
+            withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) {
+                draft.isPrivate = isPrivate
+                // Zurück zu „Familie“: Ohne Anlege-Recht in dieser Familie auf eine andere wechseln.
+                if !isPrivate, let id = draft.familyID, !creatableFamilies.contains(where: { $0.id == id }),
+                   let first = creatableFamilies.first {
+                    draft.familyID = first.id
+                }
+            }
+        }
     }
 
     private var startSection: some View {
@@ -826,6 +926,9 @@ struct TaskEditorView: View {
                 }
                 try await store.save(draft, editing: editingTask, scope: scope) { current, total in
                     progressText = String(localized: "Bild \(current) von \(total) wird hochgeladen …")
+                }
+                if editingTask == nil, let familyID = draft.familyID, let userID = session.userID {
+                    LastTaskFamily().remember(familyID, for: userID)
                 }
                 dismiss()
             } catch {

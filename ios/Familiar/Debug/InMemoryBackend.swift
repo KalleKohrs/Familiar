@@ -425,6 +425,14 @@ extension InMemoryBackend: FamilyRepository {
     /// Wie `private.handle_member_departure` (Migration 0018): Wer austritt, ist für nichts mehr
     /// zuständig; Reihum-Termine ohne Person gehen an die Person, die nach der Regel dran ist.
     private func handleDeparture(of userID: UUID, from familyID: UUID) {
+        // Private Aufgaben und Serien gehören der austretenden Person allein und verschwinden mit ihr (ADR 0012).
+        for (id, record) in seriesRecords where record.input.isPrivate && record.input.familyID == familyID
+            && record.createdBy == userID {
+            seriesRecords[id] = nil
+        }
+        for (id, task) in tasks where task.isPrivate && task.familyID == familyID && task.createdBy == userID {
+            tasks[id] = nil
+        }
         for (seriesID, var record) in seriesRecords where record.input.familyID == familyID {
             record.input.assigneeIDs.removeAll { $0 == userID }
             record.info.assigneeOrder.removeAll { $0 == userID }
@@ -508,9 +516,14 @@ extension InMemoryBackend {
 }
 
 extension InMemoryBackend: TaskRepository {
+    /// Wie `private.can_view_task` (Migration 0021): Private Aufgaben sieht nur ihr Ersteller.
+    private func canView(_ task: TaskItem, _ me: UUID) -> Bool {
+        membership(task.familyID, for: me) != nil && (!task.isPrivate || task.createdBy == me)
+    }
+
     private func visibleTask(_ id: UUID) throws(FamiliarError) -> TaskItem {
         let me = try requireUser()
-        guard let task = tasks[id], membership(task.familyID, for: me) != nil else {
+        guard let task = tasks[id], canView(task, me) else {
             throw .app(key: .taskNotFound, message: "Aufgabe nicht gefunden oder für dich nicht sichtbar.")
         }
         return task
@@ -520,7 +533,7 @@ extension InMemoryBackend: TaskRepository {
         await simulateLatency()
         let me = try requireUser()
         generateAll()
-        return tasks.values.filter { $0.isOpen && membership($0.familyID, for: me) != nil }
+        return tasks.values.filter { $0.isOpen && canView($0, me) }
     }
 
     func task(id: UUID) async throws(FamiliarError) -> TaskItem {
@@ -530,7 +543,7 @@ extension InMemoryBackend: TaskRepository {
     func historyTasks() async throws(FamiliarError) -> [TaskItem] {
         await simulateLatency()
         let me = try requireUser()
-        return HistoryRules.entries(tasks.values.filter { !$0.isOpen && membership($0.familyID, for: me) != nil })
+        return HistoryRules.entries(tasks.values.filter { !$0.isOpen && canView($0, me) })
     }
 
     // MARK: Serien (vereinfacht nach Migration 0009)
@@ -562,7 +575,8 @@ extension InMemoryBackend: TaskRepository {
                                 description: input.description, startDate: date, startTime: input.startTime,
                                 timezone: input.timezone, startsAt: startsAt(input), completionMode: input.completionMode,
                                 assignees: occurrenceAssignees(record, on: date).map { TaskAssignee(userID: $0) },
-                                images: images(for: input), seriesID: seriesID, occurrenceDate: date, series: record.info)
+                                images: images(for: input), seriesID: seriesID, occurrenceDate: date, series: record.info,
+                                isPrivate: record.input.isPrivate)
             tasks[task.id] = task
         }
         if let last = dates.last {
@@ -591,6 +605,15 @@ extension InMemoryBackend: TaskRepository {
         return input
     }
 
+    /// Private Serien: nur der Ersteller, nie Reihum (wie create_recurring_task/update_series_from).
+    private func privateSeriesInput(_ input: TaskInput, owner: UUID) -> TaskInput {
+        var input = input
+        input.assigneeIDs = [owner]
+        input.assignmentMode = .together
+        input.rotationUnit = .occurrence
+        return input
+    }
+
     func createSeries(_ input: TaskInput) async throws(FamiliarError) {
         let me = try requireUser()
         guard membership(input.familyID, for: me) != nil else {
@@ -600,20 +623,25 @@ extension InMemoryBackend: TaskRepository {
             throw .app(key: .invalidRecurrence, message: "Bitte wähle für die Wiederholung mindestens einen Wochentag bzw. Monatstag.")
         }
         let today = today(input.timezone)
-        var normalizedInput = try validatedRotation(input)
+        var normalizedInput = try validatedRotation(input.isPrivate ? privateSeriesInput(input, owner: me) : input)
         normalizedInput.recurrence = rule
         let info = TaskSeries(id: UUID(), familyID: input.familyID, title: input.title, rule: rule, startDate: start,
-                              assignmentMode: input.assignmentMode, rotationUnit: input.rotationUnit,
+                              assignmentMode: normalizedInput.assignmentMode, rotationUnit: normalizedInput.rotationUnit,
                               rotationStart: RotationRules.start(rule: rule, startDate: start, today: today),
-                              assigneeOrder: input.assigneeIDs)
+                              assigneeOrder: normalizedInput.assigneeIDs)
         seriesRecords[info.id] = SeriesRecord(info: info, input: normalizedInput, createdBy: me,
                                               generatedUntil: start < today ? today.adding(days: -1) : nil)
         generate(info.id)
     }
 
     func updateSeries(fromTaskID taskID: UUID, expectedVersion: Int, _ originalInput: TaskInput) async throws(FamiliarError) -> TaskItem {
-        let input = try validatedRotation(originalInput)
         let task = try visibleTask(taskID)
+        var originalInput = originalInput
+        if task.isPrivate, let owner = task.createdBy {
+            originalInput = privateSeriesInput(originalInput, owner: owner)
+            originalInput.isPrivate = true
+        }
+        let input = try validatedRotation(originalInput)
         guard let seriesID = task.seriesID, var record = seriesRecords[seriesID],
               let occurrenceDate = task.occurrenceDate else {
             throw .app(key: .notAnOccurrence, message: "Diese Aufgabe gehört zu keiner Serie.")
@@ -716,10 +744,12 @@ extension InMemoryBackend: TaskRepository {
         guard !adminFamilies.isEmpty else {
             throw .app(key: .adminRequired, message: "Nur Admins dürfen das.")
         }
-        for (id, record) in seriesRecords where record.info.familyID.map(adminFamilies.contains) == true && record.info.deletedAt != nil {
+        for (id, record) in seriesRecords where record.info.familyID.map(adminFamilies.contains) == true && record.info.deletedAt != nil
+            && (!record.input.isPrivate || record.createdBy == me) {
             seriesRecords[id] = nil
         }
-        for (id, task) in tasks where adminFamilies.contains(task.familyID) && (task.completedAt != nil || task.deletedAt != nil) {
+        for (id, task) in tasks where adminFamilies.contains(task.familyID) && (task.completedAt != nil || task.deletedAt != nil)
+            && (!task.isPrivate || task.createdBy == me) {
             tasks[id] = nil
         }
         for (id, deletion) in deletions where adminFamilies.contains(deletion.familyID) {
@@ -732,7 +762,7 @@ extension InMemoryBackend: TaskRepository {
         let me = try requireUser()
         generateAll()
         return tasks.values.filter { task in
-            guard task.deletedAt == nil, let date = task.startDate, membership(task.familyID, for: me) != nil else { return false }
+            guard task.deletedAt == nil, let date = task.startDate, canView(task, me) else { return false }
             return date >= from && date <= through
         }
     }
@@ -742,6 +772,7 @@ extension InMemoryBackend: TaskRepository {
         let me = try requireUser()
         return seriesRecords.values.flatMap { record -> [ProjectedOccurrence] in
             guard record.info.deletedAt == nil, membership(record.input.familyID, for: me) != nil,
+                  !record.input.isPrivate || record.createdBy == me,
                   let rule = record.input.recurrence, let start = record.info.startDate else { return [] }
             let lower = [from, start, record.resumeFrom, record.generatedUntil?.adding(days: 1)].compactMap { $0 }.max() ?? from
             guard lower <= through else { return [] }
@@ -812,10 +843,13 @@ extension InMemoryBackend: TaskRepository {
         guard membership(input.familyID, for: me) != nil else {
             throw .app(key: .familyNotFound, message: "Familie nicht gefunden oder du bist kein Mitglied.")
         }
+        // Privat: gehört dem Ersteller, er ist der Einzige, dem die Aufgabe zugewiesen ist (wie create_task).
+        let assigneeIDs = input.isPrivate ? [me] : input.assigneeIDs
         let task = TaskItem(id: UUID(), familyID: input.familyID, createdBy: me, title: input.title,
                             description: input.description, startDate: input.startDate, startTime: input.startTime,
                             timezone: input.timezone, startsAt: startsAt(input), completionMode: input.completionMode,
-                            assignees: input.assigneeIDs.map { TaskAssignee(userID: $0) }, images: images(for: input))
+                            assignees: assigneeIDs.map { TaskAssignee(userID: $0) }, images: images(for: input),
+                            isPrivate: input.isPrivate)
         tasks[task.id] = task
         return task
     }
@@ -832,7 +866,8 @@ extension InMemoryBackend: TaskRepository {
         task.startTime = input.startTime
         task.startsAt = startsAt(input)
         task.completionMode = input.completionMode
-        task.assignees = input.assigneeIDs.map { previous[$0] ?? TaskAssignee(userID: $0) }
+        let assigneeIDs = task.isPrivate ? (task.createdBy.map { [$0] } ?? []) : input.assigneeIDs
+        task.assignees = assigneeIDs.map { previous[$0] ?? TaskAssignee(userID: $0) }
         task.images = images(for: TaskInput(familyID: task.familyID, title: "", description: nil, startDate: nil,
                                             startTime: nil, timezone: input.timezone, completionMode: input.completionMode,
                                             assigneeIDs: [], images: input.images))

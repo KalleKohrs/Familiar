@@ -50,7 +50,7 @@ Alle Policies auf `public`-Tabellen: `for select to authenticated`.
 | Fehlversuche (`private.invite_attempts`) | nein | nein | nein |
 | `anon` | nichts (42501) | | |
 
-### Aufgaben (0007, 0009, 0018)
+### Aufgaben (0007, 0009, 0018, 0021)
 
 Sichtbar ist eine Aufgabe (`tasks_select_visible`, gleiche Regel in `private.can_view_task` für Zuweisungen, Bilder und alle Aufgaben-RPCs) für **Mitglieder** der Familie, wenn mindestens eines gilt:
 
@@ -60,6 +60,7 @@ Sichtbar ist eine Aufgabe (`tasks_select_visible`, gleiche Regel in `private.can
 | man hat die Aufgabe angelegt | 0007 |
 | man ist der Aufgabe zugewiesen | 0007 |
 | die Aufgabe ist ein Termin einer **Reihum**-Serie, bei der man mitmacht (`private.my_rotation_series_ids()`) | 0018 |
+| **Ausnahme:** Ist die Aufgabe **privat** (`is_private`), sieht sie *nur* ihr Ersteller – keine der anderen Bedingungen zählt, auch Admins nicht (gleiche Regel für Serien: `task_series_select_visible`, `private.can_view_series`) | 0021 |
 
 Wer austritt, verliert mit der Mitgliedschaft jede Sicht; offene Zuweisungen und Serienplätze entfallen (Trigger `family_members_departure`). Abhaken bleibt Zugewiesenen und der Person vorbehalten, die die Aufgabe angelegt hat.
 
