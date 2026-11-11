@@ -128,6 +128,99 @@ final class TaskUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Verschoben auf'")).firstMatch.waitForExistence(timeout: 5))
     }
+
+    // MARK: Suche
+
+    @MainActor
+    func testSearchFiltersTasksByTitleDescriptionAndPerson() {
+        let app = launch()
+        let search = openSearch(app)
+
+        // Titel, ohne Akzente und Großschreibung („Müll“).
+        search.typeText("MULL")
+        XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["task.open.Zimmer aufräumen"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["1 Treffer"].waitForExistence(timeout: 5))
+
+        // Beschreibung („Jede Person ihr eigenes Zimmer.“).
+        clearSearch(app, search)
+        search.typeText("eigenes")
+        XCTAssertTrue(app.buttons["task.open.Zimmer aufräumen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForNonExistence(timeout: 5))
+
+        // Person: Anna ist nur bei „Zimmer aufräumen“ und „Arzttermin Anna“ zugewiesen.
+        clearSearch(app, search)
+        search.typeText("anna")
+        XCTAssertTrue(app.buttons["task.open.Arzttermin Anna"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["task.open.Zimmer aufräumen"].exists)
+        XCTAssertFalse(app.buttons["task.open.Müll rausbringen"].exists)
+        XCTAssertTrue(app.staticTexts["2 Treffer"].exists)
+    }
+
+    @MainActor
+    func testSearchWithoutMatchShowsEmptyState() {
+        let app = launch()
+        let search = openSearch(app)
+        search.typeText("qqq")
+        XCTAssertTrue(app.staticTexts.matching(identifier: "search.empty").firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Keine Treffer für „qqq“"].exists
+                      || app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Keine Treffer für'")).firstMatch.exists)
+        XCTAssertFalse(app.buttons["task.open.Müll rausbringen"].exists)
+    }
+
+    @MainActor
+    func testSearchIsClearedWhenLeavingTheTab() {
+        let app = launch()
+        let search = openSearch(app)
+        // Mit „Suchen“ (Return) schließt die Tastatur; sie verdeckt sonst die Tab-Leiste.
+        search.typeText("qqq\n")
+        let empty = app.staticTexts.matching(identifier: "search.empty").firstMatch
+        XCTAssertTrue(empty.waitForExistence(timeout: 5))
+
+        app.buttons["tab.history"].tap()
+        app.buttons["tab.tasks"].tap()
+        // Die Suche ist geleert: die Aufgaben sind wieder da, der Leerzustand nicht.
+        XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(empty.waitForNonExistence(timeout: 5))
+        // Auch das Suchfeld ist wieder zu (kein Abbrechen-Knopf, leere Eingabe).
+        XCTAssertTrue(app.buttons["search.open"].exists)
+    }
+
+    @MainActor
+    func testHistorySearchFindsEntryByPersonWhoCompletedIt() {
+        let app = launch()
+        app.buttons["Müll rausbringen abhaken"].tap()
+        XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForNonExistence(timeout: 5))
+        app.buttons["tab.history"].tap()
+        XCTAssertTrue(app.staticTexts["Müll rausbringen"].waitForExistence(timeout: 5))
+
+        let search = openSearch(app)
+        search.typeText("kalle")
+        XCTAssertTrue(app.staticTexts["1 Treffer"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Müll rausbringen"].exists)
+
+        clearSearch(app, search)
+        search.typeText("qqq")
+        XCTAssertTrue(app.staticTexts.matching(identifier: "search.empty").firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Müll rausbringen"].exists)
+    }
+
+    /// Lupe antippen und das Suchfeld liefern.
+    @MainActor
+    private func openSearch(_ app: XCUIApplication) -> XCUIElement {
+        let open = app.buttons["search.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        open.tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        return field
+    }
+
+    @MainActor
+    private func clearSearch(_ app: XCUIApplication, _ field: XCUIElement) {
+        let clear = field.buttons["Text löschen"]
+        if clear.exists { clear.tap() } else { field.clearAndType("") }
+    }
 }
 
 /// Verlauf: Erledigtes erscheint dort und lässt sich wiederherstellen.

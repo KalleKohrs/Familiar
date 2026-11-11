@@ -12,6 +12,7 @@ struct RootTabView: View {
     @State private var tabBarHeight: CGFloat = 0
     @State private var bottomSafeArea: CGFloat = 0
     @State private var showsNotificationPrimer = false
+    @State private var tabSwitches = 0
 
     /// Abstand der Leiste zur Bildschirmunterkante: auf Geräten mit Home-Indikator wie Apples
     /// Leiste (konzentrisch zu den Displayecken), sonst etwas knapper.
@@ -41,6 +42,7 @@ struct RootTabView: View {
                         // Verschachtelte horizontale Scroll-Ansichten setzen den Rand auf 0 zurück.
                         .contentMargins(.bottom, contentInset)
                         .environment(\.floatingTabBarHeight, contentInset)
+                        .environment(\.tabSelection, TabSelection(tab: selection, switches: tabSwitches))
                         .environment(\.openNewTask, OpenNewTaskAction(action: openNewTask))
                 } label: {
                     Label(tab.title, systemImage: tab.systemImage)
@@ -110,6 +112,9 @@ struct RootTabView: View {
                 if !isCreatingTask && !showsNotificationPrimer { requestReview() }
             }
         }
+        .onChange(of: selection) { tabSwitches += 1 }
+        // Die Tastatur (Suche, Blatt) schiebt weder die schwebende Leiste noch den Listenrand nach oben.
+        .ignoresSafeArea(.keyboard)
     }
 
     /// Nur mit geladener Liste abgleichen – sonst würden laufende Activities fälschlich beendet.

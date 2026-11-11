@@ -11,6 +11,12 @@ struct HistoryHomeView: View {
     @Namespace private var transition
     @State private var path: [UUID] = []
     @State private var confirmsClearing = false
+    @State private var searchText = ""
+
+    /// Verlauf, gefiltert nach der Suche (ohne Suche: alles).
+    private var visibleHistory: [HistoryEntry] {
+        TaskSearch.filter(store.history, query: searchText, nameOf: session.searchNames)
+    }
 
     /// Nur Admins dürfen den Verlauf ihrer Familien leeren (`clear_history`).
     private var canClear: Bool {
@@ -36,6 +42,8 @@ struct HistoryHomeView: View {
             .familiarScreenBackground()
             .navigationTitle("Verlauf")
             .navigationBarTitleDisplayMode(.inline)
+            .familiarSearch(text: $searchText, tab: .history, resultCount: visibleHistory.count,
+                            prompt: "Titel, Beschreibung oder Person")
             .toolbar(removing: .title)
             .toolbar {
                 if canClear {
@@ -84,6 +92,15 @@ struct HistoryHomeView: View {
                 )
                 .padding(.vertical, FamiliarSpacing.xl)
             } else {
+                if TaskSearch.isActive(searchText) {
+                    SearchResultsSummary(count: visibleHistory.count)
+                    if visibleHistory.isEmpty {
+                        NoSearchResultsView(
+                            query: searchText,
+                            hint: "Gesucht wird in Titel, Beschreibung und Namen der Personen. Der Verlauf reicht 30 Tage zurück."
+                        )
+                    }
+                }
                 ForEach(sections, id: \.day) { section in
                     FamiliarSectionHeader(section.title)
                         .padding(.top, FamiliarSpacing.s)
@@ -104,7 +121,7 @@ struct HistoryHomeView: View {
     /// Einträge nach Tag gruppiert (Heute, Gestern, Datum), neueste zuerst.
     private var sections: [(day: Date, title: String, entries: [HistoryEntry])] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: store.history) { entry in
+        let grouped = Dictionary(grouping: visibleHistory) { entry in
             calendar.startOfDay(for: entry.date)
         }
         return grouped.keys.sorted(by: >).map { day in
