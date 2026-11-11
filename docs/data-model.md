@@ -28,6 +28,7 @@ Serien, Geräte und Kalender kommen ab Phase 5 dazu. Regeln für Aufgaben: [ADR 
 | `0018_rotation_and_nudges` | `20261024120000` | eingespielt am 2026-10-29 über den SQL-Editor (enthält `drop function`, `delete`). Tests `supabase/tests/0010_rotation_nudges.sql` (47/47). |
 | `0019_clear_history` | `20261029100000` | eingespielt am 2026-10-29 über den SQL-Editor (enthält `delete`). `clear_history()`: Admins leeren den Verlauf ihrer Familien endgültig. Tests `supabase/tests/0011_clear_history.sql`. |
 | `0020_activity_end_race` | – | eingespielt am 2026-10-30 über `apply_migration` (reiner Funktionsersatz). `push_claim_jobs`: Ein Live-Activity-Ende nach Terminänderung beendet nur Activities, die schon vor dem Auftrag liefen. Tests P8/P9 in `supabase/tests/0009_notifications.sql`. |
+| `0021_private_tasks` | – (**nicht eingespielt**) | Private Aufgaben und Serien (`is_private`), ADR [0012](decisions/0012-private-aufgaben-und-letzte-familie.md). Enthält `drop function`, `delete` → im SQL-Editor ausführen und Eintrag in `schema_migrations` (steht am Ende der Datei). Tests `supabase/tests/0012_private_tasks.sql` (48/48 grün, Entwicklungs-DB, Rollback; Altbestand 0003–0007, 0010, 0011 danach weiter grün). |
 
 Hinweis für spätere Migrationen: Enthält eine Migration `delete`/`drop`/`truncate` (auch nur in
 Funktionskörpern), fragt der Supabase-MCP nach einer Bestätigung, die in dieser App derzeit nicht ankommt.

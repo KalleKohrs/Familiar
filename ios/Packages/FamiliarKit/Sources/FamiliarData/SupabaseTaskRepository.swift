@@ -274,6 +274,8 @@ struct TaskParams: Encodable {
     let recurrence: RecurrenceRule?
     let assignmentMode: AssignmentMode
     let rotationUnit: RotationUnit
+    /// Nur beim Anlegen privater Aufgaben gesendet (ältere Server ohne Migration 0021 kennen den Parameter nicht).
+    let isPrivate: Bool
 
     init(input: TaskInput, taskID: UUID? = nil, expectedVersion: Int? = nil) {
         self.taskID = taskID
@@ -290,6 +292,7 @@ struct TaskParams: Encodable {
         recurrence = input.recurrence
         assignmentMode = input.assignmentMode
         rotationUnit = input.rotationUnit
+        isPrivate = taskID == nil && input.isPrivate
     }
 
     enum CodingKeys: String, CodingKey {
@@ -309,6 +312,7 @@ struct TaskParams: Encodable {
         case monthDays = "p_month_days"
         case assignmentMode = "p_assignment_mode"
         case rotationUnit = "p_rotation_unit"
+        case isPrivate = "p_private"
     }
 
     // Beschreibung, Datum und Uhrzeit werden bei update_task immer gesendet (auch null),
@@ -326,6 +330,9 @@ struct TaskParams: Encodable {
         try container.encode(startTime, forKey: .startTime)
         try container.encode(timezone, forKey: .timezone)
         try container.encode(images, forKey: .images)
+        if isPrivate {
+            try container.encode(true, forKey: .isPrivate)
+        }
         if let recurrence {
             try container.encode(recurrence.frequency, forKey: .freq)
             try container.encode(recurrence.weekdays, forKey: .weekdays)

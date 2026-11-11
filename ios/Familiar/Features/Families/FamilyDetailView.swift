@@ -82,7 +82,7 @@ struct FamilyDetailView: View {
                 title: "„\(membership.family.name)“ verlassen?",
                 message: membership.members.count == 1
                     ? "Du bist das letzte Mitglied. Die Familie wird dabei samt Aufgaben gelöscht."
-                    : "Du siehst danach keine Aufgaben dieser Familie mehr. Ein neuer Beitritt braucht eine Einladung."
+                    : "Du siehst danach keine Aufgaben dieser Familie mehr; deine privaten Aufgaben darin werden gelöscht. Ein neuer Beitritt braucht eine Einladung."
             ) {
                 Button("Verlassen", role: .destructive) { confirmLeave = false; leave() }
                     .buttonStyle(.familiarDestructive)

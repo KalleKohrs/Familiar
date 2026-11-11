@@ -72,6 +72,22 @@ struct TaskDecodingTests {
         #expect((object["p_images"] as? [[String: Any]])?.first?["width"] as? Int == 10)
     }
 
+    @Test func privateFlagIsSentOnlyWhenCreatingPrivateTasks() throws {
+        var input = TaskInput(
+            familyID: UUID(), title: "Geheim", description: nil, startDate: nil, startTime: nil,
+            timezone: "Europe/Berlin", completionMode: .anyOne, assigneeIDs: [UUID()], images: []
+        )
+        func object(_ params: TaskParams) throws -> [String: Any] {
+            try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(params)) as? [String: Any])
+        }
+        // Normale Aufgabe: Parameter fehlt (läuft auch gegen Server ohne Migration 0021).
+        #expect(try object(TaskParams(input: input))["p_private"] == nil)
+        input.isPrivate = true
+        #expect(try object(TaskParams(input: input))["p_private"] as? Bool == true)
+        // Beim Bearbeiten wird der Parameter nie gesendet.
+        #expect(try object(TaskParams(input: input, taskID: UUID(), expectedVersion: 1))["p_private"] == nil)
+    }
+
     @Test func occurrenceWithEmbeddedSeries() throws {
         let json = """
         {

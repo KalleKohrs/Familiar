@@ -59,6 +59,8 @@ public struct TaskInput: Hashable, Sendable {
     /// Nur bei Serien: alle gemeinsam oder reihum (Reihenfolge = `assigneeIDs`).
     public var assignmentMode: AssignmentMode
     public var rotationUnit: RotationUnit
+    /// Private Aufgabe (nur beim Anlegen): nur der Ersteller sieht sie und ist zugewiesen.
+    public var isPrivate: Bool
 
     public init(
         familyID: UUID,
@@ -72,7 +74,8 @@ public struct TaskInput: Hashable, Sendable {
         images: [TaskImageReference],
         recurrence: RecurrenceRule? = nil,
         assignmentMode: AssignmentMode = .together,
-        rotationUnit: RotationUnit = .occurrence
+        rotationUnit: RotationUnit = .occurrence,
+        isPrivate: Bool = false
     ) {
         self.familyID = familyID
         self.title = title
@@ -86,6 +89,7 @@ public struct TaskInput: Hashable, Sendable {
         self.recurrence = recurrence
         self.assignmentMode = assignmentMode
         self.rotationUnit = rotationUnit
+        self.isPrivate = isPrivate
     }
 }
 
@@ -112,6 +116,9 @@ public struct TaskDraft: Hashable, Sendable {
     /// Bei Serien: alle gemeinsam oder reihum in der Reihenfolge von `assigneeIDs`.
     public var assignmentMode: AssignmentMode = .together
     public var rotationUnit: RotationUnit = .occurrence
+    /// Private Aufgabe („Nur für mich“): nur der Ersteller sieht sie; Zugewiesene = er allein.
+    /// Lässt sich nach dem Anlegen nicht ändern (ADR 0012).
+    public var isPrivate = false
 
     public init(familyID: UUID?, now: Date = .now, timeZone: TimeZone = .current) {
         self.familyID = familyID
@@ -124,6 +131,7 @@ public struct TaskDraft: Hashable, Sendable {
     /// Editor-Stand einer bestehenden Aufgabe.
     public init(task: TaskItem, now: Date = .now) {
         self.init(familyID: task.familyID, now: now, timeZone: task.timeZone)
+        isPrivate = task.isPrivate
         title = task.title
         description = task.description ?? ""
         if let startDate = task.startDate {
@@ -159,7 +167,7 @@ public struct TaskDraft: Hashable, Sendable {
     }
 
     /// Serie mit „Reihum“: pro Termin genau eine Person, Erledigungsart entfällt.
-    public var isRotating: Bool { recurrence != nil && assignmentMode == .rotate }
+    public var isRotating: Bool { !isPrivate && recurrence != nil && assignmentMode == .rotate }
 
     /// Wöchentlicher Wechsel nur, wenn es mehrere Termine pro Woche gibt (täglich oder mehrere Wochentage).
     public var offersWeeklyRotation: Bool {
@@ -191,7 +199,7 @@ public struct TaskDraft: Hashable, Sendable {
         if trimmedTitle.isEmpty { issues.append(.titleMissing) }
         if trimmedTitle.count > Self.titleLength.upperBound { issues.append(.titleTooLong) }
         if InputRules.trimmed(description).count > Self.maxDescriptionLength { issues.append(.descriptionTooLong) }
-        if assigneeIDs.isEmpty { issues.append(.assigneesMissing) }
+        if !isPrivate && assigneeIDs.isEmpty { issues.append(.assigneesMissing) }
         if effectiveCompletionMode == nil { issues.append(.completionModeMissing) }
         if images.count > Self.maxImages { issues.append(.tooManyImages) }
         if let recurrence, !recurrence.isComplete { issues.append(.recurrenceIncomplete) }
@@ -204,7 +212,7 @@ public struct TaskDraft: Hashable, Sendable {
     /// Erst ab zwei Personen macht die Erledigungsart einen Unterschied – dann muss sie bewusst
     /// gewählt werden (Guide, Abschnitt 3). Bei einer Person gilt „Eine für alle“.
     /// Bei „Reihum“ ist pro Termin nur eine Person zugewiesen – keine Wahl nötig.
-    public var needsCompletionModeChoice: Bool { assigneeIDs.count > 1 && !isRotating }
+    public var needsCompletionModeChoice: Bool { !isPrivate && assigneeIDs.count > 1 && !isRotating }
 
     public var effectiveCompletionMode: CompletionMode? {
         if isRotating { return .anyOne }
@@ -234,7 +242,8 @@ public struct TaskDraft: Hashable, Sendable {
     }
 
     /// Server-Eingabe; Bilder müssen vorher hochgeladen sein. `nil`, solange der Entwurf ungültig ist.
-    public func input() -> TaskInput? {
+    /// Bei privaten Aufgaben ist `creatorID` (der angemeldete Mensch) der einzige Zugewiesene.
+    public func input(creatorID: UUID? = nil) -> TaskInput? {
         guard isValid, let familyID, let completionMode = effectiveCompletionMode else { return nil }
         let trimmedDescription = InputRules.trimmed(description)
         return TaskInput(
@@ -245,7 +254,7 @@ public struct TaskDraft: Hashable, Sendable {
             startTime: usesDate && hasTime ? time : nil,
             timezone: timezone,
             completionMode: completionMode,
-            assigneeIDs: assigneeIDs,
+            assigneeIDs: isPrivate ? (creatorID.map { [$0] } ?? []) : assigneeIDs,
             images: images.map { image in
                 switch image {
                 case .existing(let image): TaskImageReference(id: image.id, width: image.width, height: image.height)
@@ -254,7 +263,8 @@ public struct TaskDraft: Hashable, Sendable {
             },
             recurrence: recurrence?.normalized,
             assignmentMode: isRotating ? .rotate : .together,
-            rotationUnit: effectiveRotationUnit
+            rotationUnit: effectiveRotationUnit,
+            isPrivate: isPrivate
         )
     }
 }

@@ -223,7 +223,7 @@ struct TaskMetaLine: View {
     let task: TaskItem
 
     static func hasContent(_ task: TaskItem, familyCount: Int) -> Bool {
-        task.startDate != nil || task.series != nil || familyCount > 1
+        task.startDate != nil || task.series != nil || familyCount > 1 || task.isPrivate
     }
 
     var body: some View {
@@ -237,6 +237,12 @@ struct TaskMetaLine: View {
             if let rule = task.series?.rule {
                 Label(RecurrenceFormatting.summary(rule), systemImage: "repeat")
                     .accessibilityLabel(RecurrenceFormatting.spokenSummary(rule))
+            }
+            if task.isPrivate {
+                // Nur ein kleines Schloss; VoiceOver sagt „Privat“ (ADR 0012).
+                Image(systemName: "lock.fill")
+                    .accessibilityLabel("Privat")
+                    .accessibilityHint("Nur du siehst diese Aufgabe.")
             }
             if session.families.count > 1, let family = session.membership(task.familyID)?.family {
                 HStack(spacing: FamiliarSpacing.xxs) {

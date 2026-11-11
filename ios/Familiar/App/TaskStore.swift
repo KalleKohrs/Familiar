@@ -406,7 +406,7 @@ final class TaskStore {
     @discardableResult
     func save(_ draft: TaskDraft, editing original: TaskItem?, scope: EditScope = .thisOccurrence,
               onUploadProgress: (Int, Int) -> Void = { _, _ in }) async throws(FamiliarError) -> TaskItem? {
-        guard let input = draft.input() else {
+        guard let input = draft.input(creatorID: userID) else {
             throw .unknown(message: "Ungültiger Entwurf")
         }
         let newImages = draft.images.compactMap { image -> PreparedImage? in
