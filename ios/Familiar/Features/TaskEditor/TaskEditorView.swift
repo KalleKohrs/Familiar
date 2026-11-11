@@ -277,12 +277,17 @@ struct TaskEditorView: View {
         } else if !menuFamilies.isEmpty {
             Section {
                 Menu {
-                    Picker("Familie", selection: $draft.familyID) {
-                        ForEach(menuFamilies) { membership in
-                            Text(membership.family.name).tag(Optional(membership.id))
+                    ForEach(menuFamilies) { membership in
+                        Button {
+                            draft.familyID = membership.id
+                        } label: {
+                            if membership.id == draft.familyID {
+                                Label(membership.family.name, systemImage: "checkmark")
+                            } else {
+                                Text(membership.family.name)
+                            }
                         }
                     }
-                    .pickerStyle(.inline)
                     Divider()
                     Toggle(isOn: privateBinding) {
                         Label("Nur für mich (privat)", systemImage: "lock")
@@ -296,6 +301,7 @@ struct TaskEditorView: View {
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
+            .listSectionSpacing(.compact)
         }
     }
 
@@ -316,7 +322,7 @@ struct TaskEditorView: View {
         .font(FamiliarFont.secondary.weight(.semibold))
         .foregroundStyle(FamiliarColor.textSecondary)
         .padding(.horizontal, FamiliarSpacing.xs)
-        .frame(minHeight: FamiliarSize.minimumTouchTarget, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: FamiliarSize.minimumTouchTarget, alignment: .leading)
         .contentShape(Rectangle())
     }
 

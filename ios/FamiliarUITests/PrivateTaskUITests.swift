@@ -18,7 +18,18 @@ final class PrivateTaskUITests: XCTestCase {
     /// Menüeintrag (Knopf, Schalter oder Auswahl – je nach Darstellung des Systemmenüs).
     @MainActor
     private func menuItem(_ app: XCUIApplication, _ label: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+        let button = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+        if button.waitForExistence(timeout: 3) { return button }
+        return app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+    }
+
+    /// Wartet, bis das Element den Text trägt (das Menü schließt mit einer kurzen Animation).
+    @MainActor
+    private func assertScope(_ app: XCUIApplication, _ expected: String, file: StaticString = #filePath, line: UInt = #line) {
+        let scope = app.buttons["editor.scope"]
+        let predicate = NSPredicate(format: "label == %@", expected)
+        let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: scope)], timeout: 5)
+        XCTAssertEqual(result, .completed, "Chip zeigt „\(scope.label)“ statt „\(expected)“", file: file, line: line)
     }
 
     @MainActor
@@ -45,7 +56,7 @@ final class PrivateTaskUITests: XCTestCase {
         XCTAssertTrue(app.buttons["editor.assignee.Anna"].exists)
 
         chooseFromScopeMenu(app, "Nur für mich (privat)")
-        XCTAssertEqual(app.buttons["editor.scope"].label, "Nur für mich, privat")
+        assertScope(app, "Nur für mich, privat")
         // Privat: keine Zuweisung, keine Erledigungsart.
         XCTAssertTrue(app.buttons["editor.assignee.Anna"].waitForNonExistence(timeout: 5))
         XCTAssertFalse(app.buttons["editor.mode.any_one"].exists)
@@ -79,7 +90,7 @@ final class PrivateTaskUITests: XCTestCase {
         let first = scope.label.replacingOccurrences(of: "Familie: ", with: "")
         let other = first == "Familie Berger" ? "Oma & Opa" : "Familie Berger"
         chooseFromScopeMenu(app, other)
-        XCTAssertEqual(app.buttons["editor.scope"].label, "Familie: \(other)")
+        assertScope(app, "Familie: \(other)")
         chooseFromScopeMenu(app, "Nur für mich (privat)")
 
         let title = app.textFields["editor.title"]
@@ -92,6 +103,6 @@ final class PrivateTaskUITests: XCTestCase {
         app.buttons["createTask"].tap()
         let again = app.buttons["editor.scope"]
         XCTAssertTrue(again.waitForExistence(timeout: 5))
-        XCTAssertEqual(again.label, "Familie: \(other)")
+        assertScope(app, "Familie: \(other)")
     }
 }
