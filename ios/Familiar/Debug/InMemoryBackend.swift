@@ -27,6 +27,18 @@ actor InMemoryBackend {
     /// `-FamiliarLiveActivities`: lokale Live Activities zur Sichtprüfung (ohne Server und Push).
     static let liveActivitiesDemo = ProcessInfo.processInfo.arguments.contains("-FamiliarLiveActivities")
     static let joinableCode = "TEST2345"
+    /// `-FamiliarInMemoryLatency <ms>`: künstliche Netzverzögerung beim Laden der Listen – damit lassen sich
+    /// Ladezustände und Übergänge (Platzhalter, Leerzustand) wie mit echtem Netz prüfen.
+    private static let latency: Duration = {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-FamiliarInMemoryLatency"), arguments.indices.contains(index + 1),
+              let milliseconds = Int(arguments[index + 1]) else { return .zero }
+        return .milliseconds(milliseconds)
+    }()
+
+    private func simulateLatency() async {
+        if Self.latency > .zero { try? await Task.sleep(for: Self.latency) }
+    }
 
     private var user: (id: UUID, email: String)?
     private var profiles: [UUID: Profile] = [:]
@@ -495,6 +507,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func openTasks() async throws(FamiliarError) -> [TaskItem] {
+        await simulateLatency()
         let me = try requireUser()
         generateAll()
         return tasks.values.filter { $0.isOpen && membership($0.familyID, for: me) != nil }
@@ -505,6 +518,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func historyTasks() async throws(FamiliarError) -> [TaskItem] {
+        await simulateLatency()
         let me = try requireUser()
         return HistoryRules.entries(tasks.values.filter { !$0.isOpen && membership($0.familyID, for: me) != nil })
     }
@@ -704,6 +718,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func calendarTasks(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [TaskItem] {
+        await simulateLatency()
         let me = try requireUser()
         generateAll()
         return tasks.values.filter { task in
@@ -713,6 +728,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func projectedOccurrences(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [ProjectedOccurrence] {
+        await simulateLatency()
         let me = try requireUser()
         return seriesRecords.values.flatMap { record -> [ProjectedOccurrence] in
             guard record.info.deletedAt == nil, membership(record.input.familyID, for: me) != nil,
@@ -755,6 +771,7 @@ extension InMemoryBackend: TaskRepository {
     }
 
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {
+        await simulateLatency()
         let me = try requireUser()
         return deletions.values.filter { $0.restoredAt == nil && membership($0.familyID, for: me) != nil }
     }
