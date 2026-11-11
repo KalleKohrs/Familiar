@@ -159,6 +159,7 @@ struct TaskEditorView: View {
                 }
             }
             .interactiveDismissDisabled(draft != original || isSaving)
+            .endsEditingWhenDisappearing()
             .confirmationDialog("Änderungen verwerfen?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Verwerfen", role: .destructive) { dismiss() }
             }

@@ -58,4 +58,33 @@ struct FamilyMembershipTests {
         let id = UUID(uuidString: "A1111111-1111-4111-8111-111111111111")!
         #expect(Profile.avatarStoragePath(for: id) == "a1111111-1111-4111-8111-111111111111/avatar.jpg")
     }
+
+    // MARK: Einladen beim Start
+
+    @Test func aloneAdminIsAskedToInvite() {
+        #expect(membership(myRole: .admin).suggestsInvite)
+    }
+
+    @Test func noInvitePromptWhenOthersAreThere() {
+        #expect(!membership(myRole: .admin, otherRole: .member).suggestsInvite)
+    }
+
+    @Test func noInvitePromptWithoutPermission() {
+        let family = Family(id: familyID, name: "Test", colorHex: "#5EC2F2", membersCanInvite: false)
+        #expect(!membership(myRole: .member, family: family).suggestsInvite)
+        // Admins dürfen immer einladen.
+        #expect(membership(myRole: .admin, family: family).suggestsInvite)
+    }
+
+    @Test func inviteMessageContainsLinkAndCode() {
+        let text = InviteMessage.text(familyName: "Familie Kohrs", code: "ABCDEFGH", expiresAt: .now)
+        #expect(text.contains("https://familiar-app.de/join/ABCD-EFGH"))
+        #expect(text.contains("ABCD-EFGH (gültig bis"))
+        #expect(text.contains("Familie Kohrs"))
+    }
+
+    @Test func inviteMessageWithoutValidCodeFallsBackToPlainText() {
+        let text = InviteMessage.text(familyName: "WG", code: "kaputt", expiresAt: .now)
+        #expect(!text.contains("https://"))
+    }
 }

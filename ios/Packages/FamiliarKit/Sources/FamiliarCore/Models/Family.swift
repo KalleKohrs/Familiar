@@ -181,6 +181,12 @@ public struct FamilyMembership: Hashable, Identifiable, Sendable {
         }
     }
 
+    /// Allein in der Familie: Dann lohnt der Hinweis „Hol deine Familie dazu“.
+    public var isOnlyMember: Bool { members.count <= 1 }
+
+    /// Soll die Startseite zum Einladen auffordern? Nur wer allein ist und einladen darf.
+    public var suggestsInvite: Bool { myRole != nil && isOnlyMember && allows(.invite) }
+
     /// Der letzte Admin darf nicht gehen, solange andere Mitglieder da sind (wie `leave_family`).
     public var isLastAdminWithOthers: Bool {
         myRole == .admin

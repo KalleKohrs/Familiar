@@ -368,6 +368,8 @@ struct TaskCard: View {
         .familiarCard(padding: FamiliarSpacing.m)
         .opacity(isLeaving ? 0 : (busy && pendingDone == nil ? 0.6 : 1))
         .scaleEffect(isLeaving && !reduceMotion ? 0.97 : 1)
+        // „In Arbeit“-Abdunklung blendet ein/aus, statt zu springen.
+        .animation(FamiliarMotion.fade, value: busy)
         .sensoryFeedback(.success, trigger: pendingDone) { _, new in new == true }
         .onChange(of: task.version) { _, _ in pendingDone = nil }
         // Gedrückt halten: Duplizieren und Verschieben (für VoiceOver als Aktionen am Titel der Karte).
@@ -378,16 +380,16 @@ struct TaskCard: View {
     private func check(_ action: TaskCompletionAction) {
         pendingDone = action != .undoMine
         Task {
-            try? await Task.sleep(for: .milliseconds(350))
+            try? await Task.sleep(for: FamiliarMotion.checkHold)
             if willLeaveList(after: action) {
-                withAnimation(FamiliarMotion.animation(.easeOut(duration: 0.22), reduceMotion: reduceMotion)) {
+                withAnimation(FamiliarMotion.animation(FamiliarMotion.leave, reduceMotion: reduceMotion)) {
                     isLeaving = true
                 }
-                try? await Task.sleep(for: .milliseconds(230))
+                try? await Task.sleep(for: .seconds(FamiliarMotion.leaveDuration + 0.01))
             }
             await store.perform(action, on: task)
             // Bleibt die Karte (z. B. Fehler oder andere müssen noch abhaken), wieder einblenden.
-            withAnimation(FamiliarMotion.animation(.easeOut(duration: 0.2), reduceMotion: reduceMotion)) {
+            withAnimation(FamiliarMotion.animation(FamiliarMotion.fade, reduceMotion: reduceMotion)) {
                 isLeaving = false
             }
             pendingDone = nil
@@ -502,10 +504,13 @@ struct TaskBanner: View {
         }
         .padding(.horizontal, FloatingTabBar.edgeInset)
         .padding(.bottom, tabBarHeight + FamiliarSpacing.s)
-        .familiarAnimation(value: store.undo?.id)
-        .familiarAnimation(value: store.actionError)
-        .familiarAnimation(value: store.info)
+        // Ein Wert für alle drei Hinweisarten: Wechselt „Erledigt“ zu „Erinnert“, läuft nur eine Animation.
+        .familiarAnimation(FamiliarMotion.snappy, value: bannerKey)
         .announcesChanges(of: store.undo?.message ?? store.actionError ?? store.info)
+    }
+
+    private var bannerKey: String {
+        store.undo.map { $0.id.uuidString } ?? store.info ?? store.actionError ?? ""
     }
 
     private func banner(text: String, systemImage: String, tint: Color, @ViewBuilder action: () -> some View) -> some View {

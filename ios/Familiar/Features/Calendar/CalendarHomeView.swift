@@ -24,6 +24,13 @@ struct CalendarHomeView: View {
     private var today: LocalDate { LocalDate(.now, timeZone: .current) }
     private var grid: [LocalDate] { CalendarRules.monthGrid(year: month.year, month: month.month) }
 
+    /// Zeilenhöhe der Tageszellen (`minHeight` in `dayCell`) und Abstand der Zeilen.
+    private static let rowHeight: CGFloat = 48
+    private var gridHeight: CGFloat {
+        let rows = CGFloat(max(1, grid.count / 7))
+        return rows * Self.rowHeight + (rows - 1) * FamiliarSpacing.xxs
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
@@ -148,7 +155,7 @@ struct CalendarHomeView: View {
             // voller Größe in der Tagesliste, lange Drücken zeigt den Tag vergrößert.
             .dynamicTypeSize(...DynamicTypeSize.xxLarge)
 
-            ZStack {
+            ZStack(alignment: .top) {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: FamiliarSpacing.xxs) {
                     ForEach(grid, id: \.self) { day in
                         dayCell(day)
@@ -159,13 +166,20 @@ struct CalendarHomeView: View {
                 // Reine Überblendung: Ein seitliches Schieben ließ Geisterspalten außerhalb der Karte stehen.
                 .transition(.opacity)
             }
+            // Höhe folgt der Zeilenzahl (5 oder 6 Wochen) und wird mit dem Monatswechsel mitanimiert.
+            // Ohne feste Höhe bliebe die Karte während der Überblendung so hoch wie der größere Monat
+            // und schrumpfte danach ruckartig.
+            .frame(height: gridHeight, alignment: .top)
             .clipped()
             .gesture(
                 DragGesture(minimumDistance: 24)
                     .onEnded { value in
+                        // Entscheidend ist, wohin die Geste auslaufen würde (Geschwindigkeit zählt mit),
+                        // nicht nur, wie weit der Finger gekommen ist: Ein schnelles Wischen reicht.
+                        let projected = value.predictedEndTranslation.width
                         guard abs(value.translation.width) > abs(value.translation.height),
-                              abs(value.translation.width) > 50 else { return }
-                        changeMonth(by: value.translation.width < 0 ? 1 : -1)
+                              abs(projected) > 100 else { return }
+                        changeMonth(by: projected < 0 ? 1 : -1)
                     }
             )
         }
@@ -223,7 +237,7 @@ struct CalendarHomeView: View {
                 dots(for: dayEntries)
                     .opacity(inMonth ? 1 : 0.5)
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: Self.rowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -253,6 +267,7 @@ struct CalendarHomeView: View {
             }
         }
         .frame(height: 6)
+        .animation(FamiliarMotion.fade, value: dayEntries.count)
     }
 
     private func familyColor(_ familyID: UUID) -> Color {
@@ -283,29 +298,48 @@ struct CalendarHomeView: View {
             .padding(.leading, FamiliarSpacing.xxs)
             .accessibilityAddTraits(.isHeader)
 
-        if let loadError, entries.isEmpty {
-            FamiliarErrorState(message: loadError) { Task { await load() } }
-                .familiarCard()
-        } else if isLoading || !hasLoaded {
-            FamiliarSkeleton(height: 64)
-        } else if dayEntries.isEmpty {
-            Text("Nichts geplant.")
-                .font(FamiliarFont.secondary)
-                .foregroundStyle(FamiliarColor.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, FamiliarSpacing.xxs)
-                .familiarFadeIn()
-        } else {
-            VStack(spacing: 0) {
-                ForEach(Array(dayEntries.enumerated()), id: \.element.id) { index, entry in
-                    if index > 0 {
-                        Divider().overlay(FamiliarColor.hairline).padding(.leading, 64)
+        VStack(spacing: 0) {
+            switch dayPhase {
+            case .failed:
+                FamiliarErrorState(message: loadError ?? "") { Task { await load() } }
+                    .familiarCard()
+                    .transition(FamiliarMotion.contentTransition)
+            case .loading:
+                FamiliarSkeleton(height: 64)
+            case .empty:
+                Text("Nichts geplant.")
+                    .font(FamiliarFont.secondary)
+                    .foregroundStyle(FamiliarColor.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, FamiliarSpacing.xxs)
+                    .transition(FamiliarMotion.contentTransition)
+            case .list:
+                VStack(spacing: 0) {
+                    ForEach(Array(dayEntries.enumerated()), id: \.element.id) { index, entry in
+                        if index > 0 {
+                            Divider().overlay(FamiliarColor.hairline).padding(.leading, 64)
+                        }
+                        CalendarEntryRow(entry: entry, transition: transition) { taskID in path.append(taskID) }
                     }
-                    CalendarEntryRow(entry: entry) { taskID in path.append(taskID) }
                 }
+                .familiarCard(padding: FamiliarSpacing.xs)
+                .transition(FamiliarMotion.contentTransition)
             }
-            .familiarCard(padding: FamiliarSpacing.xs)
         }
+        // Überblendung nur zwischen den Zuständen (Platzhalter, „Nichts geplant“, Liste) – ein anderer Tag
+        // mit eigener Liste wechselt sofort, ohne Geister.
+        .familiarContentSwap(value: dayPhase)
+    }
+
+    private enum DayPhase: Equatable {
+        case failed, loading, empty, list
+    }
+
+    /// „Nichts geplant“ erst nach dem ersten Laden – davor Platzhalter statt falscher Leere.
+    private var dayPhase: DayPhase {
+        if loadError != nil, entries.isEmpty { return .failed }
+        if isLoading || !hasLoaded { return .loading }
+        return (entries[selected] ?? []).isEmpty ? .empty : .list
     }
 
     private var dayTitle: String {
@@ -321,6 +355,8 @@ private struct CalendarEntryRow: View {
     @ScaledMetric(relativeTo: .footnote) private var timeColumnWidth: CGFloat = 52
     @Environment(\.dynamicTypeSize) private var typeSize
     let entry: CalendarEntry
+    /// Quelle für den Zoom-Übergang Zeile → Details (ohne Quelle gäbe es keinen Zoom).
+    let transition: Namespace.ID
     let onOpen: (UUID) -> Void
 
     var body: some View {
@@ -331,6 +367,7 @@ private struct CalendarEntryRow: View {
                     subtitle: subtitle(for: task), done: !task.isOpen, planned: false)
             }
             .buttonStyle(.plain)
+            .matchedTransitionSource(id: task.id, in: transition)
             .accessibilityHint("Öffnet die Details")
             .accessibilityIdentifier("calendar.task.\(task.title)")
         case .projected(let occurrence):

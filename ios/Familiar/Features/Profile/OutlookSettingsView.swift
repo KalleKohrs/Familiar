@@ -37,6 +37,7 @@ struct OutlookSettingsView: View {
                 switch outlook.state {
                 case .idle, .loading:
                     FamiliarSkeleton(height: 120)
+                        .transition(FamiliarMotion.contentTransition)
                 case .failed(let text):
                     FamiliarErrorState(message: text) { Task { await outlook.reload() } }
                 case .loaded:
@@ -50,6 +51,7 @@ struct OutlookSettingsView: View {
                     }
                 }
             }
+            .familiarContentSwap(value: outlook.state)
             .padding(FamiliarSpacing.m)
         }
         .familiarScreenBackground()

@@ -54,6 +54,7 @@ final class SessionStore {
             email = nil
             profile = nil
             families = []
+            invitePromptFamilyID = nil
             phase = .signedOut
             onAccountChange?(nil)
         case .signedIn(let id, let email):
@@ -68,8 +69,13 @@ final class SessionStore {
     func reload() async {
         let requestedFor = userID
         do throws(FamiliarError) {
-            let loadedProfile = try await dependencies.profiles.myProfile()
-            let loadedFamilies = try await dependencies.families.myFamilies()
+            // Beide Anfragen gleichzeitig: Sie hängen nicht voneinander ab, nacheinander kostete das einen
+            // zusätzlichen Netz-Rundlauf vor dem ersten Bild.
+            async let profileRequest = captured { () async throws(FamiliarError) -> Profile in try await dependencies.profiles.myProfile() }
+            async let familiesRequest = captured { () async throws(FamiliarError) -> [FamilyMembership] in try await dependencies.families.myFamilies() }
+            let (profileResult, familiesResult) = await (profileRequest, familiesRequest)
+            let loadedProfile = try profileResult.get()
+            let loadedFamilies = try familiesResult.get()
             // Während des Ladens abgemeldet oder Konto gewechselt: alten Stand nicht übernehmen.
             guard userID == requestedFor, userID != nil else { return }
             profile = loadedProfile
@@ -194,8 +200,15 @@ final class SessionStore {
         if phase != .signedOut { updatePhase() }
     }
 
+    /// Gerade angelegte Familie: danach fragt die App einmal „Wen holst du dazu?“ (überspringbar).
+    private(set) var invitePromptFamilyID: UUID?
+
+    func clearInvitePrompt() { invitePromptFamilyID = nil }
+
     func createFamily(name: String, colorHex: String) async throws(FamiliarError) {
-        _ = try await dependencies.families.createFamily(name: name, colorHex: colorHex)
+        let family = try await dependencies.families.createFamily(name: name, colorHex: colorHex)
+        // Nur bei der ersten Familie: Weitere legt man aus der laufenden App an, dort gibt es „Einladen“ in den Details.
+        if families.isEmpty { invitePromptFamilyID = family.id }
         try await refreshFamilies()
     }
 

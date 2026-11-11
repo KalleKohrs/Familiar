@@ -84,8 +84,12 @@ struct TaskEntityQuery: EntityStringQuery {
     private func openTasks() async throws -> [TaskEntity] {
         let dependencies = try await IntentEnvironment.require()
         do {
-            let me = try await dependencies.profiles.myProfile().id
-            return try await dependencies.tasks.openTasks()
+            // Profil und Aufgaben gleichzeitig holen (nacheinander wären es zwei Netz-Rundläufe).
+            async let profile = captured { () async throws(FamiliarError) -> Profile in try await dependencies.profiles.myProfile() }
+            async let open = captured { () async throws(FamiliarError) -> [TaskItem] in try await dependencies.tasks.openTasks() }
+            let (profileResult, openResult) = await (profile, open)
+            let me = try profileResult.get().id
+            return try openResult.get()
                 .filter { task in
                     TaskRules.actions(for: task, userID: me).contains { $0 == .completeForMe || $0 == .completeForAll }
                 }

@@ -161,6 +161,6 @@ struct TaskImageView: View {
             }
         }
         .task(id: path) { await images.load(path: path) }
-        .familiarAnimation(value: images.image(path: path) != nil)
+        .familiarContentSwap(value: images.image(path: path) != nil)
     }
 }

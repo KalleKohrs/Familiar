@@ -1,3 +1,4 @@
+import FamiliarActivity
 import FamiliarCore
 import FamiliarDesign
 import StoreKit
@@ -20,7 +21,7 @@ struct RootTabView: View {
 
     /// Platz, den Inhalte unten freihalten (relativ zur Safe Area), plus etwas Luft.
     private var contentInset: CGFloat {
-        max(0, tabBarHeight + barBottomInset - bottomSafeArea) + FamiliarSpacing.xs
+        max(0, tabBarHeight + barBottomInset - bottomSafeArea) + FloatingTabBar.listClearance
     }
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var tasks
@@ -49,8 +50,8 @@ struct RootTabView: View {
                 }
             }
         }
-        // Beim Einblenden eines Sheets meldet die Ansicht kurz 0: Die Leiste sprang dann nach oben.
-        // Der Home-Indikator-Abstand ändert sich im Betrieb nicht, daher kurzzeitige Nullen ignorieren.
+        // Beim Einblenden eines Sheets meldet die Ansicht kurz 0. Der Home-Indikator-Abstand ändert sich
+        // im Betrieb nicht, daher kurzzeitige Nullen ignorieren (die Tastatur ist unten ausgeschlossen).
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { value in
             if value > 0 || bottomSafeArea == 0 { bottomSafeArea = value }
         }
@@ -95,6 +96,9 @@ struct RootTabView: View {
             }
         }
         .task(id: tasks.changeToken) { await reconcileLiveActivities() }
+        // Steuerelement „Neue Aufgabe“ (Kontrollzentrum): öffnet das Formular, sobald die Hauptansicht steht.
+        .onAppear { AppLaunchRequests.shared.setNewTaskHandler { openNewTask() } }
+        .onDisappear { AppLaunchRequests.shared.setNewTaskHandler(nil) }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await reconcileLiveActivities() } }
         }
@@ -113,7 +117,10 @@ struct RootTabView: View {
             }
         }
         .onChange(of: selection) { tabSwitches += 1 }
-        // Die Tastatur (Suche, Blatt) schiebt weder die schwebende Leiste noch den Listenrand nach oben.
+        // Die Tastatur gehört dem Blatt „Neue Aufgabe“, nicht dieser Ansicht. Ohne diese Zeile meldet
+        // sie sich hier als untere Safe Area (gemessen: 34 → 328 → 410 → 342 pt, beim Schließen
+        // 362 → 48 → 34 pt): Die schwebende Leiste fuhr mit der Tastatur nach oben und beim
+        // Schließen wieder herunter, und der Rand der Listen sprang mit.
         .ignoresSafeArea(.keyboard)
     }
 

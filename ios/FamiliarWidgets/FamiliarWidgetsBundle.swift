@@ -8,5 +8,7 @@ struct FamiliarWidgetsBundle: WidgetBundle {
     var body: some Widget {
         TaskLiveActivityWidget()
         TodayWidget()
+        NewTaskControl()
+        OpenTodayControl()
     }
 }

@@ -9,7 +9,6 @@ struct TasksHomeView: View {
     @Environment(TaskStore.self) private var store
     @Environment(\.openNewTask) private var openNewTask
     @Environment(NotificationStore.self) private var notifications
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var transition
     @State private var path: [UUID] = []
     @State private var gallery: GalleryState?
@@ -28,10 +27,11 @@ struct TasksHomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
                     header
+                    InviteHintSection()
                     content
                 }
-                // Weicher Wechsel zwischen Liste und Leerzustand (z. B. nach der letzten Aufgabe).
-                .familiarAnimation(value: store.tasks.isEmpty)
+                // Ein Zustandswert steuert den Wechsel Platzhalter ↔ Leerzustand ↔ Liste: nur Überblendung.
+                .familiarContentSwap(value: phase)
                 .padding(.horizontal, FamiliarSpacing.m)
                 .padding(.top, FamiliarSpacing.s)
             }
@@ -104,71 +104,93 @@ struct TasksHomeView: View {
         .accessibilityAddTraits(.isHeader)
     }
 
+    /// Was der Bereich gerade zeigt. Ein einziger Wert, damit alle Wechsel gleich (Überblendung,
+    /// gleiche Dauer) und nie aus mehreren Zuständen zusammengesetzt ablaufen.
+    private enum Phase: Equatable {
+        case loading
+        case failed
+        case allDone
+        case empty
+        case list
+    }
+
+    private var phase: Phase {
+        if store.tasks.isEmpty {
+            switch store.state {
+            case .idle, .loading: return .loading
+            case .failed: return .failed
+            case .loaded: return (store.hadOpenTasks || !store.history.isEmpty) ? .allDone : .empty
+            }
+        }
+        return .list
+    }
+
     @ViewBuilder
     private var content: some View {
-        if store.tasks.isEmpty && (store.state == .idle || store.state == .loading) {
-            ForEach(0..<3, id: \.self) { _ in FamiliarSkeleton(height: 104) }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Aufgaben werden geladen")
-        } else if store.tasks.isEmpty, case .failed(let error) = store.state {
-            FamiliarErrorState(message: error.message) {
-                Task { await store.reload() }
+        switch phase {
+        case .loading:
+            VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                ForEach(0..<3, id: \.self) { _ in FamiliarSkeleton(height: 104) }
             }
-            .familiarCard()
-        } else {
-            if store.tasks.isEmpty {
-                if store.hadOpenTasks || !store.history.isEmpty {
-                    FamiliarEmptyState(
-                        systemImage: "checkmark",
-                        title: "Alles erledigt",
-                        message: "Gerade ist nichts offen. Neue Aufgaben legst du über das Plus an."
-                    )
-                    .padding(.vertical, FamiliarSpacing.xl)
-                    .transition(FamiliarMotion.appearTransition(reduceMotion: reduceMotion))
-                    .accessibilityIdentifier("tasks.allDone")
-                } else {
-                    FamiliarEmptyState(
-                        systemImage: "checklist",
-                        title: "Noch keine Aufgaben",
-                        message: "Lege über das Plus unten rechts die erste Aufgabe an.",
-                        actionTitle: "Aufgabe anlegen",
-                        action: { openNewTask() }
-                    )
-                    .padding(.vertical, FamiliarSpacing.xl)
-                    .transition(.opacity)
+            .transition(FamiliarMotion.contentTransition)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Aufgaben werden geladen")
+        case .failed:
+            if case .failed(let error) = store.state {
+                FamiliarErrorState(message: error.message) {
+                    Task { await store.reload() }
                 }
-            } else {
-                // Normaler VStack statt LazyVStack: Familienlisten sind kurz, und Ein-/Ausblenden
-                // bleibt sauber (LazyVStack ließ ausgeblendete Karten kurz über Überschriften stehen).
-                VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
-                    if TaskSearch.isActive(searchText) {
-                        SearchResultsSummary(count: visibleTasks.count)
-                        if visibleTasks.isEmpty {
-                            NoSearchResultsView(
-                                query: searchText,
-                                hint: "Gesucht wird in Titel, Beschreibung und Namen der Personen."
-                            )
-                        }
-                    }
-                    ForEach(TaskRules.homeSections(visibleTasks), id: \.section) { group in
-                        sectionTitle(group.section, count: group.tasks.count)
-                            .transition(.opacity)
-                        ForEach(group.tasks) { task in
-                            TaskCard(
-                                task: task,
-                                onOpen: { path.append(task.id) },
-                                onOpenImages: { gallery = GalleryState(images: task.images, index: 0) },
-                                onDuplicate: { duplicating = task }
-                            )
-                            .matchedTransitionSource(id: task.id, in: transition)
-                            .transition(.asymmetric(insertion: .opacity,
-                                                    removal: .opacity.combined(with: .scale(scale: 0.96, anchor: .top))))
-                        }
+                .familiarCard()
+                .transition(FamiliarMotion.contentTransition)
+            }
+        case .allDone:
+            FamiliarEmptyState(
+                systemImage: "checkmark",
+                title: "Alles erledigt",
+                message: "Gerade ist nichts offen. Neue Aufgaben legst du über das Plus an."
+            )
+            .padding(.vertical, FamiliarSpacing.xl)
+            .accessibilityIdentifier("tasks.allDone")
+        case .empty:
+            FamiliarEmptyState(
+                systemImage: "checklist",
+                title: "Noch keine Aufgaben",
+                message: "Lege über das Plus unten rechts die erste Aufgabe an.",
+                actionTitle: "Aufgabe anlegen",
+                action: { openNewTask() }
+            )
+            .padding(.vertical, FamiliarSpacing.xl)
+        case .list:
+            // Normaler VStack statt LazyVStack: Familienlisten sind kurz, und Ein-/Ausblenden
+            // bleibt sauber (LazyVStack ließ ausgeblendete Karten kurz über Überschriften stehen).
+            VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
+                if TaskSearch.isActive(searchText) {
+                    SearchResultsSummary(count: visibleTasks.count)
+                    if visibleTasks.isEmpty {
+                        NoSearchResultsView(
+                            query: searchText,
+                            hint: "Gesucht wird in Titel, Beschreibung und Namen der Personen."
+                        )
                     }
                 }
-                .familiarAnimation(value: visibleTasks.map(\.id))
-                .transition(.opacity)
+                ForEach(TaskRules.homeSections(visibleTasks), id: \.section) { group in
+                    sectionTitle(group.section, count: group.tasks.count)
+                        .transition(.opacity)
+                    ForEach(group.tasks) { task in
+                        TaskCard(
+                            task: task,
+                            onOpen: { path.append(task.id) },
+                            onOpenImages: { gallery = GalleryState(images: task.images, index: 0) },
+                            onDuplicate: { duplicating = task }
+                        )
+                        .matchedTransitionSource(id: task.id, in: transition)
+                        .transition(.asymmetric(insertion: .opacity,
+                                                removal: .opacity.combined(with: .scale(scale: 0.96, anchor: .top))))
+                    }
+                }
             }
+            .familiarAnimation(value: visibleTasks.map(\.id))
+            .transition(.opacity)
         }
     }
 }
