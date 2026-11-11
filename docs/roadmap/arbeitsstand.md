@@ -1,0 +1,38 @@
+# Arbeitsstand und Übergabe (2026-11-11, abends)
+
+Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die Arbeit nach einer Unterbrechung (z. B. Token-Limit) weiterführt. Zuerst lesen, dann `git log --oneline --graph --all -30` und `git status`.
+
+## Rahmen
+
+- App im App Store seit 2026-11-08 (Version 1.0, Build 5). Version 1.0.1 (Build 6, nur neuer Store-Auftritt) war bei Apple zur Prüfung eingereicht; Stand dort in App Store Connect nachsehen.
+- Regeln: [AGENTS.md](../../AGENTS.md). Nichts pushen (der Inhaber pusht per GitHub Desktop), keine Migration auf dem Server einspielen und keine Edge Function deployen ohne Zustimmung des Inhabers, keine Geheimnisse.
+- Der Mac hat wenig Speicherplatz und ist stark ausgelastet: immer nur **ein** `xcodebuild` gleichzeitig, Build-Ordner (`-derivedDataPath`) im Scratch-Ordner anlegen und danach löschen, vor jedem Bau `df -h /System/Volumes/Data` prüfen (unter 1,5 GB frei: nicht bauen). UI-Tests bei „kAXErrorServerNotFound“ oder „Audit failed to complete in time“ einzeln mit `-only-testing:` wiederholen, bevor sie als Fehler gelten.
+
+## Was in `main` ist (lokal, nicht gepusht)
+
+1. Feinschliff `3cbab7d`: „Zuletzt verwendet“ bei der Anmeldung, Bewertungs-Bitte nach 10 erledigten Aufgaben (`ReviewPrompt`), Kalender-Übergänge, Heute-Knopf, Tab-Hülle.
+2. Merge `85f500f` (Branch `claude/animationen-74f490`): einheitliche Bewegung (`docs/design/motion.md`), Tab-Leiste wie die Systemleiste (Maße als Konstanten in `FloatingTabBar`), Tastatur beim Schließen von „Neue Aufgabe“, Start lädt Profil/Familien/Aufgaben gleichzeitig (`ConcurrentLoad`), Debug-Hilfen (`-FamiliarInMemoryLatency`, `-FamiliarSystemTabBarReference`).
+3. Merge `0eb80df` (Branch `claude/neue-funktionen-e0e9e4`): Einladen beim Start (`InviteFamilySheet`, Hinweiskarte), Steuerelemente „Neue Aufgabe“ und „Heute offen“ (`ios/Shared/ControlIntents.swift`, `FamiliarControls.swift`, ADR 0011).
+   Der Release-Build des zusammengeführten Stands war erfolgreich. Der vollständige Testlauf auf diesem Stand steht noch aus.
+
+## Offene Pakete (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
+
+| Paket | Branch | Stand | Nächster Schritt |
+|---|---|---|---|
+| Komfort und Suche (Verschieben „Tag/Woche später“, Duplizieren, Weiterempfehlen/Bewerten, Suche in Aufgaben und Verlauf) | `claude/komfort-suche-042637` | zwei Commits (`6f48ce0`, `0de9a68`), gezielte Tests laufen | Bericht „Bauen und Testen abgeschlossen“ abwarten, dann in `main` zusammenführen (`git merge --no-ff`), Konflikte prüfen: TaskEditorView, TasksHomeView, TaskDetailView, TaskStore, ProfileSheet |
+| Private Aufgaben + zuletzt genutzte Familie (ein dezentes Chip-Menü im Erstellen-Blatt: Familien und „Nur für mich 🔒“) | `claude/private-aufgaben-856bd5` | in Arbeit (Server zuerst) | Migration `0021_private_tasks.sql` + SQL-Tests + ADR, Client, UI, gezielte Tests; Migration **nicht** einspielen, bis der Inhaber zustimmt |
+
+## Reihenfolge bis zum prüfbaren Build
+
+1. Komfort und Suche zusammenführen.
+2. Private Aufgaben fertigstellen und zusammenführen (danach Konflikte mit den Komfort-Funktionen im Erstellen-Blatt prüfen).
+3. Einmal auf dem zusammengeführten `main`: alle Paket-Tests, **alle 17 UI-Tests** (inkl. `AccessibilityAuditUITests` hell/dunkel), Release-Build, Archive ohne Signierung (`CODE_SIGNING_ALLOWED=NO`) und `Metadata.appintents` prüfen: `CompleteTaskIntent`, `OpenNewTaskIntent`, `OpenTodayIntent` müssen mit Modulnamen `Familiar` in der App stehen.
+4. Mit Zustimmung des Inhabers: Migration `0021` einspielen (`apply_migration`), SQL-Tests (nur in `begin … rollback`), danach `docs/data-model.md` und `AGENTS.md` (Migrationsstand) nachtragen.
+5. Der Inhaber: GitHub Desktop → Push origin; Xcode → Archive → Upload (neue Build-Nummer in `ios/Config/Base.xcconfig`, `CURRENT_PROJECT_VERSION`); TestFlight; Prüfliste fürs iPhone (siehe Berichte der Sitzungen: Steuerelemente, Einladen, Tab-Leiste, Start, Suche, Private Aufgaben, Live Activity).
+
+## Wunsch des Inhabers (Auswahl, nicht vergessen)
+
+- Arbeiten mit höchster Effizienz, aber ohne Pfusch; regelmäßig kurze Updates geben.
+- Antworten auf Deutsch (du/dein), einfache Sprache, Schritte nummeriert.
+- Nicht ändern (entschieden): Altersfreigabe 16+, iOS 27 als Mindestversion, nur iPhone.
+- Offene Prüfungen nur auf einem echten iPhone: Bewegungsgefühl, Startzeit, Steuerelemente im Kontrollzentrum, Live Activity.
