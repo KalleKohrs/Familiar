@@ -36,8 +36,16 @@ actor InMemoryBackend {
         return .milliseconds(milliseconds)
     }()
 
-    private func simulateLatency() async {
-        if Self.latency > .zero { try? await Task.sleep(for: Self.latency) }
+    /// Beginn der ersten Anfrage: Nullpunkt für das Anfrage-Protokoll.
+    private static let origin = ContinuousClock.now
+
+    private func simulateLatency(_ name: String = #function) async {
+        guard Self.latency > .zero else { return }
+        // Protokoll für Messungen: zeigt, welche Anfragen nacheinander und welche gleichzeitig laufen.
+        func stamp() -> Int { Int((ContinuousClock.now - Self.origin) / .milliseconds(1)) }
+        NSLog("NETZ %@ Start %d ms", name, stamp())
+        try? await Task.sleep(for: Self.latency)
+        NSLog("NETZ %@ Ende %d ms", name, stamp())
     }
 
     private var user: (id: UUID, email: String)?
