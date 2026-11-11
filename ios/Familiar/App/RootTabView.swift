@@ -1,5 +1,6 @@
 import FamiliarCore
 import FamiliarDesign
+import StoreKit
 import SwiftUI
 
 /// Hauptnavigation: drei Bereiche in einer `TabView` (behält den Zustand je Bereich),
@@ -25,6 +26,7 @@ struct RootTabView: View {
     @Environment(OutlookStore.self) private var outlook
     @Environment(NotificationStore.self) private var notifications
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         TabView(selection: $selection) {
@@ -45,7 +47,13 @@ struct RootTabView: View {
                 }
             }
         }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { bottomSafeArea = $0 }
+        // Beim Einblenden eines Sheets meldet die Ansicht kurz 0: Die Leiste sprang dann nach oben.
+        // Der Home-Indikator-Abstand ändert sich im Betrieb nicht, daher kurzzeitige Nullen ignorieren.
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { value in
+            if value > 0 || bottomSafeArea == 0 { bottomSafeArea = value }
+        }
+        // Hintergrund auch hinter der Tab-Hülle, damit beim Sheet-Übergang kein fremder Streifen unten aufblitzt.
+        .background(FamiliarColor.canvas.ignoresSafeArea())
         .overlay(alignment: .bottom) {
             // Weicher Übergang wie bei der System-Leiste: Inhalte dunkeln zum unteren Rand hin ab,
             // statt hart hinter der Leiste zu verschwinden.
@@ -95,6 +103,13 @@ struct RootTabView: View {
             NotificationPrimerView()
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: createTaskRequests)
+        // Bewertungs-Bitte erst, wenn das „Erledigt“-Banner vorbei ist und kein Sheet offen steht.
+        .onChange(of: tasks.reviewRequestToken) {
+            Task {
+                try? await Task.sleep(for: .seconds(2.5))
+                if !isCreatingTask && !showsNotificationPrimer { requestReview() }
+            }
+        }
     }
 
     /// Nur mit geladener Liste abgleichen – sonst würden laufende Activities fälschlich beendet.

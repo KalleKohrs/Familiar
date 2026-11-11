@@ -43,6 +43,9 @@ final class TaskStore {
     private(set) var historyState: LoadState = .idle
     /// Gab es in dieser Sitzung offene Aufgaben? Dann heißt die leere Liste „Alles erledigt“.
     private(set) var hadOpenTasks = false
+    /// Zählt hoch, wenn die App nach einem Erfolgsmoment um eine Bewertung bitten darf (siehe ``ReviewPrompt``).
+    private(set) var reviewRequestToken = 0
+    private let reviewPrompt = ReviewPrompt()
 
     private let repository: any TaskRepository
     private var userID: UUID?
@@ -210,12 +213,14 @@ final class TaskStore {
             switch action {
             case .completeForMe:
                 try await repository.complete(taskID: task.id, scope: .me)
+                noteCompletionForReview()
                 let message = userID.map { TaskRules.completesTask(task, userID: $0) } ?? true
                     ? String(localized: "Erledigt")
                     : String(localized: "Für dich abgehakt")
                 offerUndo(task.id, message: message, kind: .uncomplete(.me))
             case .completeForAll:
                 try await repository.complete(taskID: task.id, scope: .all)
+                noteCompletionForReview()
                 offerUndo(task.id, message: String(localized: "Für alle erledigt"), kind: .uncomplete(.all))
             case .undoMine:
                 try await repository.uncomplete(taskID: task.id, scope: .me)
@@ -224,6 +229,14 @@ final class TaskStore {
             showError(error.message)
         }
         await refreshAll()
+    }
+
+    private func noteCompletionForReview() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        if reviewPrompt.recordCompletionShouldAsk(version: version) {
+            reviewPrompt.markAsked(version: version)
+            reviewRequestToken += 1
+        }
     }
 
     func delete(_ task: TaskItem) async -> Bool {

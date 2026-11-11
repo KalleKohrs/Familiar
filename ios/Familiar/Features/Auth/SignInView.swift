@@ -4,6 +4,19 @@ import FamiliarData
 import FamiliarDesign
 import SwiftUI
 
+/// Womit man sich zuletzt angemeldet hat – nur ein Merker auf dem Gerät („Zuletzt verwendet“), kein Konto-Inhalt.
+enum LastSignInMethod: String {
+    case email, apple, google
+
+    private static let key = "auth.lastMethod"
+
+    static var current: LastSignInMethod? {
+        UserDefaults.standard.string(forKey: key).flatMap(LastSignInMethod.init(rawValue:))
+    }
+
+    func remember() { UserDefaults.standard.set(rawValue, forKey: Self.key) }
+}
+
 /// Anmeldung per E-Mail-Code, mit Apple oder mit Google (Plan, Abschnitt 6).
 struct SignInView: View {
     @Environment(SessionStore.self) private var session
@@ -16,6 +29,20 @@ struct SignInView: View {
     @State private var isSigningInWithApple = false
     @State private var isSigningInWithGoogle = false
     @FocusState private var emailFocused: Bool
+    private let lastMethod = LastSignInMethod.current
+
+    /// Kleiner Hinweis über der Anmeldeart, die zuletzt benutzt wurde.
+    @ViewBuilder
+    private func lastUsedBadge(_ method: LastSignInMethod) -> some View {
+        if lastMethod == method {
+            Label("Zuletzt verwendet", systemImage: "checkmark.circle.fill")
+                .font(FamiliarFont.caption.weight(.semibold))
+                .foregroundStyle(FamiliarColor.accent)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, FamiliarSpacing.xs)
+                .accessibilityIdentifier("signIn.lastUsed.\(method.rawValue)")
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -35,6 +62,7 @@ struct SignInView: View {
                     }
 
                     VStack(spacing: FamiliarSpacing.s) {
+                        lastUsedBadge(.email)
                         TextField("E-Mail-Adresse", text: $email)
                             .keyboardType(.emailAddress)
                             .textContentType(.emailAddress)
@@ -70,6 +98,7 @@ struct SignInView: View {
                         .accessibilityHidden(true)
                         .padding(.vertical, FamiliarSpacing.xxs)
 
+                        lastUsedBadge(.apple)
                         SignInWithAppleButton(.signIn) { request in
                             appleNonce = AppleSignIn.makeNonce()
                             request.requestedScopes = [.fullName, .email]
@@ -85,6 +114,7 @@ struct SignInView: View {
                         .accessibilityIdentifier("signIn.apple")
 
                         if GoogleSignInFlow.isConfigured {
+                            lastUsedBadge(.google)
                             GoogleSignInButtonView(action: signInWithGoogle)
                                 .disabled(isSigningInWithGoogle)
                                 .accessibilityIdentifier("signIn.google")
@@ -151,6 +181,7 @@ extension SignInView {
             do {
                 let tokens = try await GoogleSignInFlow.signIn(presenting: top, hashedNonce: AppleSignIn.sha256(nonce))
                 try await session.signInWithGoogle(idToken: tokens.idToken, accessToken: tokens.accessToken, nonce: nonce)
+                LastSignInMethod.google.remember()
             } catch let error as FamiliarError {
                 errorMessage = error.message
             } catch {
@@ -182,6 +213,7 @@ extension SignInView {
                 defer { isSigningInWithApple = false }
                 do throws(FamiliarError) {
                     try await session.signInWithApple(idToken: idToken, nonce: nonce, fullName: name)
+                    LastSignInMethod.apple.remember()
                 } catch {
                     errorMessage = error.message
                 }
@@ -266,6 +298,7 @@ struct EmailCodeView: View {
             defer { isVerifying = false }
             do throws(FamiliarError) {
                 try await session.dependencies.auth.verifyEmailCode(code, email: email)
+                LastSignInMethod.email.remember()
             } catch {
                 errorMessage = error.message
             }

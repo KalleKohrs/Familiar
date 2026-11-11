@@ -18,8 +18,8 @@ struct CalendarHomeView: View {
     @State private var entries: [LocalDate: [CalendarEntry]] = [:]
     @State private var loadError: String?
     @State private var isLoading = false
-    /// Richtung des letzten Monatswechsels, für die Überblendung.
-    @State private var direction = 1
+    /// Erst nach dem ersten Laden zeigt die Tagesliste „Nichts geplant“ – davor Platzhalter statt falscher Leere.
+    @State private var hasLoaded = false
 
     private var today: LocalDate { LocalDate(.now, timeZone: .current) }
     private var grid: [LocalDate] { CalendarRules.monthGrid(year: month.year, month: month.month) }
@@ -63,7 +63,10 @@ struct CalendarHomeView: View {
     private func load() async {
         guard let first = grid.first, let last = grid.last else { return }
         isLoading = entries.isEmpty
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            hasLoaded = true
+        }
         do throws(FamiliarError) {
             let data = try await store.calendarData(from: first, through: last)
             // Persönliche Outlook-Termine (nur für den Nutzer selbst).
@@ -77,19 +80,25 @@ struct CalendarHomeView: View {
     }
 
     private func changeMonth(by offset: Int) {
-        direction = offset
+        let newMonth = CalendarRules.month(month, offset: offset)
+        // Auswahl bleibt sinnvoll: heute im aktuellen Monat, sonst der Erste. Ohne Animation, sonst
+        // blendet der alte Tagestitel als Geist unter der Karte aus.
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) {
+            selected = (newMonth.year == today.year && newMonth.month == today.month) ? today : newMonth
+        }
         withAnimation(reduceMotion ? FamiliarMotion.reduced : FamiliarMotion.standard) {
-            month = CalendarRules.month(month, offset: offset)
-            // Auswahl bleibt sinnvoll: heute im aktuellen Monat, sonst der Erste.
-            selected = (month.year == today.year && month.month == today.month) ? today : month
+            month = newMonth
         }
     }
 
     private func goToToday() {
-        direction = today < month ? -1 : 1
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) { selected = today }
         withAnimation(reduceMotion ? FamiliarMotion.reduced : FamiliarMotion.standard) {
             month = CalendarRules.month(today, offset: 0)
-            selected = today
         }
     }
 
@@ -101,16 +110,24 @@ struct CalendarHomeView: View {
                 Text(monthTitle)
                     .font(FamiliarFont.sectionTitle)
                     .foregroundStyle(FamiliarColor.textPrimary)
-                    .contentTransition(.numericText(countsDown: direction < 0))
+                    // Reine Überblendung: „numericText“ verwischt Buchstaben („Ja…uar“).
+                    .contentTransition(.opacity)
                     .accessibilityAddTraits(.isHeader)
                 Spacer(minLength: 0)
                 if !(month.year == today.year && month.month == today.month) || selected != today {
-                    Button("Heute", action: goToToday)
-                        .font(FamiliarFont.secondary.weight(.semibold))
-                        .foregroundStyle(FamiliarColor.accent)
-                        .padding(.horizontal, FamiliarSpacing.s)
-                        .frame(minHeight: FamiliarSize.minimumTouchTarget)
-                        .accessibilityIdentifier("calendar.today")
+                    Button(action: goToToday) {
+                        Label("Heute", systemImage: "arrow.uturn.backward")
+                            .font(FamiliarFont.caption.weight(.semibold))
+                            .foregroundStyle(FamiliarColor.accent)
+                            .padding(.horizontal, FamiliarSpacing.s)
+                            .padding(.vertical, 6)
+                            .overlay(Capsule().strokeBorder(FamiliarColor.accent.opacity(0.6), lineWidth: 1))
+                            .frame(minHeight: FamiliarSize.minimumTouchTarget)
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Zurück zu heute")
+                    .accessibilityIdentifier("calendar.today")
                 }
                 roundButton("chevron.left", label: "Vorheriger Monat") { changeMonth(by: -1) }
                     .accessibilityIdentifier("calendar.previous")
@@ -131,16 +148,17 @@ struct CalendarHomeView: View {
             // voller Größe in der Tagesliste, lange Drücken zeigt den Tag vergrößert.
             .dynamicTypeSize(...DynamicTypeSize.xxLarge)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: FamiliarSpacing.xxs) {
-                ForEach(grid, id: \.self) { day in
-                    dayCell(day)
+            ZStack {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: FamiliarSpacing.xxs) {
+                    ForEach(grid, id: \.self) { day in
+                        dayCell(day)
+                    }
                 }
+                .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+                .id(month)
+                // Reine Überblendung: Ein seitliches Schieben ließ Geisterspalten außerhalb der Karte stehen.
+                .transition(.opacity)
             }
-            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-            .id(month)
-            .transition(reduceMotion ? .opacity : .asymmetric(
-                insertion: .move(edge: direction > 0 ? .trailing : .leading).combined(with: .opacity),
-                removal: .move(edge: direction > 0 ? .leading : .trailing).combined(with: .opacity)))
             .clipped()
             .gesture(
                 DragGesture(minimumDistance: 24)
@@ -199,7 +217,7 @@ struct CalendarHomeView: View {
                             Circle().fill(FamiliarColor.accentFill)
                         } else if isSelected {
                             Circle().fill(FamiliarColor.cardGlassPressed)
-                                .overlay(Circle().strokeBorder(FamiliarColor.accent.opacity(0.7), lineWidth: 1.5))
+                                .overlay(Circle().strokeBorder(FamiliarColor.textPrimary.opacity(0.55), lineWidth: 1.5))
                         }
                     }
                 dots(for: dayEntries)
@@ -268,7 +286,7 @@ struct CalendarHomeView: View {
         if let loadError, entries.isEmpty {
             FamiliarErrorState(message: loadError) { Task { await load() } }
                 .familiarCard()
-        } else if isLoading {
+        } else if isLoading || !hasLoaded {
             FamiliarSkeleton(height: 64)
         } else if dayEntries.isEmpty {
             Text("Nichts geplant.")
