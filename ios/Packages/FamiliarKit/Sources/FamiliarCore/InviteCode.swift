@@ -55,3 +55,17 @@ public enum InviteLink {
         return InviteCode.normalize(parts[1])
     }
 }
+
+/// Text, den die Teilen-Funktion verschickt (Nachricht, AirDrop, Mail).
+public enum InviteMessage {
+    /// Mit Link: Der Link öffnet die App oder – ohne App – eine Seite mit dem Weg in den App Store.
+    /// Der Code steht zusätzlich da, falls der Link nicht geöffnet werden kann.
+    public static func text(familyName: String, code: String, expiresAt: Date) -> String {
+        let formatted = InviteCode.formatted(code)
+        let until = expiresAt.formatted(date: .abbreviated, time: .omitted)
+        guard let link = InviteLink.url(for: code) else {
+            return String(localized: "Komm in unsere Familie „\(familyName)“ bei Familiar! Code: \(formatted) (gültig bis \(until)).")
+        }
+        return String(localized: "Komm in unsere Familie „\(familyName)“ bei Familiar: \(link.absoluteString)\nNoch nicht in der App? Der Link führt dich zum kostenlosen Download. Oder in der App „Mit Code beitreten“ wählen: \(formatted) (gültig bis \(until)).")
+    }
+}

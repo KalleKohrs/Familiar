@@ -301,12 +301,7 @@ struct FamilyDetailView: View {
     // MARK: Aktionen
 
     private func shareText(invite: FamilyInvite, family: Family) -> String {
-        let code = InviteCode.formatted(invite.code)
-        let until = invite.expiresAt.formatted(date: .abbreviated, time: .omitted)
-        guard let link = InviteLink.url(for: invite.code) else {
-            return String(localized: "Komm in unsere Familie „\(family.name)“ bei Familiar! Code: \(code) (gültig bis \(until)).")
-        }
-        return String(localized: "Komm in unsere Familie „\(family.name)“ bei Familiar: \(link.absoluteString)\nOder in der App „Mit Code beitreten“ wählen: \(code) (gültig bis \(until)).")
+        InviteMessage.text(familyName: family.name, code: invite.code, expiresAt: invite.expiresAt)
     }
 
     private func run(_ action: @escaping () async throws(FamiliarError) -> Void) {

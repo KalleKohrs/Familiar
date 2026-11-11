@@ -45,6 +45,10 @@ struct RootView: View {
         .sheet(isPresented: showsInvite) {
             if let code = session.pendingInviteCode { InviteJoinSheet(code: code) }
         }
+        // Gerade angelegte Familie: einmal anbieten, Leute einzuladen.
+        .sheet(isPresented: showsInvitePrompt) {
+            if let familyID = session.invitePromptFamilyID { InviteFamilySheet(familyID: familyID) }
+        }
         .onChange(of: session.userID) { _, userID in
             // Nach dem Abmelden keine Aufgaben der vorigen Person im Speicher behalten.
             if userID == nil { tasks.stop() }
@@ -53,6 +57,14 @@ struct RootView: View {
 }
 
 extension RootView {
+    private var showsInvitePrompt: Binding<Bool> {
+        Binding {
+            session.invitePromptFamilyID != nil && session.phase == .ready && session.pendingInviteCode == nil
+        } set: { isPresented in
+            if !isPresented { session.clearInvitePrompt() }
+        }
+    }
+
     /// Beitritts-Frage erst nach dem Profil-Schritt; „Nicht jetzt“ bzw. Wischen verwirft den Link.
     private var showsInvite: Binding<Bool> {
         Binding {

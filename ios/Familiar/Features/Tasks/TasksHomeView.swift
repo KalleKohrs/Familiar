@@ -21,6 +21,7 @@ struct TasksHomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
                     header
+                    InviteHintSection()
                     content
                 }
                 // Weicher Wechsel zwischen Liste und Leerzustand (z. B. nach der letzten Aufgabe).
