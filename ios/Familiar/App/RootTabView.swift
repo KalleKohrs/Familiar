@@ -19,7 +19,7 @@ struct RootTabView: View {
 
     /// Platz, den Inhalte unten freihalten (relativ zur Safe Area), plus etwas Luft.
     private var contentInset: CGFloat {
-        max(0, tabBarHeight + barBottomInset - bottomSafeArea) + FamiliarSpacing.xs
+        max(0, tabBarHeight + barBottomInset - bottomSafeArea) + FloatingTabBar.listClearance
     }
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var tasks

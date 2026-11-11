@@ -13,13 +13,19 @@ struct FloatingTabBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var selectionNamespace
 
-    /// Maße wie die System-Leiste ab iOS 26, pixelgenau an einem App-Store-Screenshot gemessen
-    /// (iPhone, 393 pt breit): 20 pt Seitenrand, 22 pt zur Unterkante, 61 pt hoch,
-    /// Auswahl-Kapsel 4 pt seitlich und 6,5 pt oben/unten eingerückt.
-    static let barHeight: CGFloat = 61
+    /// Maße der System-Leiste ab iOS 26, im Simulator an einer echten `TabView` gemessen (Debug-Aufbau
+    /// `-FamiliarSystemTabBarReference`, iPhone 17, 402 pt breit, Pixel ÷ 3):
+    /// Pille 62 pt hoch, 21 pt zur Unterkante, Auswahlkapsel **rundum exakt 4 pt** eingerückt (also
+    /// 54 pt hoch und an den runden Enden konzentrisch), Beschriftung 10 pt halbfett, Symbol 23 pt.
+    /// 20 pt Seitenrand wie bei Apples Leiste mit fünf Bereichen (App-Store-Bild).
+    static let barHeight: CGFloat = 62
     static let edgeInset: CGFloat = 20
-    static let bottomInset: CGFloat = 22
-    private static let selectionInset = EdgeInsets(top: 6.5, leading: 4, bottom: 6.5, trailing: 4)
+    static let bottomInset: CGFloat = 21
+    /// Abstand der Auswahlkapsel zum Rand der Pille – an allen vier Seiten gleich.
+    static let selectionInset: CGFloat = 4
+    private static let symbolSize: CGFloat = 23
+    /// Luft zwischen dem Ende einer Liste und der Leiste (Token statt Einzelwert in `RootTabView`).
+    static let listClearance: CGFloat = FamiliarSpacing.m
     private var barHeight: CGFloat { Self.barHeight }
 
     var body: some View {
@@ -57,15 +63,13 @@ struct FloatingTabBar: View {
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: tab.systemImage)
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: Self.symbolSize, weight: .medium))
                     .frame(height: 26)
                     .accessibilityHidden(true)
-                Text(tab.title)
-                    .font(.caption2.weight(.semibold))
-                    .lineLimit(1)
+                TabLabel(title: tab.title)
             }
             .foregroundStyle(isSelected ? FamiliarColor.accent : FamiliarColor.textPrimary)
-            .frame(maxWidth: .infinity, minHeight: barHeight - Self.selectionInset.top - Self.selectionInset.bottom)
+            .frame(maxWidth: .infinity, minHeight: barHeight - 2 * Self.selectionInset)
             .background {
                 if isSelected {
                     selectionIndicator
@@ -111,6 +115,20 @@ struct FloatingTabBar: View {
         .accessibilityShowsLargeContentViewer {
             Label("Neue Aufgabe", systemImage: "plus")
         }
+    }
+}
+
+/// Beschriftung eines Bereichs: 10 pt wie die System-Leiste, wächst mit der Schriftgröße. Eigene Ansicht, damit
+/// `ScaledMetric` die begrenzte Schriftgröße der Leiste (`dynamicTypeSize(...xLarge)`) sieht und nicht die
+/// ungebremste – sonst würden die Namen bei den größten Stufen abgeschnitten.
+private struct TabLabel: View {
+    let title: String
+    @ScaledMetric(relativeTo: .caption2) private var size: CGFloat = 10
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: size, weight: .semibold))
+            .lineLimit(1)
     }
 }
 
