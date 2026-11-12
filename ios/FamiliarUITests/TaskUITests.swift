@@ -270,7 +270,8 @@ final class HistoryUITests: XCTestCase {
 
         app.buttons["tab.history"].tap()
         XCTAssertTrue(app.staticTexts["Müll rausbringen"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Noch 30 Tage im Verlauf"].exists || app.staticTexts["Noch 29 Tage im Verlauf"].exists)
+        // Frisch erledigt: keine Fristzeile (sie erscheint erst, wenn es knapp wird).
+        XCTAssertFalse(app.staticTexts["Noch 30 Tage im Verlauf"].exists || app.staticTexts["Noch 29 Tage im Verlauf"].exists)
 
         app.buttons["history.restore.Müll rausbringen"].tap()
         XCTAssertTrue(app.staticTexts["Müll rausbringen"].waitForNonExistence(timeout: 5))

@@ -5,6 +5,9 @@ import SwiftUI
 /// Bereich „Verlauf“: erledigte und gelöschte Aufgaben sowie gelöschte Serien der letzten 30 Tage
 /// (Guide, Abschnitte 4 und 5).
 /// Jedes Mitglied mit Sicht auf eine Aufgabe darf sie wiederherstellen (Guide, Abschnitt 3).
+/// Ab so vielen verbleibenden Tagen zeigt eine Karte die Frist („Noch 3 Tage im Verlauf“); davor bleibt sie leise.
+private let historyExpiryHintDays = 7
+
 struct HistoryHomeView: View {
     @Environment(TaskStore.self) private var store
     @Environment(SessionStore.self) private var session
@@ -239,7 +242,8 @@ private struct HistoryRow: View {
                         Text(statusText(kind))
                             .font(FamiliarFont.secondary)
                             .foregroundStyle(FamiliarColor.textSecondary)
-                        if let days = HistoryRules.daysRemaining(for: task) {
+                        // Die Frist nur zeigen, wenn sie knapp wird: 30-mal „Noch 29 Tage“ untereinander ist Rauschen.
+                        if let days = HistoryRules.daysRemaining(for: task), days <= historyExpiryHintDays {
                             Text(days == 1 ? "Noch 1 Tag im Verlauf" : "Noch \(days) Tage im Verlauf")
                                 .font(FamiliarFont.meta)
                                 .foregroundStyle(FamiliarColor.textSecondary)
@@ -343,9 +347,11 @@ private struct SeriesDeletionRow: View {
                             .foregroundStyle(FamiliarColor.textSecondary)
                     }
                     let days = HistoryRules.daysRemaining(for: entry)
-                    Text(days == 1 ? "Noch 1 Tag im Verlauf" : "Noch \(days) Tage im Verlauf")
-                        .font(FamiliarFont.meta)
-                        .foregroundStyle(FamiliarColor.textSecondary)
+                    if days <= historyExpiryHintDays {
+                        Text(days == 1 ? "Noch 1 Tag im Verlauf" : "Noch \(days) Tage im Verlauf")
+                            .font(FamiliarFont.meta)
+                            .foregroundStyle(FamiliarColor.textSecondary)
+                    }
                     if session.families.count > 1, let family = session.membership(deletion.familyID)?.family {
                         FamilyBadge(name: family.name,
                                     color: Color(session.familyDisplayColors[deletion.familyID] ?? family.color))

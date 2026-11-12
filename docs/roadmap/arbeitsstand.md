@@ -44,6 +44,10 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 - Such-Symbol oben rechts entfernt (Suche per Herunterziehen; VoiceOver-Knopf bleibt). Kalender: kein Platzhalter-Kasten mehr beim ersten Öffnen, „Nichts geplant“ ruhiger (Symbol, mittig, feste Höhe).
 - Tests: UI (Suche, Aufgaben, Kalender, Audit) grün, Paket-Tests 118 + 19 grün.
 - Bilder: 1600 px/Qualität 0,7 statt 2048 px/0,8, Aufbereitung im Hintergrund, Upload parallel (2 Bilder, Bild+Miniatur gleichzeitig); **Duplizieren übernimmt jetzt die Bilder** (ohne Upload; bei anderer Familie entfallen sie). Neue Tests `ImageProcessorTests`, Duplikat-Test angepasst.
+- Editor: Familien-Auswahl als ruhige Zeile „Familie“ **über den Bildern** (nicht mehr als Menü am Kopf); „Kohrs“ aus Platzhalter und Testdaten entfernt (jetzt „Familie Lindner“). Server-Test für Bild-Kopien in `supabase/tests/0003_tasks.sql` (H5b–H5e; einzeln gegen die Produktion in `begin … rollback` 6/6 grün).
+- Navigation: Jeder Bereich (Aufgaben, Kalender, Verlauf) steht nach einem Tab-Wechsel wieder auf der Startseite (`popsToRootOnTabChange`, UI-Test `testTabChangeReturnsToStartPage`).
+- Verlauf: „Noch X Tage im Verlauf“ nur noch in den letzten 7 Tagen (sonst auf jeder Karte Rauschen).
+- Abschlussprüfung vor dem Dauerstand: Kontraste aller Farb-Tokens nachgerechnet (Text ≥ 4,5 : 1 in Hell, Dunkel und „Kontrast erhöhen“; `textTertiary` nur für Dekoration), Bildschirme hell/dunkel gesichtet, Supabase-Advisors (nur erwartete Hinweise: RPCs für angemeldete Nutzer absichtlich ausführbar, kein Passwort-Login).
 
 ## Offene Pakete (Stand davor, erledigt) (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
 
