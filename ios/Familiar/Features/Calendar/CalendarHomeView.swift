@@ -333,19 +333,13 @@ struct CalendarHomeView: View {
                 // „Nichts geplant“-Aussage. Gleiche Höhe wie der Leerzustand, damit nichts springt.
                 Color.clear.frame(height: Self.placeholderHeight)
             case .empty:
-                VStack(spacing: FamiliarSpacing.xs) {
-                    Image(systemName: "calendar")
-                        .font(.title2)
-                        .foregroundStyle(FamiliarColor.textTertiary)
-                        .accessibilityHidden(true)
-                    Text("Nichts geplant")
-                        .font(FamiliarFont.secondary)
-                        .foregroundStyle(FamiliarColor.textSecondary)
-                }
-                .frame(maxWidth: .infinity, minHeight: Self.placeholderHeight)
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("calendar.empty")
-                .transition(FamiliarMotion.contentTransition)
+                // Bewusst leise: eine kleine Zeile, kein Symbol, keine Karte.
+                Text("Nichts geplant")
+                    .font(FamiliarFont.meta)
+                    .foregroundStyle(FamiliarColor.textSecondary)
+                    .frame(maxWidth: .infinity, minHeight: Self.placeholderHeight)
+                    .accessibilityIdentifier("calendar.empty")
+                    .transition(FamiliarMotion.contentTransition)
             case .list:
                 VStack(spacing: 0) {
                     ForEach(Array(dayEntries.enumerated()), id: \.element.id) { index, entry in
@@ -365,7 +359,7 @@ struct CalendarHomeView: View {
     }
 
     /// Höhe des Bereichs unter dem Datum, solange nichts oder „Nichts geplant“ dort steht.
-    private static let placeholderHeight: CGFloat = 96
+    private static let placeholderHeight: CGFloat = 48
 
     private enum DayPhase: Equatable {
         case failed, loading, pending, empty, list
