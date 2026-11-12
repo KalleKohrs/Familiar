@@ -17,9 +17,13 @@ struct CalendarHomeView: View {
     @State private var selected = LocalDate(.now, timeZone: .current)
     @State private var entries: [LocalDate: [CalendarEntry]] = [:]
     @State private var loadError: String?
-    @State private var isLoading = false
     /// Erst nach dem ersten Laden zeigt die Tagesliste „Nichts geplant“ – davor Platzhalter statt falscher Leere.
     @State private var hasLoaded = false
+    /// Für welchen Monat `entries` zuletzt geladen wurde. Nach einem Monatswechsel ist die Tagesliste bis dahin
+    /// unbestimmt (weder Platzhalter noch „Nichts geplant“ – beides blitzte kurz als Kasten bzw. falsche Aussage auf).
+    @State private var loadedMonth: LocalDate?
+    /// Von welcher Seite der neue Monat hereinkommt (`.trailing` = „nächster“, `.leading` = „vorheriger“).
+    @State private var slide: Edge = .trailing
 
     private var today: LocalDate { LocalDate(.now, timeZone: .current) }
     private var grid: [LocalDate] { CalendarRules.monthGrid(year: month.year, month: month.month) }
@@ -69,45 +73,61 @@ struct CalendarHomeView: View {
 
     private func load() async {
         guard let first = grid.first, let last = grid.last else { return }
-        isLoading = entries.isEmpty
-        defer {
-            isLoading = false
-            hasLoaded = true
-        }
+        let requested = month
+        defer { hasLoaded = true }
         do throws(FamiliarError) {
             let data = try await store.calendarData(from: first, through: last)
             // Persönliche Outlook-Termine (nur für den Nutzer selbst).
             let external = await outlook.events(from: first.startOfDay(in: .current),
                                                 to: last.adding(days: 1).startOfDay(in: .current))
+            // Kam inzwischen ein anderer Monat dazwischen, gehört dieses Ergebnis nicht mehr hierher.
+            guard !Task.isCancelled, requested == month else { return }
             entries = CalendarRules.entriesByDay(tasks: data.tasks, projected: data.projected, external: external)
+            loadedMonth = requested
             loadError = nil
         } catch {
             loadError = error.message
         }
     }
 
-    private func changeMonth(by offset: Int) {
-        let newMonth = CalendarRules.month(month, offset: offset)
-        // Auswahl bleibt sinnvoll: heute im aktuellen Monat, sonst der Erste. Ohne Animation, sonst
-        // blendet der alte Tagestitel als Geist unter der Karte aus.
-        var instant = Transaction()
-        instant.disablesAnimations = true
-        withTransaction(instant) {
-            selected = (newMonth.year == today.year && newMonth.month == today.month) ? today : newMonth
-        }
-        withAnimation(reduceMotion ? FamiliarMotion.reduced : FamiliarMotion.standard) {
-            month = newMonth
+    /// Monat wechseln: Das Raster schiebt sich seitlich herein (Richtung wie beim Blättern). SwiftUI liest die
+    /// Abgangs-Bewegung des alten Monats vom zuletzt gezeigten Zustand – deshalb wird die Richtung zuerst
+    /// gesetzt und der Monat erst einen Augenblick später gewechselt (sonst schöbe sich der alte Monat in die
+    /// falsche Richtung hinaus).
+    private func changeMonth(by offset: Int, selecting day: LocalDate? = nil) {
+        slide = offset > 0 ? .trailing : .leading
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(24))
+            let newMonth = CalendarRules.month(month, offset: offset)
+            // Auswahl bleibt sinnvoll: heute im aktuellen Monat, sonst der Erste. Ohne Animation, sonst
+            // blendet der alte Tagestitel als Geist unter der Karte aus.
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) {
+                selected = day ?? ((newMonth.year == today.year && newMonth.month == today.month) ? today : newMonth)
+            }
+            withAnimation(reduceMotion ? FamiliarMotion.reduced : Self.slideAnimation) {
+                month = newMonth
+            }
         }
     }
 
     private func goToToday() {
-        var instant = Transaction()
-        instant.disablesAnimations = true
-        withTransaction(instant) { selected = today }
-        withAnimation(reduceMotion ? FamiliarMotion.reduced : FamiliarMotion.standard) {
-            month = CalendarRules.month(today, offset: 0)
+        let target = CalendarRules.month(today, offset: 0)
+        slide = target < month ? .leading : .trailing
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(24))
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { selected = today }
+            withAnimation(reduceMotion ? FamiliarMotion.reduced : Self.slideAnimation) {
+                month = target
+            }
         }
     }
+
+    /// Ruhiges Schieben ohne Nachfedern (ein Überschwingen ließe das Raster über die Kartenkante ragen).
+    private static let slideAnimation: Animation = .smooth(duration: 0.38)
 
     // MARK: Monatskarte
 
@@ -163,8 +183,12 @@ struct CalendarHomeView: View {
                 }
                 .dynamicTypeSize(...DynamicTypeSize.xxLarge)
                 .id(month)
-                // Reine Überblendung: Ein seitliches Schieben ließ Geisterspalten außerhalb der Karte stehen.
-                .transition(.opacity)
+                // Der alte Monat schiebt sich hinaus, der neue herein – beide blenden dabei aus bzw. ein. Das
+                // Raster liegt in einem festen, abgeschnittenen Bereich: nichts ragt über die Karte hinaus.
+                .transition(.asymmetric(
+                    insertion: .move(edge: slide).combined(with: .opacity),
+                    removal: .move(edge: slide == .trailing ? .leading : .trailing).combined(with: .opacity)
+                ))
             }
             // Höhe folgt der Zeilenzahl (5 oder 6 Wochen) und wird mit dem Monatswechsel mitanimiert.
             // Ohne feste Höhe bliebe die Karte während der Überblendung so hoch wie der größere Monat
@@ -218,7 +242,7 @@ struct CalendarHomeView: View {
 
         return Button {
             selected = day
-            if !inMonth { changeMonth(by: day < month ? -1 : 1); selected = day }
+            if !inMonth { changeMonth(by: day < month ? -1 : 1, selecting: day) }
         } label: {
             VStack(spacing: 4) {
                 Text("\(day.day)")
@@ -306,6 +330,9 @@ struct CalendarHomeView: View {
                     .transition(FamiliarMotion.contentTransition)
             case .loading:
                 FamiliarSkeleton(height: 64)
+            case .pending:
+                // Platz halten, nichts zeigen: kein Kasten und keine falsche „Nichts geplant“-Aussage.
+                Color.clear.frame(height: 64)
             case .empty:
                 Text("Nichts geplant.")
                     .font(FamiliarFont.secondary)
@@ -332,13 +359,15 @@ struct CalendarHomeView: View {
     }
 
     private enum DayPhase: Equatable {
-        case failed, loading, empty, list
+        case failed, loading, pending, empty, list
     }
 
     /// „Nichts geplant“ erst nach dem ersten Laden – davor Platzhalter statt falscher Leere.
     private var dayPhase: DayPhase {
-        if loadError != nil, entries.isEmpty { return .failed }
-        if isLoading || !hasLoaded { return .loading }
+        if loadError != nil, entries.isEmpty || loadedMonth != month { return .failed }
+        if !hasLoaded { return .loading }
+        // Nach einem Monatswechsel erst anzeigen, wenn dessen Einträge da sind.
+        if loadedMonth != month { return .pending }
         return (entries[selected] ?? []).isEmpty ? .empty : .list
     }
 

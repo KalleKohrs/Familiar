@@ -13,6 +13,8 @@ actor InMemoryBackend {
     enum Scenario: String {
         case signedOut
         case ready
+        /// Angemeldet, eine Familie, noch keine Aufgaben und niemand sonst dabei (wie ein frisches Konto).
+        case empty
         /// Vorführdaten für App-Store-Bilder: zwei Familien, neutrale Namen, abwechslungsreiche Aufgaben.
         case showcase
 
@@ -161,6 +163,15 @@ actor InMemoryBackend {
             let lunchInfo = TaskSeries(id: UUID(), familyID: berger.id, title: "Pausenbrote machen", rule: lunchRule,
                                        startDate: lunch.startDate)
             seriesRecords[lunchInfo.id] = SeriesRecord(info: lunchInfo, input: lunch, createdBy: me)
+        }
+
+        if scenario == .empty {
+            let me = UUID()
+            user = (me, "kalle@example.test")
+            profiles[me] = Profile(id: me, displayName: "Kalle")
+            let family = Family(id: UUID(), name: "Kohrs", colorHex: "#FF7F66", createdBy: me)
+            families[family.id] = family
+            members[family.id] = [FamilyMember(familyID: family.id, userID: me, role: .admin, profile: profiles[me])]
         }
 
         if scenario == .ready {
@@ -755,6 +766,26 @@ extension InMemoryBackend: TaskRepository {
         for (id, deletion) in deletions where adminFamilies.contains(deletion.familyID) {
             deletions[id] = nil
         }
+    }
+
+    func purge(taskID: UUID) async throws(FamiliarError) {
+        let task = try visibleTask(taskID)
+        guard task.completedAt != nil || task.deletedAt != nil else {
+            throw .app(key: .taskNotFound, message: "Diese Aufgabe steht nicht im Verlauf.")
+        }
+        guard task.deletedBySeriesOp == nil else {
+            throw .app(key: .restoreSeriesInstead, message: "Diese Aufgabe gehört zu einer gelöschten Serie.")
+        }
+        tasks[taskID] = nil
+    }
+
+    func purgeSeriesDeletion(deletionID: UUID) async throws(FamiliarError) {
+        guard let deletion = deletions[deletionID] else {
+            throw .app(key: .seriesDeletionNotFound, message: "Dieser Verlaufseintrag existiert nicht mehr.")
+        }
+        for (id, task) in tasks where task.deletedBySeriesOp == deletionID { tasks[id] = nil }
+        deletions[deletionID] = nil
+        if seriesRecords[deletion.seriesID]?.info.deletedAt != nil { seriesRecords[deletion.seriesID] = nil }
     }
 
     func calendarTasks(from: LocalDate, through: LocalDate) async throws(FamiliarError) -> [TaskItem] {

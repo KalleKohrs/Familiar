@@ -166,6 +166,24 @@ final class TaskStore {
         }
     }
 
+    /// Einen einzelnen Verlaufseintrag endgültig löschen (Wischen nach links). Liefert `true`, wenn es geklappt hat.
+    func purgeFromHistory(_ entry: HistoryEntry) async -> Bool {
+        busyTaskIDs.insert(entry.id)
+        defer { busyTaskIDs.remove(entry.id) }
+        do throws(FamiliarError) {
+            switch entry {
+            case .seriesDeletion(let deletion): try await repository.purgeSeriesDeletion(deletionID: deletion.id)
+            case .task(let task): try await repository.purge(taskID: task.id)
+            }
+            await refreshAll()
+            return true
+        } catch {
+            showError(error.message)
+            await refreshAll()
+            return false
+        }
+    }
+
     /// Verlauf leeren (nur Admins, endgültig). Liefert `true`, wenn es geklappt hat.
     func clearHistory() async -> Bool {
         do throws(FamiliarError) {
@@ -372,6 +390,43 @@ final class TaskStore {
         } catch {
             if case .app(.nudgeTooSoon, _) = error { nudgedAt[Self.nudgeKey(task.id, userID)] = .now }
             showError(error.message)
+        }
+    }
+
+    /// Alle angegebenen Personen auf einmal erinnern (Knopf „Alle erinnern“ in den Details). Wer in der letzten
+    /// Stunde schon erinnert wurde, wird übersprungen. Eine gemeinsame Rückmeldung statt einer je Person.
+    func nudgeAll(_ task: TaskItem, recipients: [(userID: UUID, name: String)]) async {
+        var reminded: [String] = []
+        var quietUntil: Date?
+        var failure: String?
+        for recipient in recipients where !wasNudgedRecently(task.id, recipient.userID) {
+            do throws(FamiliarError) {
+                let result = try await repository.nudge(taskID: task.id, userID: recipient.userID)
+                nudgedAt[Self.nudgeKey(task.id, recipient.userID)] = .now
+                reminded.append(recipient.name)
+                if result.quietHours { quietUntil = result.scheduledFor }
+            } catch {
+                if case .app(.nudgeTooSoon, _) = error {
+                    nudgedAt[Self.nudgeKey(task.id, recipient.userID)] = .now
+                } else {
+                    failure = error.message
+                }
+            }
+        }
+        if let failure { showError(failure); return }
+        guard !reminded.isEmpty else { return }
+        let names = reminded.formatted(.list(type: .and))
+        let plural = reminded.count > 1
+        if let quietUntil {
+            let time = quietUntil.formatted(date: .omitted, time: .shortened)
+            let today = Calendar.current.isDateInToday(quietUntil)
+            showInfo(plural
+                ? (today ? String(localized: "\(names) werden heute um \(time) erinnert.")
+                         : String(localized: "\(names) werden morgen um \(time) erinnert."))
+                : (today ? String(localized: "\(names) wird heute um \(time) erinnert.")
+                         : String(localized: "\(names) wird morgen um \(time) erinnert.")))
+        } else {
+            showInfo(plural ? String(localized: "\(names) werden erinnert.") : String(localized: "\(names) wird erinnert."))
         }
     }
 

@@ -19,15 +19,19 @@ struct TaskLiveActivityWidget: Widget {
             let familyColor = context.attributes.familyColor
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
+                    // Abstand zur Rundung der Insel (wie rechts), sonst wird das Symbol in der Ecke angeschnitten.
                     Image(systemName: "checklist")
                         .foregroundStyle(familyColor)
+                        .padding(.leading, FamiliarSpacing.s)
+                        .padding(.top, FamiliarSpacing.xxs)
                         .accessibilityHidden(true)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     // Abstand zur Rundung der Insel, sonst wird die Uhrzeit angeschnitten.
                     StartTimeText(startsAt: context.state.startsAt)
                         .fixedSize()
-                        .padding(.trailing, FamiliarSpacing.xs)
+                        .padding(.trailing, FamiliarSpacing.s)
+                        .padding(.top, FamiliarSpacing.xxs)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(context.state.title)
@@ -42,10 +46,13 @@ struct TaskLiveActivityWidget: Widget {
                             CompleteButton(taskID: context.attributes.taskID)
                         }
                     }
+                    // Die untere Ecke der Insel ist stark gerundet: seitlich Luft lassen.
+                    .padding(.horizontal, FamiliarSpacing.xs)
                 }
             } compactLeading: {
                 Image(systemName: "checklist")
                     .foregroundStyle(familyColor)
+                    .padding(.leading, FamiliarSpacing.xxs)
             } compactTrailing: {
                 StartTimeText(startsAt: context.state.startsAt)
             } minimal: {

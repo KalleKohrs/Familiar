@@ -40,13 +40,21 @@ struct SearchRevealScrollView<Content: View>: View {
     @ViewBuilder let content: Content
 
     @Environment(\.tabSelection) private var tabSelection
-    @Environment(\.floatingTabBarHeight) private var bottomClearance
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var position = ScrollPosition(y: 0)
     @State private var slot: CGFloat = 56
     @State private var viewportHeight: CGFloat = 0
-    @State private var topInset: CGFloat = 0
     @State private var offsetY: CGFloat = 0
+    @State private var containerHeight: CGFloat = 0
+    @State private var scrollPhase: ScrollPhase = .idle
+    /// Hat die Person das Feld selbst hervorgeholt (Herunterziehen, Lupe)? Dann bleibt es stehen, bis sie es
+    /// wieder wegscrollt oder abbricht. Solange das nicht der Fall ist, hält die Ansicht es verborgen –
+    /// jederzeit, nicht nur beim Start (Inhalte laden nach, Größen ändern sich; ein einmaliges Wegscrollen
+    /// reichte am echten Gerät nicht).
+    @State private var revealedByUser = false
+    /// Solange das Feld per Animation ein- oder ausgefahren wird, greift `settle()` nicht ein (es würde die
+    /// Animation durch einen sofortigen Sprung ersetzen).
+    @State private var isSliding = false
     @FocusState private var isFocused: Bool
 
     private var isSearching: Bool { TaskSearch.isActive(text) }
@@ -71,21 +79,36 @@ struct SearchRevealScrollView<Content: View>: View {
                     .accessibilityHidden(fieldOpacity < 0.05)
                 content
             }
-            // Mindesthöhe, damit sich das Feld auch bei kurzen Listen wegscrollen lässt.
-            .frame(minHeight: max(0, viewportHeight - topInset - bottomClearance) + slot, alignment: .top)
+            // Mindesthöhe, damit sich das Feld auch bei kurzen Inhalten wegscrollen lässt. Gemessen (gemessen: bei
+            // Inhalt kürzer als der Sichtbereich scrollt SwiftUI gar nicht, auch nicht per `scrollTo`) – maßgeblich
+            // ist die vom Scrollbereich gemeldete Höhe, nicht eine Schätzung aus Rändern.
+            // Ideale Höhe zuerst: Sonst gibt die Mindesthöhe dem Inhalt eine zu knappe Höhenvorgabe und Texte werden
+            // auf eine Zeile gekürzt („…erste Au…“).
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(minHeight: containerHeight + slot + 1, alignment: .top)
         }
         .scrollPosition($position)
         .scrollTargetBehavior(SearchRevealSnap(slot: slot))
         .scrollDismissesKeyboard(.interactively)
-        .onGeometryChange(for: CGSize.self) { CGSize(width: $0.safeAreaInsets.top, height: $0.size.height) } action: {
-            topInset = $0.width
-            viewportHeight = $0.height
-        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { viewportHeight = $0 }
         .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, new in
             offsetY = new
+            // Vom Finger (oder Auslaufen) bis über die Kante gezogen: gewollt hervorgeholt.
+            if (scrollPhase == .interacting || scrollPhase == .decelerating), new < slot - 1 { revealedByUser = true }
+            if new >= slot - 1 { revealedByUser = false }
+            settle()
         }
-        // Sobald die Höhen bekannt sind, das Feld verbergen. Mehrere Versuche, weil sich der Inhalt beim
-        // Start noch ändert (Platzhalter, Liste) und ein zu früh gesetzter Versatz zurückgesetzt werden kann.
+        .onScrollPhaseChange { _, new in
+            scrollPhase = new
+            settle()
+        }
+        // Verborgen halten, sobald Höhen bekannt sind oder sich ändern.
+        .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height } action: { _, new in
+            containerHeight = new
+        }
+        .onChange(of: viewportHeight) { settle() }
+        .onChange(of: slot) { settle() }
+        .onChange(of: isSearching) { settle() }
         .task(id: viewportHeight > 0) { await hideInitially() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -98,6 +121,7 @@ struct SearchRevealScrollView<Content: View>: View {
             // Jeder Wechsel des Bereichs leert die Suche und verbirgt das Feld wieder (ohne Bewegung: der
             // Bereich ist gerade nicht zu sehen).
             if new.switches != old.switches, !text.isEmpty || isFocused {
+                revealedByUser = false
                 text = ""
                 isFocused = false
                 position.scrollTo(y: slot)
@@ -112,18 +136,36 @@ struct SearchRevealScrollView<Content: View>: View {
         }
     }
 
+    /// Das Feld verbergen, wenn niemand es hervorgeholt hat und die Liste ruht (ohne Bewegung: sonst zuckte
+    /// der Inhalt beim Start).
+    private func settle() {
+        guard scrollPhase == .idle, !isSliding, !revealedByUser, !isFocused, !isSearching, viewportHeight > 0 else { return }
+        guard offsetY < slot - 1 else { return }
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) { position.scrollTo(y: slot) }
+    }
+
+    /// Zusätzlich in kurzen Abständen nachsehen: Meldet SwiftUI beim Start keine Änderung mehr (Inhalt war
+    /// schon fertig, bevor die Größen bekannt waren), käme `settle()` sonst nie zum Zug.
     private func hideInitially() async {
         guard viewportHeight > 0 else { return }
-        for delay in [80, 250, 600] {
+        for delay in [60, 200, 500, 1200] {
             try? await Task.sleep(for: .milliseconds(delay))
-            if Task.isCancelled || isFocused || isSearching { return }
-            if offsetY < slot - 1 { position.scrollTo(y: slot) }
+            if Task.isCancelled { return }
+            settle()
         }
+    }
+
+    /// Weiches Ein- und Ausfahren ohne Nachfedern: Ein Überschwingen ließ den ganzen Inhalt kurz mitzucken.
+    private var slideAnimation: Animation {
+        reduceMotion ? FamiliarMotion.reduced : .smooth(duration: 0.32)
     }
 
     /// Lupe: Feld hervorholen und gleich mit dem Tippen beginnen lassen.
     private func reveal() {
-        withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) { position.scrollTo(y: 0) }
+        revealedByUser = true
+        slide { position.scrollTo(y: 0) }
         isFocused = true
         // Das Feld war eben noch ausgeblendet; nimmt es den Fokus nicht sofort an, erneut anfordern.
         Task { @MainActor in
@@ -133,9 +175,21 @@ struct SearchRevealScrollView<Content: View>: View {
     }
 
     private func cancel() {
+        revealedByUser = false
         text = ""
         isFocused = false
-        withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) { position.scrollTo(y: slot) }
+        slide { position.scrollTo(y: slot) }
+    }
+
+    /// Animiert scrollen und `settle()` bis kurz nach dem Ende heraushalten.
+    private func slide(_ scroll: () -> Void) {
+        isSliding = true
+        withAnimation(slideAnimation) { scroll() }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            isSliding = false
+            settle()
+        }
     }
 }
 

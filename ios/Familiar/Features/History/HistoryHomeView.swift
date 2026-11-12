@@ -12,6 +12,8 @@ struct HistoryHomeView: View {
     @State private var path: [UUID] = []
     @State private var confirmsClearing = false
     @State private var searchText = ""
+    /// Eintrag, dessen endgültiges Löschen gerade bestätigt werden soll (Wischen nach links).
+    @State private var purging: HistoryEntry?
 
     /// Verlauf, gefiltert nach der Suche (ohne Suche: alles).
     private var visibleHistory: [HistoryEntry] {
@@ -36,6 +38,8 @@ struct HistoryHomeView: View {
                         .padding(.bottom, FamiliarSpacing.xs)
                     content
                 }
+                // Wischen auf den Karten: nach rechts wiederherstellen, nach links endgültig löschen.
+                .swipeActionsContainer()
                 // Platzhalter ↔ Leerzustand ↔ Liste: gleiche Überblendung wie bei den Aufgaben.
                 .familiarContentSwap(value: phase)
                 .padding(.horizontal, FamiliarSpacing.m)
@@ -63,6 +67,14 @@ struct HistoryHomeView: View {
                 }
             } message: {
                 Text("Alle erledigten und gelöschten Aufgaben und Serien in den Familien, in denen du Admin bist, werden für alle endgültig entfernt. Das lässt sich nicht rückgängig machen.")
+            }
+            .confirmationDialog("Endgültig löschen?", isPresented: isConfirmingPurge, titleVisibility: .visible,
+                                presenting: purging) { entry in
+                Button("Endgültig löschen", role: .destructive) {
+                    Task { _ = await store.purgeFromHistory(entry) }
+                }
+            } message: { entry in
+                Text(purgeMessage(entry))
             }
             .navigationDestination(for: UUID.self) { taskID in
                 TaskDetailView(taskID: taskID)
@@ -130,15 +142,52 @@ struct HistoryHomeView: View {
                 FamiliarSectionHeader(section.title)
                     .padding(.top, FamiliarSpacing.s)
                 ForEach(section.entries) { entry in
-                    switch entry {
-                    case .task(let task):
-                        HistoryRow(task: task) { path.append(task.id) }
-                            .matchedTransitionSource(id: task.id, in: transition)
-                    case .seriesDeletion(let deletion):
-                        SeriesDeletionRow(deletion: deletion, entry: entry)
+                    Group {
+                        switch entry {
+                        case .task(let task):
+                            HistoryRow(task: task) { path.append(task.id) }
+                                .matchedTransitionSource(id: task.id, in: transition)
+                        case .seriesDeletion(let deletion):
+                            SeriesDeletionRow(deletion: deletion, entry: entry)
+                        }
                     }
+                    .historySwipeActions(
+                        restore: canRestore(entry) ? { Task { _ = await store.restoreFromHistory(entry) } } : nil,
+                        purge: canPurge(entry) ? { purging = entry } : nil
+                    )
                 }
             }
+        }
+    }
+
+    private var isConfirmingPurge: Binding<Bool> {
+        Binding { purging != nil } set: { if !$0 { purging = nil } }
+    }
+
+    /// Gelöschtes wiederherstellen braucht das Recht „löschen“; Erledigtes wieder öffnen dürfen alle.
+    private func canRestore(_ entry: HistoryEntry) -> Bool {
+        switch entry {
+        case .task(let task):
+            HistoryRules.kind(of: task) != .deleted || task.isPrivate || session.allows(.deleteTasks, in: task.familyID)
+        case .seriesDeletion(let deletion):
+            session.allows(.deleteTasks, in: deletion.familyID)
+        }
+    }
+
+    /// Endgültig löschen darf, wer auch löschen darf (private Aufgaben: ihr Ersteller, der sie allein sieht).
+    private func canPurge(_ entry: HistoryEntry) -> Bool {
+        switch entry {
+        case .task(let task): task.isPrivate || session.allows(.deleteTasks, in: task.familyID)
+        case .seriesDeletion(let deletion): session.allows(.deleteTasks, in: deletion.familyID)
+        }
+    }
+
+    private func purgeMessage(_ entry: HistoryEntry) -> String {
+        switch entry {
+        case .task(let task):
+            String(localized: "„\(task.title)“ wird für alle endgültig gelöscht. Das lässt sich nicht rückgängig machen.")
+        case .seriesDeletion(let deletion):
+            String(localized: "Die gelöschte Serie „\(deletion.series?.title ?? String(localized: "Wiederkehrende Aufgabe"))“ wird mit allen ihren gelöschten Terminen für alle endgültig entfernt. Das lässt sich nicht rückgängig machen.")
         }
     }
 
@@ -337,5 +386,40 @@ private enum HistoryRowLayout {
         size.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: FamiliarSpacing.xs))
             : AnyLayout(HStackLayout(alignment: .top, spacing: FamiliarSpacing.s))
+    }
+}
+
+/// Wischen auf einer Verlaufskarte: nach rechts „Wiederherstellen“ (ganzes Wischen löst es aus), nach links
+/// „Löschen“ (nur per Tippen auf den Knopf – endgültig, mit Rückfrage). Fehlt das Recht, fehlt die Aktion.
+private struct HistorySwipeActions: ViewModifier {
+    let restore: (() -> Void)?
+    let purge: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        content
+            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                if let restore {
+                    Button(action: restore) {
+                        Label("Wiederherstellen", systemImage: "arrow.uturn.backward")
+                    }
+                    .tint(FamiliarColor.accentFill)
+                }
+            }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                if let purge {
+                    Button(role: .destructive, action: purge) {
+                        Label("Löschen", systemImage: "trash")
+                    }
+                }
+            }
+            .accessibilityActions {
+                if let purge { Button("Endgültig löschen", action: purge) }
+            }
+    }
+}
+
+private extension View {
+    func historySwipeActions(restore: (() -> Void)?, purge: (() -> Void)?) -> some View {
+        modifier(HistorySwipeActions(restore: restore, purge: purge))
     }
 }

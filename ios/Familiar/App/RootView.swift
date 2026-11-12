@@ -13,11 +13,22 @@ struct RootView: View {
     /// nacheinander überblendet werden.
     @State private var showsLaunchCover = true
 
+    /// Die Startansicht liegt über allem, solange die Sitzung geladen wird und danach, bis die erste Liste da ist.
+    /// Eine einzige, durchgehende Ebene: Früher gab es dieselbe Ansicht zweimal (eine je Zustand) und der
+    /// Wechsel blendete beide ineinander – das flackerte.
+    private var showsCover: Bool {
+        switch session.phase {
+        case .launching: true
+        case .ready: showsLaunchCover
+        default: false
+        }
+    }
+
     var body: some View {
         ZStack {
             switch session.phase {
             case .launching:
-                LaunchView()
+                Color.clear
             case .signedOut:
                 SignInView()
             case .onboarding(.profile):
@@ -26,15 +37,14 @@ struct RootView: View {
                 FamilySetupView()
             case .ready:
                 RootTabView()
-                    .overlay {
-                        if showsLaunchCover {
-                            LaunchView()
-                                .allowsHitTesting(false)
-                                .transition(.opacity)
-                        }
-                    }
             case .failed(let error):
                 LoadingFailedView(error: error)
+            }
+            if showsCover {
+                LaunchView()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                    .zIndex(1)
             }
         }
         .transition(.opacity)
@@ -84,7 +94,11 @@ extension RootView {
             try? await Task.sleep(for: .milliseconds(50))
             if Task.isCancelled { return }
         }
-        withAnimation(reduceMotion ? FamiliarMotion.reduced : .easeOut(duration: 0.45)) { showsLaunchCover = false }
+        // Erst eine Atempause: Die gerade geladene Liste soll fertig gelegt sein, bevor das Ausblenden beginnt –
+        // sonst konkurrieren Layout und Animation um denselben Takt und es ruckelt.
+        try? await Task.sleep(for: .milliseconds(160))
+        if Task.isCancelled { return }
+        withAnimation(reduceMotion ? FamiliarMotion.reduced : .easeInOut(duration: 0.5)) { showsLaunchCover = false }
     }
 
     private var showsInvitePrompt: Binding<Bool> {
@@ -110,11 +124,16 @@ extension RootView {
 }
 
 /// Kurzer Zwischenzustand, während die gespeicherte Sitzung geladen wird.
+///
+/// Der Systemstartbildschirm ist nur eine einfarbige Fläche (`LaunchBackground`, gleich `canvas`). Diese Ansicht
+/// beginnt mit derselben Fläche und zeigt das Zeichen sofort und ohne eigene Animation (eine Einblende-Animation
+/// bleibt stecken, solange der Start den Hauptthread belegt, und sprang dann erst beim Ausblenden an). Das Licht des
+/// Hintergrunds kommt erst mit der fertigen Ansicht darunter, wenn diese Ansicht ausblendet.
 private struct LaunchView: View {
     var body: some View {
         FamiliarMark(size: 72)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .familiarScreenBackground()
+            .background { FamiliarColor.canvas.ignoresSafeArea() }
             .accessibilityElement()
             .accessibilityLabel("Familiar wird geladen")
     }

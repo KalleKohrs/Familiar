@@ -33,6 +33,11 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 - Tests: alle UI-Tests grün (28; Such-Tests auf `textFields["search.field"]` umgestellt, neuer Schritt „zurück von privat“ in `PrivateTaskUITests`).
 - Offen am iPhone prüfen: Telefonnummern-Vorschläge verschwunden? Start flüssig? Suchfeld per Herunterziehen? Abbrechen ohne Sprung der Leiste?
 
+## Nachtrag 2026-11-12 (später) – zweite Rückmeldung aus TestFlight (Build 9)
+
+- Behoben bzw. neu: (1) Start: **eine** durchgehende Startansicht-Ebene (vorher zwei, die sich ineinander blendeten und flackerten), Zeichen ohne eigene Animation, Ausblenden erst eine Atempause nach dem Laden. (2) **Suchfeld sichtbar bei kurzem Inhalt** (leere Familie mit Einladungskarte): SwiftUI scrollt bei zu kurzem Inhalt gar nicht → Mindesthöhe aus der gemessenen Containerhöhe, `settle()` hält das Feld jederzeit verborgen; Test-Szenario `empty`. (3) Suche abbrechen: sanftes Einfahren (`isSliding` hält `settle()` heraus). (4) Kalender: Monat schiebt seitlich herein (Richtung wie Blättern), „weiße Box“ war der Platzhalter der Tagesliste (`pending` statt Skeleton). (5) **Verlauf: Wischen** – nach rechts wiederherstellen, nach links endgültig löschen (mit Rückfrage; `swipeActionsContainer`, iOS 27). (6) Live Activity: Abstände in der erweiterten Dynamic Island (links/unten) – ob das die abgeschnittene Ecke war, am Gerät prüfen. (7) Details: Knopf „Alle offenen erinnern“ (ab zwei offenen Personen; pro Person gab es „Erinnern“ schon).
+- **Offen für den Inhaber:** Migration `0022_purge_history_entry.sql` im SQL-Editor ausführen und danach `supabase/tests/0013_purge_history_entry.sql` (Ergebnis „alle grün“); bis dahin meldet „Löschen“ im Verlauf einen Fehler.
+
 ## Offene Pakete (Stand davor, erledigt) (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
 
 | Paket | Branch | Stand | Nächster Schritt |

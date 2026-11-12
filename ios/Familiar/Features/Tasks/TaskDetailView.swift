@@ -207,6 +207,7 @@ struct TaskDetailView: View {
                 }
             }
             .familiarCard(padding: FamiliarSpacing.s)
+            nudgeAllButton(task)
         }
     }
 
@@ -237,6 +238,28 @@ struct TaskDetailView: View {
     private func canNudge(_ assignee: TaskAssignee, in task: TaskItem) -> Bool {
         task.isOpen && !assignee.isDone && assignee.userID != session.userID
             && session.member(assignee.userID, in: task.familyID) != nil
+    }
+
+    /// „Alle erinnern“: erscheint, sobald mindestens zwei Personen ihren Teil noch nicht erledigt haben
+    /// (bei einer einzelnen genügt deren Knopf). Wer gerade erst erinnert wurde, wird übersprungen.
+    @ViewBuilder
+    private func nudgeAllButton(_ task: TaskItem) -> some View {
+        let open = task.assignees.filter { canNudge($0, in: task) }
+        if open.count > 1 {
+            let recipients = open.map { (userID: $0.userID, name: session.displayName(of: $0.userID, in: task.familyID)) }
+            let allReminded = recipients.allSatisfy { store.wasNudgedRecently(task.id, $0.userID) }
+            Button {
+                Task { await store.nudgeAll(task, recipients: recipients) }
+            } label: {
+                Label(allReminded ? "Alle erinnert" : "Alle offenen erinnern",
+                      systemImage: allReminded ? "bell.badge" : "bell.and.waves.left.and.right")
+                    .frame(maxWidth: .infinity, minHeight: FamiliarSize.minimumTouchTarget)
+            }
+            .buttonStyle(.familiarSecondary)
+            .disabled(allReminded)
+            .accessibilityHint("Schickt allen, die noch nicht fertig sind, eine freundliche Mitteilung zu dieser Aufgabe.")
+            .accessibilityIdentifier("task.nudgeAll")
+        }
     }
 
     private func nudgeButton(task: TaskItem, userID: UUID, name: String) -> some View {

@@ -252,6 +252,51 @@ final class HistoryUITests: XCTestCase {
         app.buttons["tab.tasks"].tap()
         XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForExistence(timeout: 5))
     }
+
+    /// Verlauf: Nach rechts wischen stellt wieder her, nach links wischen löscht endgültig (mit Rückfrage).
+    @MainActor
+    func testHistorySwipeRestoresAndDeletesForever() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-FamiliarInMemoryBackend", "-FamiliarInMemoryScenario", "ready"]
+        app.launch()
+        XCTAssertTrue(app.buttons["tab.tasks"].waitForExistence(timeout: 10))
+        // „Training“ ist eine Serie: Nach dem Abhaken erscheint der nächste Termin, der Eintrag im Verlauf bleibt.
+        for title in ["Müll rausbringen", "Training"] {
+            let check = app.buttons["\(title) abhaken"].firstMatch
+            XCTAssertTrue(check.waitForExistence(timeout: 5))
+            check.tap()
+            // Rückgängig-Hinweis abwarten, bevor die nächste Aufgabe abgehakt wird.
+            XCTAssertTrue(app.buttons["Rückgängig"].firstMatch.waitForExistence(timeout: 5))
+        }
+        app.buttons["tab.history"].tap()
+        let first = app.staticTexts["Müll rausbringen"]
+        XCTAssertTrue(first.waitForExistence(timeout: 5))
+
+        // Nach rechts: wiederherstellen.
+        first.swipeRight(velocity: .slow)
+        // Die Wisch-Knöpfe tragen ihr Wort doppelt im Namen („Wiederherstellen, Wiederherstellen“).
+        let restore = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wiederherstellen'")).firstMatch
+        XCTAssertTrue(restore.waitForExistence(timeout: 5))
+        restore.tap()
+        XCTAssertTrue(first.waitForNonExistence(timeout: 5))
+        app.buttons["tab.tasks"].tap()
+        XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForExistence(timeout: 5))
+
+        // Nach links: Löschen-Knopf, Rückfrage, dann ist der Eintrag endgültig weg.
+        app.buttons["tab.history"].tap()
+        let second = app.staticTexts["Training"]
+        XCTAssertTrue(second.waitForExistence(timeout: 5))
+        second.swipeLeft()
+        let delete = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Löschen'")).firstMatch
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        delete.tap()
+        let confirm = app.buttons["Endgültig löschen"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(second.waitForNonExistence(timeout: 5))
+        app.buttons["tab.tasks"].tap()
+        XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForExistence(timeout: 5))
+    }
 }
 
 /// Wiederholungen: Serie anlegen, ganze Serie löschen und aus dem Verlauf wiederherstellen.

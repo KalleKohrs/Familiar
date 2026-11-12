@@ -133,6 +133,20 @@ final class SupabaseTaskRepository: TaskRepository {
         }
     }
 
+    func purge(taskID: UUID) async throws(FamiliarError) {
+        _ = try await perform {
+            try await client.rpc("purge_history_entry",
+                                 params: ["p_kind": "task", "p_id": taskID.uuidString]).execute()
+        }
+    }
+
+    func purgeSeriesDeletion(deletionID: UUID) async throws(FamiliarError) {
+        _ = try await perform {
+            try await client.rpc("purge_history_entry",
+                                 params: ["p_kind": "series", "p_id": deletionID.uuidString]).execute()
+        }
+    }
+
     func seriesDeletions() async throws(FamiliarError) -> [SeriesDeletion] {
         let since = Date.now.addingTimeInterval(-Double(HistoryRules.retentionDays) * 86_400)
         return try await perform {
