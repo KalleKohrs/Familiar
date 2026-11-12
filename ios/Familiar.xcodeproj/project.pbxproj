@@ -81,11 +81,6 @@
 			path = FamiliarWidgets;
 			sourceTree = "<group>";
 		};
-		F0000000000000000000A034 /* Shared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Shared;
-			sourceTree = "<group>";
-		};
 		F0000000000000000000A032 /* FamiliarTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = FamiliarTests;
@@ -94,6 +89,11 @@
 		F0000000000000000000A033 /* FamiliarUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = FamiliarUITests;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A034 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */

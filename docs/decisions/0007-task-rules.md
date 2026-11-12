@@ -17,7 +17,7 @@
 | Start | Optional Datum, optional Uhrzeit (nur mit Datum), Zeitzone der Aufgabe (IANA). `starts_at` berechnet der Server; nur Datum = Tagesbeginn. |
 | Überfällig | Mit Uhrzeit: 1 h nach Start (wie `staleDate` der Live Activity). Nur Datum: ab dem Folgetag in der Zeitzone der Aufgabe. |
 | Reihenfolge | Ohne Datum zuerst (neueste oben), dann datierte chronologisch (`TaskRules.homeOrder`). |
-| Bilder | Höchstens 10; JPEG, 2048 px plus 480-px-Miniatur, ohne Metadaten. Hochladen nach `task-images/{family_id}/{id}.jpg`; die RPC prüft, dass beide Dateien vom Aufrufer existieren. Lesen nur über eine sichtbare Aufgabe. Kein Löschen durch Clients (Bereinigung in Phase 4). |
+| Bilder | Höchstens 10; JPEG, 1600 px (Qualität 0,7; bis Build 9: 2048 px) plus 480-px-Miniatur, ohne Metadaten; Aufbereitung nicht auf dem Hauptthread, Upload je Bild mit Miniatur gleichzeitig und höchstens zwei Bilder parallel. Duplizieren übernimmt die Bilder ohne neuen Upload (dieselbe Bildzeile wird verknüpft; beim Wechsel der Familie entfallen sie). Hochladen nach `task-images/{family_id}/{id}.jpg`; die RPC prüft, dass beide Dateien vom Aufrufer existieren. Lesen nur über eine sichtbare Aufgabe. Kein Löschen durch Clients (Bereinigung in Phase 4). |
 | Realtime | Jede Änderung über die RPCs löst `task_changed` an **alle Mitglieder der Familie** aus (privater Kanal `user:<uid>`, Inhalt nur Aufgaben- und Familien-ID). Die App lädt danach per RLS neu; wer die Aufgabe nicht sehen darf, erfährt nur, dass sich in seiner Familie etwas geändert hat. So erfahren auch Personen, die gerade aus einer Zuweisung entfernt wurden, davon. |
 
 ## Bekannte Grenzen

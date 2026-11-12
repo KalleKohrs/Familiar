@@ -53,8 +53,22 @@ final class SupabaseTaskRepository: TaskRepository {
         let name = image.id.uuidString.lowercased()
         let storage = client.storage.from(Self.bucket)
         let options = FileOptions(contentType: "image/jpeg")
-        try await uploadOnce("\(folder)/\(name).jpg", data: image.jpegData, to: storage, options: options)
-        try await uploadOnce("\(folder)/\(name)_thumb.jpg", data: image.thumbnailData, to: storage, options: options)
+        // Bild und Miniatur gleichzeitig (die Miniatur ist winzig, das Warten auf sie kostete nur Zeit).
+        async let full = attemptUpload("\(folder)/\(name).jpg", data: image.jpegData, to: storage, options: options)
+        async let thumbnail = attemptUpload("\(folder)/\(name)_thumb.jpg", data: image.thumbnailData, to: storage, options: options)
+        let (fullResult, thumbnailResult) = await (full, thumbnail)
+        try fullResult.get()
+        try thumbnailResult.get()
+    }
+
+    private func attemptUpload(_ path: String, data: Data, to storage: StorageFileApi,
+                               options: FileOptions) async -> Result<Void, FamiliarError> {
+        do throws(FamiliarError) {
+            try await uploadOnce(path, data: data, to: storage, options: options)
+            return .success(())
+        } catch {
+            return .failure(error)
+        }
     }
 
     /// Lädt eine Datei hoch; „gibt es schon“ (409) zählt als Erfolg. Das Speichern einer Aufgabe lädt bei jedem Versuch

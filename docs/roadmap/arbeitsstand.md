@@ -43,6 +43,7 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 - Bilder-Fehler beim Anlegen (4 Bilder): Server-Protokoll zeigt, dass der Supabase-Speicher ca. 1 Minute lang **alles** mit 429/544 abgelehnt hat (auch Avatare), danach wieder 200 – kein Fehler der App oder der Richtlinien (Policies geprüft). Trotzdem: klare Meldung `serviceBusy` und „409 Duplicate = Erfolg“, damit der zweite Versuch nicht an schon hochgeladenen Bildern scheitert.
 - Such-Symbol oben rechts entfernt (Suche per Herunterziehen; VoiceOver-Knopf bleibt). Kalender: kein Platzhalter-Kasten mehr beim ersten Öffnen, „Nichts geplant“ ruhiger (Symbol, mittig, feste Höhe).
 - Tests: UI (Suche, Aufgaben, Kalender, Audit) grün, Paket-Tests 118 + 19 grün.
+- Bilder: 1600 px/Qualität 0,7 statt 2048 px/0,8, Aufbereitung im Hintergrund, Upload parallel (2 Bilder, Bild+Miniatur gleichzeitig); **Duplizieren übernimmt jetzt die Bilder** (ohne Upload; bei anderer Familie entfallen sie). Neue Tests `ImageProcessorTests`, Duplikat-Test angepasst.
 
 ## Offene Pakete (Stand davor, erledigt) (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
 

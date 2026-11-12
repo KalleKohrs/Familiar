@@ -33,8 +33,10 @@ extension TaskDraft {
     /// Neue, einzelne Aufgabe nach dem Vorbild einer bestehenden („Duplizieren“).
     ///
     /// Übernommen werden Familie, Titel, Beschreibung, Personen und Erledigungsart. Das Datum bleibt, solange es
-    /// nicht in der Vergangenheit liegt (sonst heute); die Uhrzeit bleibt. Nicht übernommen werden Bilder
-    /// (jede Aufgabe hat ihre eigenen Dateien) und Wiederholung bzw. Reihum – die Kopie ist eine einmalige Aufgabe.
+    /// nicht in der Vergangenheit liegt (sonst heute); die Uhrzeit bleibt. Die Bilder werden mit übernommen, ohne
+    /// neuen Upload: Der Server verknüpft dieselben Bilddateien mit der neuen Aufgabe (`set_task_images`), und sie
+    /// bleiben, solange irgendeine Aufgabe sie nutzt. Nicht übernommen werden Wiederholung bzw. Reihum – die Kopie
+    /// ist eine einmalige Aufgabe.
     public init(duplicating task: TaskItem, now: Date = .now) {
         self.init(familyID: task.familyID, now: now, timeZone: task.timeZone)
         title = task.title
@@ -49,6 +51,7 @@ extension TaskDraft {
         }
         completionMode = task.completionMode
         assigneeIDs = task.assignees.map(\.userID)
+        images = task.images.map(DraftImage.existing)
         // Das Duplikat einer privaten Aufgabe ist wieder privat (und bleibt in derselben Familie).
         isPrivate = task.isPrivate
     }

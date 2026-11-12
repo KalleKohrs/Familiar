@@ -240,7 +240,7 @@ struct TaskQuickActionsTests {
         #expect(TaskRules.canPostpone(task(date: LocalDate(year: 2026, month: 11, day: 12))))
     }
 
-    @Test func duplicateKeepsContentButNotImagesOrRecurrence() {
+    @Test func duplicateKeepsContentAndImagesButNotRecurrence() {
         let item = task(date: LocalDate(year: 2026, month: 11, day: 20), time: LocalTime(hour: 18, minute: 30))
         let draft = TaskDraft(duplicating: item, now: now)
         #expect(draft.title == "Müll rausbringen")
@@ -250,7 +250,7 @@ struct TaskQuickActionsTests {
         #expect(draft.completionMode == .each)
         #expect(draft.hasDate && draft.date == LocalDate(year: 2026, month: 11, day: 20))
         #expect(draft.hasTime && draft.time == LocalTime(hour: 18, minute: 30))
-        #expect(draft.images.isEmpty)
+        #expect(draft.images == item.images.map(DraftImage.existing))
         #expect(draft.recurrence == nil)
         #expect(draft.assignmentMode == .together)
         #expect(draft.isValid)

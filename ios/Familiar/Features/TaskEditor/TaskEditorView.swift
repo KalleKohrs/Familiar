@@ -189,7 +189,7 @@ struct TaskEditorView: View {
                 Task { await addPhotos(items) }
             }
             .fullScreenCover(isPresented: $showsCamera) {
-                CameraPicker { data in addImage(data) }
+                CameraPicker { data in Task { await addImage(data) } }
                     .ignoresSafeArea()
             }
             .sensoryFeedback(.selection, trigger: draft.completionMode)
@@ -343,6 +343,9 @@ struct TaskEditorView: View {
     /// Eine Familie wählen: macht die Aufgabe wieder gemeinsam (auch aus dem Zustand „privat“ heraus).
     private func choose(family id: UUID) {
         withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) {
+            // Schon gespeicherte Bilder (z. B. beim Duplizieren) gehören zu einer Familie und lassen sich nicht in
+            // eine andere mitnehmen; neu hinzugefügte bleiben.
+            if draft.familyID != id { draft.images.removeAll { if case .existing = $0 { true } else { false } } }
             draft.familyID = id
             draft.isPrivate = false
         }
@@ -876,7 +879,7 @@ struct TaskEditorView: View {
             for _ in 0..<2 where data == nil {
                 do { data = try await item.loadTransferable(type: Data.self) } catch { reason = error.localizedDescription }
             }
-            if let data, addImage(data, reportsFailure: false) { continue }
+            if let data, await addImage(data, reportsFailure: false) { continue }
             failed += 1
         }
         pickerItems = []
@@ -888,9 +891,9 @@ struct TaskEditorView: View {
     }
 
     @discardableResult
-    private func addImage(_ data: Data, reportsFailure: Bool = true) -> Bool {
+    private func addImage(_ data: Data, reportsFailure: Bool = true) async -> Bool {
         guard draft.images.count < TaskDraft.maxImages else { return false }
-        guard let prepared = ImageProcessor.taskImage(from: data) else {
+        guard let prepared = await ImageProcessor.taskImage(from: data) else {
             if reportsFailure { errorMessage = String(localized: "Ein Bild konnte nicht gelesen werden.") }
             return false
         }

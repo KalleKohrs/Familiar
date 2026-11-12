@@ -9,7 +9,7 @@ import UIKit
 enum ImageProcessor {
     /// Verkleinert auf höchstens `maxPixelSize` (längste Seite), richtet nach EXIF aus und kodiert
     /// als JPEG. Metadaten wie der Aufnahmeort werden dabei nicht übernommen.
-    static func jpeg(from data: Data, maxPixelSize: Int, quality: CGFloat = 0.82) -> (data: Data, width: Int, height: Int)? {
+    nonisolated static func jpeg(from data: Data, maxPixelSize: Int, quality: CGFloat = 0.82) -> (data: Data, width: Int, height: Int)? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
@@ -22,14 +22,18 @@ enum ImageProcessor {
     }
 
     /// Profilbild: 512 px.
-    static func avatarJPEG(from data: Data) -> Data? {
+    nonisolated static func avatarJPEG(from data: Data) -> Data? {
         jpeg(from: data, maxPixelSize: 512)?.data
     }
 
-    /// Aufgabenbild: 2048 px für die Großansicht, 480 px als Miniatur für Liste und Editor.
-    static func taskImage(from data: Data) -> PreparedImage? {
-        guard let full = jpeg(from: data, maxPixelSize: 2048, quality: 0.8),
-              let thumbnail = jpeg(from: data, maxPixelSize: 480, quality: 0.75) else { return nil }
+    /// Aufgabenbild: 1600 px (Qualität 0,7) für die Großansicht – das reicht für den Bildschirm und ist je Bild
+    /// nur etwa 250–400 KB statt über 1 MB –, 480 px als Miniatur für Liste und Editor. Die Miniatur entsteht aus der
+    /// schon verkleinerten Fassung (schneller als noch einmal das volle Foto zu entpacken). Läuft nicht auf dem
+    /// Hauptthread: Das Entpacken eines Fotos mit vielen Megapixeln ließ sonst die Oberfläche stocken.
+    @concurrent
+    static func taskImage(from data: Data) async -> PreparedImage? {
+        guard let full = jpeg(from: data, maxPixelSize: 1600, quality: 0.7),
+              let thumbnail = jpeg(from: full.data, maxPixelSize: 480, quality: 0.75) else { return nil }
         return PreparedImage(jpegData: full.data, thumbnailData: thumbnail.data, width: full.width, height: full.height)
     }
 }

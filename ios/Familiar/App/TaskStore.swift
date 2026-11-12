@@ -481,6 +481,36 @@ final class TaskStore {
         case thisAndFuture
     }
 
+    /// Lädt die Bilder hoch, höchstens zwei gleichzeitig (schneller als nacheinander, ohne den Server zu bedrängen).
+    /// `progress(n, gesamt)`: das n-te Bild ist gerade an der Reihe bzw. fertig.
+    private func uploadAll(_ images: [PreparedImage], familyID: UUID,
+                           progress: (Int, Int) -> Void) async throws(FamiliarError) {
+        guard !images.isEmpty else { return }
+        let repository = self.repository
+        let total = images.count
+        progress(1, total)
+        do {
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                var next = images.makeIterator()
+                var finished = 0
+                func startNext() {
+                    guard let image = next.next() else { return }
+                    group.addTask { try await repository.upload(image, familyID: familyID) }
+                }
+                for _ in 0..<min(2, total) { startNext() }
+                while try await group.next() != nil {
+                    finished += 1
+                    progress(min(finished + 1, total), total)
+                    startNext()
+                }
+            }
+        } catch let error as FamiliarError {
+            throw error
+        } catch {
+            throw .unknown(message: String(describing: error))
+        }
+    }
+
     /// Lädt neue Bilder hoch und legt die Aufgabe bzw. Serie an oder speichert den vollständigen Stand.
     /// Liefert die gespeicherte Aufgabe; beim Anlegen einer Serie `nil` (die Vorkommen erscheinen in der Liste).
     @discardableResult
@@ -493,10 +523,7 @@ final class TaskStore {
             if case .new(let prepared) = image { return prepared }
             return nil
         }
-        for (index, image) in newImages.enumerated() {
-            onUploadProgress(index + 1, newImages.count)
-            try await repository.upload(image, familyID: input.familyID)
-        }
+        try await uploadAll(newImages, familyID: input.familyID, progress: onUploadProgress)
         let saved: TaskItem?
         if let original {
             if original.isOccurrence && scope == .thisAndFuture && input.recurrence != nil {
