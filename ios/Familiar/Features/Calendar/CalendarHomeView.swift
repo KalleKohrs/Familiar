@@ -334,10 +334,12 @@ struct CalendarHomeView: View {
                 Color.clear.frame(height: Self.placeholderHeight)
             case .empty:
                 // Bewusst leise: eine kleine Zeile, kein Symbol, keine Karte.
+                // Direkt unter dem Datum, linksbündig wie dessen Überschrift; blendet nur ein (kein Schieben).
                 Text("Nichts geplant")
                     .font(FamiliarFont.meta)
                     .foregroundStyle(FamiliarColor.textSecondary)
-                    .frame(maxWidth: .infinity, minHeight: Self.placeholderHeight)
+                    .padding(.leading, FamiliarSpacing.xxs)
+                    .frame(maxWidth: .infinity, minHeight: Self.placeholderHeight, alignment: .topLeading)
                     .accessibilityIdentifier("calendar.empty")
                     .transition(FamiliarMotion.contentTransition)
             case .list:
@@ -359,7 +361,7 @@ struct CalendarHomeView: View {
     }
 
     /// Höhe des Bereichs unter dem Datum, solange nichts oder „Nichts geplant“ dort steht.
-    private static let placeholderHeight: CGFloat = 48
+    private static let placeholderHeight: CGFloat = 28
 
     private enum DayPhase: Equatable {
         case failed, loading, pending, empty, list
