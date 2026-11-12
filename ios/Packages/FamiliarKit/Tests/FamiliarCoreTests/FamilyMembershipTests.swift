@@ -77,10 +77,10 @@ struct FamilyMembershipTests {
     }
 
     @Test func inviteMessageContainsLinkAndCode() {
-        let text = InviteMessage.text(familyName: "Familie Kohrs", code: "ABCDEFGH", expiresAt: .now)
+        let text = InviteMessage.text(familyName: "Familie Lindner", code: "ABCDEFGH", expiresAt: .now)
         #expect(text.contains("https://familiar-app.de/join/ABCD-EFGH"))
         #expect(text.contains("ABCD-EFGH (gültig bis"))
-        #expect(text.contains("Familie Kohrs"))
+        #expect(text.contains("Familie Lindner"))
     }
 
     @Test func inviteMessageWithoutValidCodeFallsBackToPlainText() {

@@ -15,7 +15,7 @@ enum AppleSignIn {
         SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
-    /// Name aus der ersten Anmeldung, z. B. „Anna Kohrs“.
+    /// Name aus der ersten Anmeldung, z. B. „Anna Lindner“.
     static func displayName(from components: PersonNameComponents?) -> String? {
         guard let components else { return nil }
         let name = PersonNameComponentsFormatter.localizedString(from: components, style: .default)

@@ -24,7 +24,7 @@ Familiar ist ein deutschsprachiger Familienplaner für iOS: Aufgaben anlegen, zu
 | Argument | Wirkung |
 |---|---|
 | `-FamiliarInMemoryBackend` | Backend ohne Netz (`ios/Familiar/Debug/InMemoryBackend.swift`) |
-| `-FamiliarInMemoryScenario signedOut \| ready \| showcase` | Startzustand: abgemeldet / „Familie Kohrs“ mit Testaufgaben / Vorführdaten „Familie Berger“ für App-Store-Bilder |
+| `-FamiliarInMemoryScenario signedOut \| ready \| showcase` | Startzustand: abgemeldet / „Familie Lindner“ mit Testaufgaben / Vorführdaten „Familie Berger“ für App-Store-Bilder |
 | `-FamiliarOpenURL <url>` | Universal Link simulieren (z. B. `https://familiar-app.de/join/TEST-2345`) |
 | `-appearance light \| dark \| system` | Darstellung erzwingen (`@AppStorage("appearance")`) |
 

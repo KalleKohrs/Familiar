@@ -19,7 +19,7 @@ struct CreateFamilyForm: View {
                     Text("Name")
                         .font(FamiliarFont.sectionTitle)
                         .foregroundStyle(FamiliarColor.textSecondary)
-                    TextField("z. B. Familie Kohrs", text: $name)
+                    TextField("z. B. Familie Lindner", text: $name)
                         .textInputAutocapitalization(.words)
                         .submitLabel(.done)
                         .familiarInputField()

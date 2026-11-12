@@ -3,7 +3,7 @@ import Testing
 
 struct InputRulesTests {
     @Test func familyNameIsTrimmedAndLimited() {
-        #expect(InputRules.isValidFamilyName("  Familie Kohrs  "))
+        #expect(InputRules.isValidFamilyName("  Familie Lindner  "))
         #expect(!InputRules.isValidFamilyName("   "))
         #expect(InputRules.isValidFamilyName(String(repeating: "a", count: 60)))
         #expect(!InputRules.isValidFamilyName(String(repeating: "a", count: 61)))

@@ -42,7 +42,7 @@ final class OnboardingUITests: XCTestCase {
         let familyName = app.textFields["createFamily.name"]
         XCTAssertTrue(familyName.waitForExistence(timeout: 5))
         familyName.tap()
-        familyName.typeText("Familie Kohrs")
+        familyName.typeText("Familie Lindner")
         app.buttons["Himmel"].tap()
         app.buttons["createFamily.submit"].tap()
 
@@ -56,7 +56,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["tab.tasks"].waitForExistence(timeout: 5))
         let header = app.buttons["header.family"]
         XCTAssertTrue(header.waitForExistence(timeout: 5))
-        XCTAssertEqual(header.label, "Familie Kohrs, Familien verwalten")
+        XCTAssertEqual(header.label, "Familie Lindner, Familien verwalten")
 
         // Solange man allein ist, erinnert die Startseite ans Einladen; „Später“ blendet den Hinweis aus.
         XCTAssertTrue(app.buttons["inviteHint.invite"].waitForExistence(timeout: 5))
@@ -65,7 +65,7 @@ final class OnboardingUITests: XCTestCase {
 
         // Einladungscode erstellen.
         header.tap()
-        app.buttons["Familie Kohrs, 1 Mitglied"].firstMatch.tap()
+        app.buttons["Familie Lindner, 1 Mitglied"].firstMatch.tap()
         app.buttons["familyDetail.invite"].tap()
         XCTAssertTrue(app.staticTexts["invite.code"].waitForExistence(timeout: 5))
         app.navigationBars.buttons.element(boundBy: 0).tap()

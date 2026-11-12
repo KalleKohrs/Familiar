@@ -25,6 +25,44 @@ final class PrivateTaskUITests: XCTestCase {
         add(attachment)
     }
 
+    /// Die Familien-Zeile steht über den Bildern, also unten im Formular: bei Bedarf hinscrollen.
+    @MainActor
+    private func scopeButton(_ app: XCUIApplication) -> XCUIElement {
+        let scope = app.buttons["editor.scope"]
+        _ = scope.waitForExistence(timeout: 5)
+        var swipes = 0
+        while !(scope.exists && scope.isHittable) && swipes < 5 {
+            dragForm(app, up: true)
+            swipes += 1
+        }
+        return scope
+    }
+
+    /// Nach dem Hinscrollen zur Familien-Zeile wieder nach oben, damit das Titelfeld antippbar ist.
+    @MainActor
+    private func scrollToTitle(_ app: XCUIApplication) {
+        let title = app.textFields["editor.title"]
+        var swipes = 0
+        while !(title.exists && title.isHittable) && swipes < 5 {
+            dragForm(app, up: false)
+            swipes += 1
+        }
+    }
+
+    /// Das Formular per Ziehen scrollen (bei geöffneter Tastatur läge der Start unter ihr).
+    @MainActor
+    private func dragForm(_ app: XCUIApplication, up: Bool) {
+        // Die Tastatur verdeckt den unteren Teil des Formulars: erst schließen.
+        if app.keyboards.firstMatch.exists, app.buttons["Fertig"].exists {
+            app.buttons["Fertig"].tap()
+            _ = app.keyboards.firstMatch.waitForNonExistence(timeout: 3)
+        }
+        let form = app.collectionViews.firstMatch
+        let from = form.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.7 : 0.3))
+        let to = form.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.2 : 0.8))
+        from.press(forDuration: 0.1, thenDragTo: to)
+    }
+
     /// Menüeintrag (Knopf, Schalter oder Auswahl – je nach Darstellung des Systemmenüs).
     @MainActor
     private func menuItem(_ app: XCUIApplication, _ label: String) -> XCUIElement {
@@ -36,7 +74,7 @@ final class PrivateTaskUITests: XCTestCase {
     /// Wartet, bis das Element den Text trägt (das Menü schließt mit einer kurzen Animation).
     @MainActor
     private func assertScope(_ app: XCUIApplication, _ expected: String, file: StaticString = #filePath, line: UInt = #line) {
-        let scope = app.buttons["editor.scope"]
+        let scope = scopeButton(app)
         let predicate = NSPredicate(format: "label == %@", expected)
         let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: scope)], timeout: 5)
         XCTAssertEqual(result, .completed, "Chip zeigt „\(scope.label)“ statt „\(expected)“", file: file, line: line)
@@ -44,7 +82,7 @@ final class PrivateTaskUITests: XCTestCase {
 
     @MainActor
     private func chooseFromScopeMenu(_ app: XCUIApplication, _ label: String) {
-        let scope = app.buttons["editor.scope"]
+        let scope = scopeButton(app)
         XCTAssertTrue(scope.waitForExistence(timeout: 5))
         scope.tap()
         let item = menuItem(app, label)
@@ -60,10 +98,10 @@ final class PrivateTaskUITests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 5))
 
         // Eine Familie: ruhiges Element mit dem Namen; die Zuweisung ist noch sichtbar.
-        let scope = app.buttons["editor.scope"]
-        XCTAssertTrue(scope.exists)
-        XCTAssertEqual(scope.label, "Familie: Familie Kohrs")
         XCTAssertTrue(app.buttons["editor.assignee.Anna"].exists)
+        let scope = scopeButton(app)
+        XCTAssertTrue(scope.exists)
+        XCTAssertEqual(scope.label, "Familie: Familie Lindner")
 
         chooseFromScopeMenu(app, "Nur für mich (privat)")
         assertScope(app, "Nur für mich, privat")
@@ -72,12 +110,15 @@ final class PrivateTaskUITests: XCTestCase {
         XCTAssertFalse(app.buttons["editor.mode.any_one"].exists)
 
         // Zurück zu „Familie“ muss gehen (früher blieb das Menü in „privat“ hängen) – und wieder hin.
-        chooseFromScopeMenu(app, "Familie Kohrs")
-        assertScope(app, "Familie: Familie Kohrs")
+        chooseFromScopeMenu(app, "Familie Lindner")
+        assertScope(app, "Familie: Familie Lindner")
+        // Die Zuweisung steht weiter oben: hinaufscrollen.
+        for _ in 0..<3 where !app.buttons["editor.assignee.Anna"].exists { dragForm(app, up: false) }
         XCTAssertTrue(app.buttons["editor.assignee.Anna"].waitForExistence(timeout: 5))
         chooseFromScopeMenu(app, "Nur für mich (privat)")
         assertScope(app, "Nur für mich, privat")
 
+        scrollToTitle(app)
         title.tap()
         title.typeText("Geschenk für Papa")
         shot(app, "10-formular-privat")
@@ -103,7 +144,7 @@ final class PrivateTaskUITests: XCTestCase {
     func testNewTaskPreselectsLastUsedFamily() {
         let app = launch(scenario: "showcase")
         app.buttons["createTask"].tap()
-        let scope = app.buttons["editor.scope"]
+        let scope = scopeButton(app)
         XCTAssertTrue(scope.waitForExistence(timeout: 5))
 
         // Zwei Familien: „In …“ zeigt die vorgewählte; die andere wählen und eine Aufgabe anlegen.
@@ -114,6 +155,7 @@ final class PrivateTaskUITests: XCTestCase {
         chooseFromScopeMenu(app, "Nur für mich (privat)")
 
         let title = app.textFields["editor.title"]
+        scrollToTitle(app)
         title.tap()
         title.typeText("Merkzettel")
         app.buttons["editor.save"].tap()
@@ -121,7 +163,7 @@ final class PrivateTaskUITests: XCTestCase {
 
         // Beim nächsten Mal ist diese Familie vorgewählt (Privat gilt nur für die eine Aufgabe).
         app.buttons["createTask"].tap()
-        let again = app.buttons["editor.scope"]
+        let again = scopeButton(app)
         XCTAssertTrue(again.waitForExistence(timeout: 5))
         assertScope(app, "Familie: \(other)")
     }
@@ -130,14 +172,15 @@ final class PrivateTaskUITests: XCTestCase {
     func testScreenshotsDark() {
         let app = launch(scenario: "showcase", appearance: "dark")
         app.buttons["createTask"].tap()
-        XCTAssertTrue(app.buttons["editor.scope"].waitForExistence(timeout: 5))
+        XCTAssertTrue(scopeButton(app).waitForExistence(timeout: 5))
         shot(app, "20-formular-dunkel")
-        app.buttons["editor.scope"].tap()
+        scopeButton(app).tap()
         XCTAssertTrue(menuItem(app, "Nur für mich (privat)").waitForExistence(timeout: 5))
         shot(app, "21-menue-dunkel")
         menuItem(app, "Nur für mich (privat)").tap()
         assertScope(app, "Nur für mich, privat")
         let title = app.textFields["editor.title"]
+        scrollToTitle(app)
         title.tap()
         title.typeText("Geschenk für Papa")
         app.buttons["editor.save"].tap()

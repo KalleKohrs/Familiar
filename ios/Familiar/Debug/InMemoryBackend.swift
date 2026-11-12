@@ -169,7 +169,7 @@ actor InMemoryBackend {
             let me = UUID()
             user = (me, "kalle@example.test")
             profiles[me] = Profile(id: me, displayName: "Kalle")
-            let family = Family(id: UUID(), name: "Kohrs", colorHex: "#FF7F66", createdBy: me)
+            let family = Family(id: UUID(), name: "Lindner", colorHex: "#FF7F66", createdBy: me)
             families[family.id] = family
             members[family.id] = [FamilyMember(familyID: family.id, userID: me, role: .admin, profile: profiles[me])]
         }
@@ -178,7 +178,7 @@ actor InMemoryBackend {
             let me = UUID()
             user = (me, "kalle@example.test")
             profiles[me] = Profile(id: me, displayName: "Kalle")
-            let family = Family(id: UUID(), name: "Familie Kohrs", colorHex: "#FF7F66", createdBy: me)
+            let family = Family(id: UUID(), name: "Familie Lindner", colorHex: "#FF7F66", createdBy: me)
             families[family.id] = family
             members[family.id] = [
                 FamilyMember(familyID: family.id, userID: me, role: .admin, profile: profiles[me]),

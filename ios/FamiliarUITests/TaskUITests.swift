@@ -1,6 +1,6 @@
 import XCTest
 
-/// Aufgaben mit dem In-Memory-Backend (Szenario „ready“: Kalle und Anna in „Familie Kohrs“,
+/// Aufgaben mit dem In-Memory-Backend (Szenario „ready“: Kalle und Anna in „Familie Lindner“,
 /// Aufgaben „Müll rausbringen“ und „Zimmer aufräumen“).
 final class TaskUITests: XCTestCase {
     override func setUp() {
@@ -465,7 +465,7 @@ final class FamilyAdminUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["header.family"].waitForExistence(timeout: 10))
         app.buttons["header.family"].tap()
-        let row = app.buttons["families.row.Familie Kohrs"]
+        let row = app.buttons["families.row.Familie Lindner"]
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         row.tap()
 

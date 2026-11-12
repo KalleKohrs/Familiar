@@ -97,7 +97,6 @@ struct TaskEditorView: View {
                         .listRowBackground(FamiliarColor.card)
                         .accessibilityIdentifier("editor.missing")
                 }
-                scopeSection.id(Anchor.family)
                 titleSection.id(Anchor.title)
                 if showsRepeat {
                     repeatSection.id(Anchor.repeating)
@@ -114,6 +113,7 @@ struct TaskEditorView: View {
                         modeSection.id(Anchor.mode)
                     }
                 }
+                scopeSection.id(Anchor.family)
                 imagesSection.id(Anchor.images)
             }
             .onChange(of: invalidSaveAttempts) { _, _ in
@@ -265,13 +265,12 @@ struct TaskEditorView: View {
         draft.familyID.flatMap { session.membership($0)?.family.name } ?? String(localized: "Familie")
     }
 
-    /// „In Familie Berger“ bei mehreren Familien, sonst nur der Name; „Nur für mich“ bei privaten Aufgaben.
+    /// Wert der Zeile: Familienname, „Nur für mich“ bei privaten Aufgaben.
     private var scopeTitle: String {
-        if draft.isPrivate { return String(localized: "Nur für mich") }
-        return session.families.count > 1 ? String(localized: "In \(familyName)") : familyName
+        draft.isPrivate ? String(localized: "Nur für mich") : familyName
     }
 
-    /// Ein einziges kleines Menü am Kopf des Formulars statt eines eigenen Abschnitts: Familie wählen
+    /// Eine ruhige Zeile „Familie“ direkt über den Bildern (statt eines Menüs am Kopf des Formulars): Familie wählen
     /// (Häkchen bei der aktuellen) und, abgetrennt, „Nur für mich (privat)“. Beim Bearbeiten nur Anzeige.
     @ViewBuilder
     private var scopeSection: some View {
@@ -279,11 +278,11 @@ struct TaskEditorView: View {
             if task.isPrivate {
                 Section {
                     scopeLabel
+                        .accessibilityElement(children: .combine)
                         .accessibilityLabel("Privat")
                         .accessibilityHint("Nur du siehst diese Aufgabe.")
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
+                .listRowBackground(FamiliarColor.card)
             }
         } else if !menuFamilies.isEmpty {
             Section {
@@ -313,30 +312,32 @@ struct TaskEditorView: View {
                 .accessibilityHint("Öffnet ein Menü, um die Familie zu wechseln oder die Aufgabe privat zu machen.")
                 .accessibilityIdentifier("editor.scope")
             }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-            .listSectionSpacing(.compact)
+            .listRowBackground(FamiliarColor.card)
         }
     }
 
     private var scopeLabel: some View {
-        HStack(spacing: FamiliarSpacing.xxs) {
-            if draft.isPrivate {
-                Image(systemName: "lock.fill")
-                    .foregroundStyle(FamiliarColor.accent)
-                    .accessibilityHidden(true)
+        HStack(spacing: FamiliarSpacing.xs) {
+            Label {
+                Text("Familie")
+                    .foregroundStyle(FamiliarColor.textPrimary)
+            } icon: {
+                Image(systemName: draft.isPrivate ? "lock.fill" : "person.2")
+                    .foregroundStyle(FamiliarColor.textSecondary)
             }
+            Spacer(minLength: FamiliarSpacing.s)
             Text(scopeTitle)
+                .foregroundStyle(FamiliarColor.textSecondary)
+                .lineLimit(1)
             if editingTask == nil {
-                Image(systemName: "chevron.down")
+                Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2.weight(.bold))
+                    .foregroundStyle(FamiliarColor.textSecondary)
                     .accessibilityHidden(true)
             }
         }
-        .font(FamiliarFont.secondary.weight(.semibold))
-        .foregroundStyle(FamiliarColor.textSecondary)
-        .padding(.horizontal, FamiliarSpacing.xs)
-        .frame(maxWidth: .infinity, minHeight: FamiliarSize.minimumTouchTarget, alignment: .leading)
+        .font(FamiliarFont.body)
+        .frame(minHeight: FamiliarSize.minimumTouchTarget)
         .contentShape(Rectangle())
     }
 

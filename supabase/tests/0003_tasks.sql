@@ -307,6 +307,22 @@ select tests.put('ti', tests.run_as(tests.u('max'), format(
 select tests.expect('H5 Aufgabe mit Bild angelegt, Pfade vom Server',
   (select i.path || '|' || i.width from public.images i join public.task_image_links l on l.image_id = i.id where l.task_id = tests.id('ti')),
   tests.get('f') || '/' || tests.get('img') || '.jpg|800');
+-- Duplizieren: dieselbe Bilddatei an einer zweiten Aufgabe der gleichen Familie (ohne neuen Upload).
+select tests.put('dup', tests.run_as(tests.u('max'), format(
+  $$select (public.create_task(%L, 'Kopie mit Bild', 'any_one', array[%L]::uuid[], p_images => %L::jsonb)).id$$,
+  tests.id('f'), tests.u('mia'), jsonb_build_array(jsonb_build_object('id', tests.get('img'), 'width', 800, 'height', 600)))));
+select tests.expect('H5b Kopie verknüpft dasselbe Bild',
+  (select count(*)::text from public.task_image_links where image_id = tests.get('img')::uuid), '2');
+select tests.expect('H5c anderes Familien-Bild lässt sich nicht in Familie G übernehmen',
+  tests.run_as(tests.u('max'), format($$select (public.create_task(%L, 'Fremdes Bild', 'any_one', array[%L]::uuid[], p_images => %L::jsonb)).id$$,
+    tests.id('g'), tests.u('mia'), jsonb_build_array(jsonb_build_object('id', tests.get('img'), 'width', 800, 'height', 600)))),
+  'ERROR:invalid_image');
+select tests.expect('H5d Kopie wieder ohne Bild (nur diese Verknüpfung fällt weg)',
+  tests.run_as(tests.u('max'), format($$select (public.update_task(%L, %s, 'Kopie mit Bild', 'any_one', array[%L]::uuid[])).id$$,
+    tests.id('dup'), (select version from public.tasks where id = tests.id('dup')), tests.u('mia'))),
+  tests.get('dup'));
+select tests.expect('H5e Original behält sein Bild',
+  (select count(*)::text from public.task_image_links where task_id = tests.id('ti')), '1');
 select tests.expect('H6 [Mia] sieht Bild und Miniatur',
   tests.run_as(tests.u('mia'), $$select count(*) from storage.objects where bucket_id = 'task-images'$$), '2');
 select tests.expect('H7 [Otto] sieht keine Aufgabenbilder',
