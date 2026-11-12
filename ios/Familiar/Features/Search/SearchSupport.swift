@@ -16,6 +16,26 @@ extension EnvironmentValues {
     @Entry var tabSelection = TabSelection()
 }
 
+/// Verlässt man einen Bereich der Tab-Leiste, steht er beim Zurückkommen wieder auf seiner Startseite (nicht mehr in
+/// einer geöffneten Aufgabe). Die Ansicht ist beim Wechsel schon verdeckt, man sieht das Zurücksetzen nicht.
+private struct PopsToRootOnTabChange: ViewModifier {
+    let tab: AppTab
+    @Binding var path: [UUID]
+    @Environment(\.tabSelection) private var tabSelection
+
+    func body(content: Content) -> some View {
+        content.onChange(of: tabSelection.tab) { old, new in
+            if old == tab && new != tab && !path.isEmpty { path = [] }
+        }
+    }
+}
+
+extension View {
+    func popsToRootOnTabChange(_ tab: AppTab, path: Binding<[UUID]>) -> some View {
+        modifier(PopsToRootOnTabChange(tab: tab, path: path))
+    }
+}
+
 extension SessionStore {
     /// Namen so, wie die App sie anzeigt – für die Personensuche.
     var searchNames: TaskSearch.NameResolver {

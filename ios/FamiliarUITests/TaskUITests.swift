@@ -93,6 +93,20 @@ final class TaskUITests: XCTestCase {
     }
 
     @MainActor
+    func testTabChangeReturnsToStartPage() {
+        let app = launch()
+        app.buttons["task.open.Müll rausbringen"].tap()
+        XCTAssertTrue(app.buttons["task.more"].waitForExistence(timeout: 5))
+
+        // Tab wechseln und zurück: Die Aufgabe ist nicht mehr geöffnet, die Liste steht wieder da.
+        app.buttons["tab.calendar"].tap()
+        XCTAssertTrue(app.staticTexts["Kalender"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["tab.tasks"].tap()
+        XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["task.more"].exists)
+    }
+
+    @MainActor
     func testDuplicateTaskFromDetailMenu() {
         let app = launch()
         app.buttons["task.open.Müll rausbringen"].tap()

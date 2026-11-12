@@ -83,6 +83,7 @@ struct HistoryHomeView: View {
             .overlay(alignment: .bottom) { TaskBanner() }
             .task { await store.reloadHistory() }
         }
+        .popsToRootOnTabChange(.history, path: $path)
     }
 
     private enum Phase: Equatable {

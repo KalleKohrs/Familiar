@@ -71,6 +71,7 @@ struct TasksHomeView: View {
                 ImageGalleryView(images: state.images, startIndex: state.index)
             }
         }
+        .popsToRootOnTabChange(.tasks, path: $path)
     }
 
     /// Große Überschrift in New York wie in der Design-Referenz.

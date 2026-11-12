@@ -61,6 +61,7 @@ struct CalendarHomeView: View {
             .overlay(alignment: .bottom) { TaskBanner() }
             .task(id: ReloadKey(month: month, token: store.changeToken, outlook: outlook.revision)) { await load() }
         }
+        .popsToRootOnTabChange(.calendar, path: $path)
     }
 
     private struct ReloadKey: Hashable {
