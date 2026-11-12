@@ -8,6 +8,8 @@ public enum FamiliarError: Error, Hashable, Sendable {
     case invalidEmailCode
     case emailRateLimited
     case offline
+    /// Der Server (Speicher für Bilder, Funktionen) ist kurz überlastet oder wird gewartet (HTTP 429 und 5xx).
+    case serviceBusy
     case unknown(message: String)
 
     public var message: String {
@@ -17,6 +19,7 @@ public enum FamiliarError: Error, Hashable, Sendable {
         case .invalidEmailCode: String(localized: "Der Code ist falsch oder abgelaufen. Fordere bei Bedarf einen neuen an.")
         case .emailRateLimited: String(localized: "Zu viele E-Mails in kurzer Zeit. Bitte warte einen Moment und versuche es erneut.")
         case .offline: String(localized: "Keine Verbindung zum Server. Prüfe deine Internetverbindung.")
+        case .serviceBusy: String(localized: "Der Server ist gerade überlastet. Deine Eingaben bleiben erhalten – versuche es in einer Minute noch einmal.")
         case .unknown: String(localized: "Etwas ist schiefgelaufen. Bitte versuche es erneut.")
         }
     }

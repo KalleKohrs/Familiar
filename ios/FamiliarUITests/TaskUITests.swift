@@ -182,8 +182,9 @@ final class TaskUITests: XCTestCase {
         // Die Suche ist geleert: die Aufgaben sind wieder da, der Leerzustand nicht.
         XCTAssertTrue(app.buttons["task.open.Müll rausbringen"].waitForExistence(timeout: 5))
         XCTAssertTrue(empty.waitForNonExistence(timeout: 5))
-        // Auch das Suchfeld ist wieder zu (kein Abbrechen-Knopf, leere Eingabe).
-        XCTAssertTrue(app.buttons["search.open"].exists)
+        // Auch das Suchfeld ist wieder zu (für Bedienungshilfen verborgen, kein Abbrechen-Knopf).
+        XCTAssertTrue(app.textFields["search.field"].waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["search.cancel"].exists)
     }
 
     @MainActor
@@ -205,20 +206,31 @@ final class TaskUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Müll rausbringen"].exists)
     }
 
-    /// Lupe antippen und das Suchfeld liefern.
+    /// Liste herunterziehen (das Suchfeld ist beim Start verborgen), das Feld antippen und liefern.
     @MainActor
     private func openSearch(_ app: XCUIApplication) -> XCUIElement {
-        let open = app.buttons["search.open"]
-        XCTAssertTrue(open.waitForExistence(timeout: 5))
-        open.tap()
         let field = app.textFields["search.field"]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Tastatur erscheint nach der Lupe")
+        pullDownToSearch(app, field)
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Tastatur erscheint nach dem Antippen")
         return field
     }
 
+}
+
+/// Holt das verborgene Suchfeld durch Herunterziehen hervor (höchstens dreimal versuchen).
+@MainActor
+func pullDownToSearch(_ app: XCUIApplication, _ field: XCUIElement) {
+    for _ in 0..<3 where !field.exists {
+        app.scrollViews.firstMatch.swipeDown()
+        _ = field.waitForExistence(timeout: 2)
+    }
+    XCTAssertTrue(field.exists, "Suchfeld erscheint nach dem Herunterziehen")
+}
+
+extension TaskUITests {
     @MainActor
-    private func clearSearch(_ app: XCUIApplication, _ field: XCUIElement) {
+    fileprivate func clearSearch(_ app: XCUIApplication, _ field: XCUIElement) {
         let clear = app.buttons["search.clear"]
         if clear.exists { clear.tap() } else { field.clearAndType("") }
         field.tap()

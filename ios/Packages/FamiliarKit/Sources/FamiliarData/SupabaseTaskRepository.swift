@@ -53,11 +53,20 @@ final class SupabaseTaskRepository: TaskRepository {
         let name = image.id.uuidString.lowercased()
         let storage = client.storage.from(Self.bucket)
         let options = FileOptions(contentType: "image/jpeg")
-        _ = try await perform {
-            try await storage.upload("\(folder)/\(name).jpg", data: image.jpegData, options: options)
-        }
-        _ = try await perform {
-            try await storage.upload("\(folder)/\(name)_thumb.jpg", data: image.thumbnailData, options: options)
+        try await uploadOnce("\(folder)/\(name).jpg", data: image.jpegData, to: storage, options: options)
+        try await uploadOnce("\(folder)/\(name)_thumb.jpg", data: image.thumbnailData, to: storage, options: options)
+    }
+
+    /// Lädt eine Datei hoch; „gibt es schon“ (409) zählt als Erfolg. Das Speichern einer Aufgabe lädt bei jedem Versuch
+    /// alle neuen Bilder hoch – nach einem Fehler mitten in der Reihe (z. B. Server kurz überlastet) liegen die ersten
+    /// schon dort, und ein zweiter Versuch würde sonst an genau diesen scheitern.
+    private func uploadOnce(_ path: String, data: Data, to storage: StorageFileApi, options: FileOptions) async throws(FamiliarError) {
+        do {
+            _ = try await storage.upload(path, data: data, options: options)
+        } catch let error as StorageError where error.statusCode == "409" || error.error == "Duplicate" {
+            return
+        } catch {
+            throw FamiliarError(supabaseError: error)
         }
     }
 

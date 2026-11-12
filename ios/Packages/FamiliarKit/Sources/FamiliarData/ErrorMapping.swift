@@ -20,6 +20,13 @@ extension FamiliarError {
             } else {
                 self = .unknown(message: error.message)
             }
+        case let error as StorageError:
+            // 429 und 5xx (auch Supabase-eigenes 544) sind vorübergehend: Der Server drosselt oder wird gewartet.
+            if let code = error.statusCode.flatMap(Int.init), code == 429 || (500...599).contains(code) {
+                self = .serviceBusy
+            } else {
+                self = .unknown(message: error.message)
+            }
         case let error as AuthError:
             self = FamiliarError(authError: error)
         case let error as URLError where Self.offlineCodes.contains(error.code):

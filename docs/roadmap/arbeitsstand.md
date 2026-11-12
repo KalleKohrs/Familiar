@@ -38,6 +38,12 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 - Behoben bzw. neu: (1) Start: **eine** durchgehende Startansicht-Ebene (vorher zwei, die sich ineinander blendeten und flackerten), Zeichen ohne eigene Animation, Ausblenden erst eine Atempause nach dem Laden. (2) **Suchfeld sichtbar bei kurzem Inhalt** (leere Familie mit Einladungskarte): SwiftUI scrollt bei zu kurzem Inhalt gar nicht → Mindesthöhe aus der gemessenen Containerhöhe, `settle()` hält das Feld jederzeit verborgen; Test-Szenario `empty`. (3) Suche abbrechen: sanftes Einfahren (`isSliding` hält `settle()` heraus). (4) Kalender: Monat schiebt seitlich herein (Richtung wie Blättern), „weiße Box“ war der Platzhalter der Tagesliste (`pending` statt Skeleton). (5) **Verlauf: Wischen** – nach rechts wiederherstellen, nach links endgültig löschen (mit Rückfrage; `swipeActionsContainer`, iOS 27). (6) Live Activity: Abstände in der erweiterten Dynamic Island (links/unten) – ob das die abgeschnittene Ecke war, am Gerät prüfen. (7) Details: Knopf „Alle offenen erinnern“ (ab zwei offenen Personen; pro Person gab es „Erinnern“ schon).
 - Migration `0022_purge_history_entry.sql` ist auf der Produktion eingespielt, SQL-Tests `0013` 10/10 grün. **Offen für den Inhaber:** Push, Archive/Upload von Build 9, iPhone-Prüfung (Start, Suche, Kalender, Verlauf-Wischen, Live Activity).
 
+## Nachtrag 2026-11-12 (abends) – Build 10
+
+- Bilder-Fehler beim Anlegen (4 Bilder): Server-Protokoll zeigt, dass der Supabase-Speicher ca. 1 Minute lang **alles** mit 429/544 abgelehnt hat (auch Avatare), danach wieder 200 – kein Fehler der App oder der Richtlinien (Policies geprüft). Trotzdem: klare Meldung `serviceBusy` und „409 Duplicate = Erfolg“, damit der zweite Versuch nicht an schon hochgeladenen Bildern scheitert.
+- Such-Symbol oben rechts entfernt (Suche per Herunterziehen; VoiceOver-Knopf bleibt). Kalender: kein Platzhalter-Kasten mehr beim ersten Öffnen, „Nichts geplant“ ruhiger (Symbol, mittig, feste Höhe).
+- Tests: UI (Suche, Aufgaben, Kalender, Audit) grün, Paket-Tests 118 + 19 grün.
+
 ## Offene Pakete (Stand davor, erledigt) (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
 
 | Paket | Branch | Stand | Nächster Schritt |

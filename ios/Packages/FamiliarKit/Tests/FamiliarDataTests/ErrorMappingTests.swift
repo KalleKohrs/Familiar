@@ -38,6 +38,13 @@ struct ErrorMappingTests {
         #expect(FamiliarError(supabaseError: URLError(.notConnectedToInternet)) == .offline)
     }
 
+    @Test func storageThrottlingAndOutagesAreBusy() {
+        for code in ["429", "500", "503", "544"] {
+            #expect(FamiliarError(supabaseError: StorageError(statusCode: code, message: "x")) == .serviceBusy)
+        }
+        #expect(FamiliarError(supabaseError: StorageError(statusCode: "403", message: "x")) == .unknown(message: "x"))
+    }
+
     private func apiError(_ code: String) -> AuthError {
         .api(
             message: code,

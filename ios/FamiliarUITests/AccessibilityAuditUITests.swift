@@ -78,10 +78,10 @@ final class AccessibilityAuditUITests: XCTestCase {
     private func auditSearch(appearance: String) {
         let app = launch(appearance: appearance)
         XCTAssertTrue(app.buttons["tab.tasks"].waitForExistence(timeout: 10))
-        app.buttons["search.open"].tap()
         let field = app.textFields["search.field"]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Tastatur erscheint nach der Lupe")
+        pullDownToSearch(app, field)
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Tastatur erscheint nach dem Antippen")
         // Return schließt die Tastatur (sie verdeckt sonst die Tab-Leiste).
         field.typeText("e\n")
         audit(app, "Suche mit Treffern (\(appearance))")

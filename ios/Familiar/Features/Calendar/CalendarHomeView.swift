@@ -328,18 +328,24 @@ struct CalendarHomeView: View {
                 FamiliarErrorState(message: loadError ?? "") { Task { await load() } }
                     .familiarCard()
                     .transition(FamiliarMotion.contentTransition)
-            case .loading:
-                FamiliarSkeleton(height: 64)
-            case .pending:
-                // Platz halten, nichts zeigen: kein Kasten und keine falsche „Nichts geplant“-Aussage.
-                Color.clear.frame(height: 64)
+            case .loading, .pending:
+                // Platz halten, nichts zeigen: kein Kasten (auch nicht beim ersten Öffnen) und keine falsche
+                // „Nichts geplant“-Aussage. Gleiche Höhe wie der Leerzustand, damit nichts springt.
+                Color.clear.frame(height: Self.placeholderHeight)
             case .empty:
-                Text("Nichts geplant.")
-                    .font(FamiliarFont.secondary)
-                    .foregroundStyle(FamiliarColor.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, FamiliarSpacing.xxs)
-                    .transition(FamiliarMotion.contentTransition)
+                VStack(spacing: FamiliarSpacing.xs) {
+                    Image(systemName: "calendar")
+                        .font(.title2)
+                        .foregroundStyle(FamiliarColor.textTertiary)
+                        .accessibilityHidden(true)
+                    Text("Nichts geplant")
+                        .font(FamiliarFont.secondary)
+                        .foregroundStyle(FamiliarColor.textSecondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: Self.placeholderHeight)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("calendar.empty")
+                .transition(FamiliarMotion.contentTransition)
             case .list:
                 VStack(spacing: 0) {
                     ForEach(Array(dayEntries.enumerated()), id: \.element.id) { index, entry in
@@ -357,6 +363,9 @@ struct CalendarHomeView: View {
         // mit eigener Liste wechselt sofort, ohne Geister.
         .familiarContentSwap(value: dayPhase)
     }
+
+    /// Höhe des Bereichs unter dem Datum, solange nichts oder „Nichts geplant“ dort steht.
+    private static let placeholderHeight: CGFloat = 96
 
     private enum DayPhase: Equatable {
         case failed, loading, pending, empty, list

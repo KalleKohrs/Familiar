@@ -24,7 +24,7 @@ extension SessionStore {
 }
 
 /// Scroll-Ansicht mit eingebautem Suchfeld, das **oberhalb** des Inhalts liegt und beim Start verborgen ist:
-/// Herunterziehen der Liste (oder die Lupe in der Leiste) holt es hervor, wie bei Apples Listen.
+/// Herunterziehen der Liste holt es hervor, wie bei Apples Listen (für VoiceOver: Knopf „Suchen“).
 ///
 /// Das Feld ist Teil des Inhalts und hat eine feste Höhe. Die System-Suchleiste (`searchable`) hing
 /// dagegen in der Navigationsleiste: Sie war immer sichtbar und sprang beim Wechsel des Bereichs verspätet
@@ -77,6 +77,15 @@ struct SearchRevealScrollView<Content: View>: View {
                     .opacity(fieldOpacity)
                     .allowsHitTesting(fieldOpacity > 0.5)
                     .accessibilityHidden(fieldOpacity < 0.05)
+                    // Solange das Feld verborgen ist, steht an seiner Stelle für VoiceOver und Sprachsteuerung ein
+                    // unsichtbarer „Suchen“-Knopf (sehende Personen ziehen die Liste herunter).
+                    .overlay {
+                        if fieldOpacity < 0.05 {
+                            Button(action: reveal) { Color.clear }
+                                .accessibilityLabel("Suchen")
+                                .accessibilityIdentifier("search.open")
+                        }
+                    }
                 content
             }
             // Mindesthöhe, damit sich das Feld auch bei kurzen Inhalten wegscrollen lässt. Gemessen (gemessen: bei
@@ -110,13 +119,7 @@ struct SearchRevealScrollView<Content: View>: View {
         .onChange(of: slot) { settle() }
         .onChange(of: isSearching) { settle() }
         .task(id: viewportHeight > 0) { await hideInitially() }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: reveal) { Image(systemName: "magnifyingglass") }
-                    .accessibilityLabel("Suchen")
-                    .accessibilityIdentifier("search.open")
-            }
-        }
+        // Kein Such-Symbol in der Leiste (machte die Oberfläche unruhig): Das Feld kommt per Herunterziehen.
         .onChange(of: tabSelection) { old, new in
             // Jeder Wechsel des Bereichs leert die Suche und verbirgt das Feld wieder (ohne Bewegung: der
             // Bereich ist gerade nicht zu sehen).
