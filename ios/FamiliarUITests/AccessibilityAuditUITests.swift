@@ -79,12 +79,15 @@ final class AccessibilityAuditUITests: XCTestCase {
         let app = launch(appearance: appearance)
         XCTAssertTrue(app.buttons["tab.tasks"].waitForExistence(timeout: 10))
         app.buttons["search.open"].tap()
-        let field = app.searchFields.firstMatch
+        let field = app.textFields["search.field"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Tastatur erscheint nach der Lupe")
         // Return schließt die Tastatur (sie verdeckt sonst die Tab-Leiste).
         field.typeText("e\n")
         audit(app, "Suche mit Treffern (\(appearance))")
-        field.buttons["Text löschen"].tap()
+        app.buttons["search.clear"].tap()
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10))
         field.typeText("qqq\n")
         XCTAssertTrue(app.staticTexts.matching(identifier: "search.empty").firstMatch.waitForExistence(timeout: 5))
         audit(app, "Suche ohne Treffer (\(appearance))")

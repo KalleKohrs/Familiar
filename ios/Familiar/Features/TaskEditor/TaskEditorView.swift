@@ -235,14 +235,16 @@ struct TaskEditorView: View {
 
     private var titleSection: some View {
         Section {
-            TextField("Titel", text: $draft.title)
+            TextField("Was ist zu tun?", text: $draft.title)
                 .font(FamiliarFont.cardTitle)
+                .noContactSuggestions()
                 .submitLabel(.next)
                 .focused($focusedField, equals: .title)
                 .onSubmit { focusedField = .description }
                 .accessibilityIdentifier("editor.title")
             TextField("Beschreibung (optional)", text: $draft.description, axis: .vertical)
                 .lineLimit(2...8)
+                .noContactSuggestions()
                 .focused($focusedField, equals: .description)
                 .accessibilityIdentifier("editor.description")
         } footer: {
@@ -286,20 +288,23 @@ struct TaskEditorView: View {
         } else if !menuFamilies.isEmpty {
             Section {
                 Menu {
-                    ForEach(menuFamilies) { membership in
+                    // Familien (nur die, in denen man anlegen darf): Häkchen nur, solange die Aufgabe nicht privat ist.
+                    ForEach(creatableFamilies) { membership in
                         Button {
-                            draft.familyID = membership.id
+                            choose(family: membership.id)
                         } label: {
-                            if membership.id == draft.familyID {
+                            if !draft.isPrivate && membership.id == draft.familyID {
                                 Label(membership.family.name, systemImage: "checkmark")
                             } else {
                                 Text(membership.family.name)
                             }
                         }
                     }
-                    Divider()
-                    Toggle(isOn: privateBinding) {
-                        Label("Nur für mich (privat)", systemImage: "lock")
+                    if !creatableFamilies.isEmpty { Divider() }
+                    Button {
+                        choosePrivate()
+                    } label: {
+                        Label("Nur für mich (privat)", systemImage: draft.isPrivate ? "checkmark" : "lock")
                     }
                 } label: {
                     scopeLabel
@@ -335,20 +340,17 @@ struct TaskEditorView: View {
         .contentShape(Rectangle())
     }
 
-    private var privateBinding: Binding<Bool> {
-        Binding {
-            draft.isPrivate
-        } set: { isPrivate in
-            // Ohne Anlege-Recht in irgendeiner Familie bleibt es privat.
-            guard isPrivate || !creatableFamilies.isEmpty else { return }
-            withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) {
-                draft.isPrivate = isPrivate
-                // Zurück zu „Familie“: Ohne Anlege-Recht in dieser Familie auf eine andere wechseln.
-                if !isPrivate, let id = draft.familyID, !creatableFamilies.contains(where: { $0.id == id }),
-                   let first = creatableFamilies.first {
-                    draft.familyID = first.id
-                }
-            }
+    /// Eine Familie wählen: macht die Aufgabe wieder gemeinsam (auch aus dem Zustand „privat“ heraus).
+    private func choose(family id: UUID) {
+        withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) {
+            draft.familyID = id
+            draft.isPrivate = false
+        }
+    }
+
+    private func choosePrivate() {
+        withAnimation(FamiliarMotion.animation(reduceMotion: reduceMotion)) {
+            draft.isPrivate = true
         }
     }
 

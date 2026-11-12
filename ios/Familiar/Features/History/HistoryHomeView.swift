@@ -25,7 +25,8 @@ struct HistoryHomeView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
+            SearchRevealScrollView(text: $searchText, tab: .history, resultCount: visibleHistory.count,
+                                   prompt: "Titel, Beschreibung oder Person") {
                 LazyVStack(alignment: .leading, spacing: FamiliarSpacing.s) {
                     // Überschrift im Inhalt in der Markenschrift wie „Aufgaben“ und „Kalender“.
                     Text("Verlauf")
@@ -44,8 +45,6 @@ struct HistoryHomeView: View {
             .familiarScreenBackground()
             .navigationTitle("Verlauf")
             .navigationBarTitleDisplayMode(.inline)
-            .familiarSearch(text: $searchText, tab: .history, resultCount: visibleHistory.count,
-                            prompt: "Titel, Beschreibung oder Person")
             .toolbar(removing: .title)
             .toolbar {
                 if canClear {

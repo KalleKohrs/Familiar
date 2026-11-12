@@ -1,4 +1,4 @@
-# Arbeitsstand und Übergabe (2026-11-11, abends)
+# Arbeitsstand und Übergabe (2026-11-12)
 
 Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die Arbeit nach einer Unterbrechung (z. B. Token-Limit) weiterführt. Zuerst lesen, dann `git log --oneline --graph --all -30` und `git status`.
 
@@ -25,6 +25,13 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 - Alle vier Pakete sind in `main` (Merge `58c0b58`; Version 1.1.0, Build 7 in `98c097e`). Nichts gepusht.
 - Gesamtprüfung auf diesem Stand: Paket-Tests 118 (+7) grün, **alle 28 UI-Tests grün** (inkl. Barrierefreiheit hell/dunkel/Suche, Private Aufgaben, Komfort, Wiederholung), Release-Build und Archive erfolgreich, `Metadata.appintents` der App enthält `CompleteTaskIntent`, `OpenNewTaskIntent`, `OpenTodayIntent` mit Modulname `Familiar`.
 - **Offen:** (1) Migration `0021_private_tasks.sql` ist **nicht** auf dem Server eingespielt; sie muss vor dem Testen/Veröffentlichen von Build 7 eingespielt werden (neue Parameter in `create_task`/Serien-RPCs; SQL-Tests 48/48 grün in Rollback). (2) Push in GitHub Desktop, Archive und Upload in Xcode, TestFlight, Prüfung auf dem iPhone. (3) Neu und nur durch Code-Lesen geprüft: Der Plus-Knopf öffnet das Formular immer; ohne Anlegerecht in irgendeiner Familie bietet es nur „Nur für mich“ an.
+
+## Nachtrag 2026-11-12 – Feinschliff nach den ersten TestFlight-Tests (Build 8)
+
+- Migration `0021` ist auf der Produktion eingespielt (SQL-Tests dort 48/48 grün). Build 7 (1.1.0) liegt bei Apple; die folgenden Korrekturen stecken in **Build 8** (`CURRENT_PROJECT_VERSION = 8`).
+- Behoben: (1) Start: Startansicht bleibt über der Hauptansicht, bis die erste Liste da ist, dann eine Überblendung (`RootView`). (2) „Nur für mich“ ↔ Familie wechselt jetzt sauber (Häkchen immer bei genau einem Eintrag). (3) Abbrechen von „Neue Aufgabe“: Tab-Leiste saß 34 pt zu hoch, weil SwiftUI bei eingeblendetem Blatt die Safe Area wieder einrechnete → `ScreenBottomAnchored` in `RootTabView`. (4) Suchfeld liegt im Inhalt, ist beim Start weggescrollt, Herunterziehen oder Lupe holt es hervor (`SearchRevealScrollView`). (5) Verlauf springt nicht mehr (war die verspätet einspringende System-Suchleiste). (6) Titelfeld heißt „Was ist zu tun?“ und schaltet Kontaktvorschläge ab (nur am Gerät prüfbar).
+- Tests: alle UI-Tests grün (28; Such-Tests auf `textFields["search.field"]` umgestellt, neuer Schritt „zurück von privat“ in `PrivateTaskUITests`).
+- Offen am iPhone prüfen: Telefonnummern-Vorschläge verschwunden? Start flüssig? Suchfeld per Herunterziehen? Abbrechen ohne Sprung der Leiste?
 
 ## Offene Pakete (Stand davor, erledigt) (jeweils eigener Branch/Worktree unter `.claude/worktrees/`)
 

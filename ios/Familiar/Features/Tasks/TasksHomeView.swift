@@ -24,7 +24,8 @@ struct TasksHomeView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
+            SearchRevealScrollView(text: $searchText, tab: .tasks, resultCount: visibleTasks.count,
+                                   prompt: "Titel, Beschreibung oder Person") {
                 VStack(alignment: .leading, spacing: FamiliarSpacing.s) {
                     header
                     InviteHintSection()
@@ -39,8 +40,6 @@ struct TasksHomeView: View {
             .familiarScreenBackground()
             .navigationTitle("Aufgaben")
             .navigationBarTitleDisplayMode(.inline)
-            .familiarSearch(text: $searchText, tab: .tasks, resultCount: visibleTasks.count,
-                            prompt: "Titel, Beschreibung oder Person")
             .toolbar(removing: .title)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

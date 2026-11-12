@@ -71,6 +71,13 @@ final class PrivateTaskUITests: XCTestCase {
         XCTAssertTrue(app.buttons["editor.assignee.Anna"].waitForNonExistence(timeout: 5))
         XCTAssertFalse(app.buttons["editor.mode.any_one"].exists)
 
+        // Zurück zu „Familie“ muss gehen (früher blieb das Menü in „privat“ hängen) – und wieder hin.
+        chooseFromScopeMenu(app, "Familie Kohrs")
+        assertScope(app, "Familie: Familie Kohrs")
+        XCTAssertTrue(app.buttons["editor.assignee.Anna"].waitForExistence(timeout: 5))
+        chooseFromScopeMenu(app, "Nur für mich (privat)")
+        assertScope(app, "Nur für mich, privat")
+
         title.tap()
         title.typeText("Geschenk für Papa")
         shot(app, "10-formular-privat")

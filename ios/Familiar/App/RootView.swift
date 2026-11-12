@@ -7,6 +7,11 @@ import SwiftUI
 struct RootView: View {
     @Environment(SessionStore.self) private var session
     @Environment(TaskStore.self) private var tasks
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Beim Start liegt die Startansicht noch über der Hauptansicht, bis die erste Liste geladen ist. So
+    /// blendet sich die fertige Liste in einem Zug ein, statt dass Platzhalter, Leerzustand und Liste
+    /// nacheinander überblendet werden.
+    @State private var showsLaunchCover = true
 
     var body: some View {
         ZStack {
@@ -21,12 +26,20 @@ struct RootView: View {
                 FamilySetupView()
             case .ready:
                 RootTabView()
+                    .overlay {
+                        if showsLaunchCover {
+                            LaunchView()
+                                .allowsHitTesting(false)
+                                .transition(.opacity)
+                        }
+                    }
             case .failed(let error):
                 LoadingFailedView(error: error)
             }
         }
         .transition(.opacity)
         .familiarAnimation(value: session.phase)
+        .task(id: session.phase == .ready) { await dismissLaunchCover() }
         // Einladungslink (Universal Link): vormerken; gefragt wird, sobald das Profil steht.
         .onOpenURL { url in
             // Rücksprung von der Google-Anmeldung, sonst ggf. Einladungslink.
@@ -57,6 +70,23 @@ struct RootView: View {
 }
 
 extension RootView {
+    private var tasksSettled: Bool {
+        switch tasks.state {
+        case .idle, .loading: false
+        default: true
+        }
+    }
+
+    /// Wartet höchstens 1,5 s auf die erste Liste und blendet dann die Startansicht ruhig aus.
+    private func dismissLaunchCover() async {
+        guard session.phase == .ready else { showsLaunchCover = true; return }
+        for _ in 0..<30 where !tasksSettled {
+            try? await Task.sleep(for: .milliseconds(50))
+            if Task.isCancelled { return }
+        }
+        withAnimation(reduceMotion ? FamiliarMotion.reduced : .easeOut(duration: 0.45)) { showsLaunchCover = false }
+    }
+
     private var showsInvitePrompt: Binding<Bool> {
         Binding {
             session.invitePromptFamilyID != nil && session.phase == .ready && session.pendingInviteCode == nil

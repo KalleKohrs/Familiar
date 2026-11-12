@@ -57,23 +57,27 @@ struct RootTabView: View {
         }
         // Hintergrund auch hinter der Tab-Hülle, damit beim Sheet-Übergang kein fremder Streifen unten aufblitzt.
         .background(FamiliarColor.canvas.ignoresSafeArea())
-        .overlay(alignment: .bottom) {
-            // Weicher Übergang wie bei der System-Leiste: Inhalte dunkeln zum unteren Rand hin ab,
-            // statt hart hinter der Leiste zu verschwinden.
-            LinearGradient(
-                colors: [FamiliarColor.canvas.opacity(0), FamiliarColor.canvas.opacity(0.85), FamiliarColor.canvas],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: tabBarHeight + barBottomInset + 28)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .ignoresSafeArea(.container, edges: .bottom)
+        // Leiste und Verlauf hängen am echten Bildschirmrand (siehe `ScreenBottomAnchored`), nicht an der Safe Area.
+        .overlay {
+            ScreenBottomAnchored { gap in
+                // Weicher Übergang wie bei der System-Leiste: Inhalte dunkeln zum unteren Rand hin ab,
+                // statt hart hinter der Leiste zu verschwinden.
+                LinearGradient(
+                    colors: [FamiliarColor.canvas.opacity(0), FamiliarColor.canvas.opacity(0.85), FamiliarColor.canvas],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: tabBarHeight + barBottomInset + 28)
+                .padding(.bottom, -gap)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
         }
-        .overlay(alignment: .bottom) {
-            FloatingTabBar(selection: $selection, onCreateTask: openNewTask)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
-                .padding(.bottom, barBottomInset)
-                .ignoresSafeArea(.container, edges: .bottom)
+        .overlay {
+            ScreenBottomAnchored { gap in
+                FloatingTabBar(selection: $selection, onCreateTask: openNewTask)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
+                    .padding(.bottom, barBottomInset - gap)
+            }
         }
         .sheet(isPresented: $isCreatingTask) {
             TaskEditorView(mode: .create)
@@ -157,3 +161,30 @@ struct RootTabView: View {
         .previewEnvironment(.ready)
 }
 #endif
+
+/// Hängt Inhalt an die Unterkante des Bildschirms und meldet, wie weit die Unterkante des Bereichs, in dem
+/// SwiftUI ihn gerade ausrichtet, über dem Bildschirmrand liegt (`gap`).
+///
+/// Warum nicht einfach `ignoresSafeArea`? Sobald ein Blatt („Neue Aufgabe“) eingeblendet wird, rechnet SwiftUI
+/// die untere Safe Area (34 pt) für diese Überlagerung doch wieder ein (gemessen: Leiste 791 → 757 pt, bis das
+/// Blatt ganz weg ist). Beim Abbrechen sah man die Leiste deshalb 34 pt zu hoch, während das Blatt noch hinunterfuhr.
+/// Der Ausgleich über die tatsächliche Lage im Bildschirm stimmt in beiden Fällen.
+private struct ScreenBottomAnchored<Content: View>: View {
+    @ViewBuilder let content: (CGFloat) -> Content
+
+    private var screenHeight: CGFloat {
+        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.screen.bounds.height }.first ?? 0
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let gap = max(0, screenHeight - proxy.frame(in: .global).maxY)
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                content(gap)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .ignoresSafeArea(.container, edges: .bottom)
+    }
+}

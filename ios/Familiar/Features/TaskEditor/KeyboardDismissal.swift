@@ -23,3 +23,11 @@ extension View {
         background { EndEditingWhenDisappearing().frame(width: 0, height: 0).accessibilityHidden(true) }
     }
 }
+
+extension View {
+    /// Unterdrückt die Vorschläge über der Tastatur, die iOS aus dem Adressbuch macht (eigene Telefonnummern
+    /// bei „Titel“): Ein leerer Inhaltstyp schaltet die automatische Feld-Erkennung für dieses Feld ab.
+    func noContactSuggestions() -> some View {
+        textContentType(UITextContentType(rawValue: ""))
+    }
+}

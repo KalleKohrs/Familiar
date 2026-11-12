@@ -211,15 +211,17 @@ final class TaskUITests: XCTestCase {
         let open = app.buttons["search.open"]
         XCTAssertTrue(open.waitForExistence(timeout: 5))
         open.tap()
-        let field = app.searchFields.firstMatch
+        let field = app.textFields["search.field"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Tastatur erscheint nach der Lupe")
         return field
     }
 
     @MainActor
     private func clearSearch(_ app: XCUIApplication, _ field: XCUIElement) {
-        let clear = field.buttons["Text löschen"]
+        let clear = app.buttons["search.clear"]
         if clear.exists { clear.tap() } else { field.clearAndType("") }
+        field.tap()
     }
 }
 
