@@ -70,3 +70,10 @@ Dieses Dokument ist die Einstiegsstelle, wenn eine Sitzung (oder ein Mensch) die
 - Antworten auf Deutsch (du/dein), einfache Sprache, Schritte nummeriert.
 - Nicht ändern (entschieden): Altersfreigabe 16+, iOS 27 als Mindestversion, nur iPhone.
 - Offene Prüfungen nur auf einem echten iPhone: Bewegungsgefühl, Startzeit, Steuerelemente im Kontrollzentrum, Live Activity.
+
+## Nachtrag 2026-11-13 – Version 1.1.0 eingereicht
+
+- **Version 1.1.0 (Build 13) ist zur App-Prüfung eingereicht** (2026-11-13, „Warten auf Prüfung“). Veröffentlichung automatisch nach der Freigabe, sofort für alle, Bewertung bleibt.
+- Die Builds 12 und 13 wurden vom Inhaber hochgeladen; im Quellcode steht als letzter Stand Build 11 (`022bae3`). Eine Build-Nummer allein ändert den Code nicht, ein Commit dazu fehlt aber. Wer den Stand sauber festhalten will: `CURRENT_PROJECT_VERSION` in `ios/Config/Base.xcconfig` auf 13 setzen.
+- „Neues in dieser Version“ und Werbetext sind in App Store Connect eingetragen (Werbetext aus `docs/app-store/v2/konzept.md`).
+- Nach der Freigabe: `REVIEW_CODE` in Supabase löschen und `REVIEW_EMAIL` neu setzen.
